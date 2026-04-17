@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 jobs:
-  build-deb:
+  build-release:
     runs-on: ubuntu-latest
     
     steps:
@@ -24,22 +24,79 @@ jobs:
       id: version
       run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
     
+    - name: Build Linux Client (x64)
+      run: |
+        cd src/ParentalControl.Client
+        dotnet publish -c Release -r linux-x64 --self-contained -o ../../publish/client-linux-x64
+    
+    - name: Build Linux Client (arm64)
+      run: |
+        cd src/ParentalControl.Client
+        dotnet publish -c Release -r linux-arm64 --self-contained -o ../../publish/client-linux-arm64
+    
+    - name: Build Windows Client (x64)
+      run: |
+        cd src/ParentalControl.Client.Windows
+        dotnet publish -c Release -r win-x64 --self-contained -o ../../publish/client-windows-x64
+    
+    - name: Build Server
+      run: |
+        cd src/ParentalControl.WebService
+        dotnet publish -c Release -o ../../publish/server
+    
+    - name: Package Linux Client (x64)
+      run: |
+        cd publish
+        tar -czf client-linux-x64.tar.gz -C client-linux-x64 .
+    
+    - name: Package Linux Client (arm64)
+      run: |
+        cd publish
+        tar -czf client-linux-arm64.tar.gz -C client-linux-arm64 .
+    
+    - name: Package Windows Client (x64)
+      run: |
+        cd publish
+        zip -r client-windows-x64.zip client-windows-x64
+    
+    - name: Package Server
+      run: |
+        cd publish
+        tar -czf server.tar.gz -C server .
+    
     - name: Build .deb package
       run: |
         cd scripts
         chmod +x build-deb.sh
         ./build-deb.sh ${{ steps.version.outputs.VERSION }}
     
-    - name: Upload .deb package
-      uses: actions/upload-artifact@v4
-      with:
-        name: deb-package
-        path: scripts/parental-control-client_*.deb
-    
     - name: Create Release
       uses: softprops/action-gh-release@v2
-      if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: scripts/parental-control-client_*.deb
+        files: |
+          publish/client-linux-x64.tar.gz
+          publish/client-linux-arm64.tar.gz
+          publish/client-windows-x64.zip
+          publish/server.tar.gz
+          scripts/parental-control-client_*.deb
         draft: false
         prerelease: false
+        body: |
+          ## Release ${{ steps.version.outputs.VERSION }}
+          
+          ### Downloads
+          
+          **Server**:
+          - `server.tar.gz` - ASP.NET Core web service
+          
+          **Linux Client**:
+          - `client-linux-x64.tar.gz` - Linux x64 client
+          - `client-linux-arm64.tar.gz` - Linux ARM64 client
+          - `parental-control-client_${{ steps.version.outputs.VERSION }}_amd64.deb` - Ubuntu/Debian package
+          
+          **Windows Client**:
+          - `client-windows-x64.zip` - Windows x64 client
+          
+          ### Installation
+          
+          See [INSTALLATION.md](https://github.com/crowndip/timekeeper-net/blob/main/INSTALLATION.md) for detailed instructions.
