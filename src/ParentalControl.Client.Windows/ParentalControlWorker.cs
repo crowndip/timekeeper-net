@@ -69,19 +69,33 @@ public class ParentalControlWorker : BackgroundService
         await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 1, 0);
 
         var pendingRecords = await _cache.GetPendingRecordsAsync();
-        var response = await _syncService.SubmitUsageAsync(pendingRecords);
-
-        if (response != null)
+        
+        if (pendingRecords.Count > 0)
         {
-            await _cache.MarkAsSyncedAsync(pendingRecords.Select(r => r.Id).ToList());
-            await CheckEnforcementAsync(userId, response);
+            // Have usage data to submit
+            var response = await _syncService.SubmitUsageAsync(pendingRecords);
+            if (response != null)
+            {
+                await _cache.MarkAsSyncedAsync(pendingRecords.Select(r => r.Id).ToList());
+                await CheckEnforcementAsync(userId, response);
+            }
+            else
+            {
+                var cachedLimits = await _cache.GetLastKnownLimitsAsync(userId);
+                if (cachedLimits != null)
+                {
+                    await CheckEnforcementAsync(userId, cachedLimits);
+                }
+            }
         }
         else
         {
-            var cachedLimits = await _cache.GetLastKnownLimitsAsync(userId);
-            if (cachedLimits != null)
+            // No pending usage but user is logged in - check server for time limits
+            // This handles the case where parent added time while child was logged off
+            var response = await _syncService.CheckTimeRemainingAsync(username);
+            if (response != null)
             {
-                await CheckEnforcementAsync(userId, cachedLimits);
+                await CheckEnforcementAsync(userId, response);
             }
         }
     }

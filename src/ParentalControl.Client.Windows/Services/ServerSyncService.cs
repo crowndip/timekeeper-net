@@ -10,6 +10,7 @@ public interface IServerSyncService
     Task<UsageReportResponse?> SubmitUsageAsync(List<UsageRecord> records);
     Task<ClientConfigResponse?> GetConfigurationAsync();
     Task<bool> RegisterComputerAsync();
+    Task<UsageReportResponse?> CheckTimeRemainingAsync(string username);
 }
 
 public class ServerSyncService : IServerSyncService
@@ -134,5 +135,51 @@ public class ServerSyncService : IServerSyncService
         }
         
         return false;
+    }
+    
+    public async Task<UsageReportResponse?> CheckTimeRemainingAsync(string username)
+    {
+        try
+        {
+            var computerIdStr = _configuration["ParentalControl:ComputerId"];
+            if (string.IsNullOrEmpty(computerIdStr) || !Guid.TryParse(computerIdStr, out var computerId))
+            {
+                _logger.LogWarning("ComputerId not configured");
+                return null;
+            }
+            
+            var request = new UsageReportRequest(
+                computerId,
+                Guid.Empty,
+                username,
+                string.Empty,
+                DateTime.UtcNow,
+                0,
+                0,
+                true
+            );
+            
+            var response = await _httpClient.PostAsJsonAsync("/api/client/usage", request);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<UsageReportResponse>();
+                if (result != null)
+                {
+                    _logger.LogDebug("Time check for {Username}: {TimeRemaining} minutes", 
+                        username, result.TimeRemaining);
+                    return result;
+                }
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogDebug(ex, "Network error checking time for {Username}", username);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to check time for {Username}", username);
+        }
+        
+        return null;
     }
 }

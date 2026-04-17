@@ -69,14 +69,19 @@ public class ParentalControlWorker : BackgroundService
     {
         var sessions = await _sessionMonitor.GetActiveSessionsAsync();
         
+        // Record time for active sessions
         foreach (var session in sessions)
         {
             await _timeTracker.RecordMinuteAsync(session);
         }
         
+        // Always sync with server (even if no active sessions)
+        // This allows detecting time adjustments when user is logged off
         var usageData = await _timeTracker.GetPendingUsageAsync();
+        
         if (usageData.Count > 0)
         {
+            // Have usage data to submit
             var response = await _serverSync.SubmitUsageAsync(usageData);
             if (response != null)
             {
@@ -89,6 +94,21 @@ public class ParentalControlWorker : BackgroundService
                 // Server unavailable - use offline mode
                 _logger.LogWarning("Server unavailable, using offline mode");
                 await _enforcement.CheckAndEnforceOfflineAsync(usageData);
+            }
+        }
+        else if (sessions.Count > 0)
+        {
+            // No pending usage but have active sessions - check server for time limits
+            // This handles the case where parent added time while child was logged off
+            _logger.LogDebug("No pending usage, checking server for {Count} active sessions", sessions.Count);
+            
+            foreach (var session in sessions)
+            {
+                var response = await _serverSync.CheckTimeRemainingAsync(session.Username);
+                if (response != null)
+                {
+                    await _enforcement.CheckAndEnforceAsync(response);
+                }
             }
         }
     }
