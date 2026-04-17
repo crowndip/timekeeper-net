@@ -166,7 +166,7 @@ public class ServerSyncService : IServerSyncService
                 if (result != null)
                 {
                     _logger.LogDebug("Time check for {Username}: {TimeRemaining} minutes", 
-                        username, result.TimeRemaining);
+                        username, result.TimeRemainingMinutes);
                     return result;
                 }
             }
