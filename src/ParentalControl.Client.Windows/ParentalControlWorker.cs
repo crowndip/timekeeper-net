@@ -1,4 +1,5 @@
 using ParentalControl.Client.Windows.Services;
+using ParentalControl.Shared.DTOs;
 
 namespace ParentalControl.Client.Windows;
 
@@ -86,7 +87,7 @@ public class ParentalControlWorker : BackgroundService
 
     private async Task CheckEnforcementAsync(Guid userId, UsageReportResponse limits)
     {
-        var remaining = TimeSpan.FromMinutes(limits.MinutesRemaining);
+        var remaining = TimeSpan.FromMinutes(limits.TimeRemainingMinutes);
 
         if (remaining <= TimeSpan.Zero)
         {

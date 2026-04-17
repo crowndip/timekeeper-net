@@ -42,3 +42,12 @@ public record DailyUsageResponse(
     int MinutesAdjustment,
     int DailyLimit,
     int TimeRemaining);
+
+public record UsageRecord(
+    Guid Id,
+    Guid UserId,
+    Guid SessionId,
+    int MinutesActive,
+    int MinutesIdle,
+    DateTime Timestamp,
+    bool Synced);

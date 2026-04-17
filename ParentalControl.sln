@@ -21,6 +21,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParentalControl.Client.Wind
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParentalControl.Client.Windows.UI", "src\ParentalControl.Client.Windows.UI\ParentalControl.Client.Windows.UI.csproj", "{DB1A1D54-12CD-4700-AC4A-4D13F4C43853}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{0AB3BF05-4346-4AA6-1389-037BE0695223}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ParentalControl.Client.Windows.Tests", "tests\ParentalControl.Client.Windows.Tests\ParentalControl.Client.Windows.Tests.csproj", "{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -127,6 +131,18 @@ Global
 		{DB1A1D54-12CD-4700-AC4A-4D13F4C43853}.Release|x64.Build.0 = Release|Any CPU
 		{DB1A1D54-12CD-4700-AC4A-4D13F4C43853}.Release|x86.ActiveCfg = Release|Any CPU
 		{DB1A1D54-12CD-4700-AC4A-4D13F4C43853}.Release|x86.Build.0 = Release|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Debug|x64.Build.0 = Debug|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Debug|x86.Build.0 = Debug|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Release|x64.ActiveCfg = Release|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Release|x64.Build.0 = Release|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Release|x86.ActiveCfg = Release|Any CPU
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -134,5 +150,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{28B4A1AA-4FAE-43D6-B121-212428E55445} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{DB1A1D54-12CD-4700-AC4A-4D13F4C43853} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{8B5DCA9F-5775-42BA-B6DE-11EA51E606E2} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
