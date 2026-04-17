@@ -1,107 +1,109 @@
 @page "/reports"
 @using ParentalControl.WebService.Services
 @using ParentalControl.WebService.Data
+@using ParentalControl.WebService.Models
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.JSInterop
+@using System.Text.Json
 @inject IUsageReportService ReportService
 @inject AppDbContext DbContext
+@inject IJSRuntime JS
 
 <PageTitle>Usage Reports</PageTitle>
 
-<h3>📊 Usage Reports</h3>
+<div style="padding: 20px; max-width: 1400px; margin: 0 auto;">
+    <h2 style="margin-bottom: 20px;">📊 Usage Reports</h2>
 
-<div class="row mb-3">
-    <div class="col-md-3">
-        <label class="form-label">Start Date</label>
-        <input type="date" class="form-control" @bind="startDate" />
+    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Start Date</label>
+            <input type="date" @bind="startDate" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">End Date</label>
+            <input type="date" @bind="endDate" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">&nbsp;</label>
+            <button @onclick="LoadReports" style="padding: 8px 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                Load Reports
+            </button>
+        </div>
     </div>
-    <div class="col-md-3">
-        <label class="form-label">End Date</label>
-        <input type="date" class="form-control" @bind="endDate" />
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">&nbsp;</label>
-        <button class="btn btn-primary d-block" @onclick="LoadReports">Load Reports</button>
+
+    @if (loading)
+    {
+        <div style="text-align: center; padding: 40px;">
+            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
+    }
+    else if (reports.Any())
+    {
+        <div style="background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0;">Summary</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                        <th style="padding: 12px; text-align: left;">User</th>
+                        <th style="padding: 12px; text-align: right;">Total Minutes</th>
+                        <th style="padding: 12px; text-align: right;">Total Hours</th>
+                        <th style="padding: 12px; text-align: right;">Daily Average</th>
+                        <th style="padding: 12px; text-align: center;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in reports)
+                    {
+                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                            <td style="padding: 12px;">@report.Username</td>
+                            <td style="padding: 12px; text-align: right;">@report.TotalMinutes</td>
+                            <td style="padding: 12px; text-align: right;">@((report.TotalMinutes / 60.0).ToString("F1"))</td>
+                            <td style="padding: 12px; text-align: right;">@report.DailyAverage.ToString("F1") min/day</td>
+                            <td style="padding: 12px; text-align: center;">
+                                <button @onclick="() => LoadUserChart(report.UserId, report.Username)" 
+                                        style="padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    View Chart
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div style="background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0;">All Users - Daily Usage</h3>
+            <canvas id="allUsersChart" style="max-height: 400px;"></canvas>
+        </div>
+
+        @if (selectedUserId != Guid.Empty)
+        {
+            <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin-top: 0;">@selectedUsername - Time Allotted vs Used</h3>
+                <canvas id="userChart" style="max-height: 400px;"></canvas>
+            </div>
+        }
+    }
+    else if (!loading)
+    {
+        <div style="text-align: center; padding: 40px; color: #6b7280;">
+            No usage data found for the selected date range.
+        </div>
+    }
+
+    <div style="margin-top: 20px;">
+        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; display: inline-block;">
+            Back to Dashboard
+        </a>
     </div>
 </div>
 
-@if (loading)
-{
-    <div class="text-center">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
-}
-else if (reports.Any())
-{
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5>Summary</h5>
-                </div>
-                <div class="card-body">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Total Minutes</th>
-                                <th>Total Hours</th>
-                                <th>Daily Average</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var report in reports)
-                            {
-                                <tr>
-                                    <td>@report.Username</td>
-                                    <td>@report.TotalMinutes</td>
-                                    <td>@((report.TotalMinutes / 60.0).ToString("F1"))</td>
-                                    <td>@report.DailyAverage.ToString("F1") min/day</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-info" @onclick="() => LoadUserChart(report.UserId, report.Username)">
-                                            View Chart
-                                        </button>
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h5>All Users - Daily Usage</h5>
-                </div>
-                <div class="card-body">
-                    <canvas id="allUsersChart" style="max-height: 400px;"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    @if (selectedUserId != Guid.Empty)
-    {
-        <div class="row">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">
-                        <h5>@selectedUsername - Daily Usage</h5>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="userChart" style="max-height: 400px;"></canvas>
-                    </div>
-                </div>
-            </div>
-        </div>
+<style>
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
-}
+</style>
 
 @code {
     private DateOnly startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7));
@@ -110,6 +112,7 @@ else if (reports.Any())
     private bool loading = false;
     private Guid selectedUserId = Guid.Empty;
     private string selectedUsername = string.Empty;
+    private bool chartsRendered = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -118,19 +121,23 @@ else if (reports.Any())
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (reports.Any())
+        if (reports.Any() && !chartsRendered)
         {
             await RenderAllUsersChart();
             if (selectedUserId != Guid.Empty)
             {
                 await RenderUserChart();
             }
+            chartsRendered = true;
         }
     }
 
     private async Task LoadReports()
     {
         loading = true;
+        chartsRendered = false;
+        StateHasChanged();
+        
         reports = await ReportService.GetUsageReportAsync(startDate, endDate);
         loading = false;
         StateHasChanged();
@@ -140,25 +147,102 @@ else if (reports.Any())
     {
         selectedUserId = userId;
         selectedUsername = username;
+        chartsRendered = false;
         StateHasChanged();
     }
 
     private async Task RenderAllUsersChart()
     {
-        var allData = new Dictionary<Guid, List<DailyUsageData>>();
+        var dates = Enumerable.Range(0, (endDate.DayNumber - startDate.DayNumber) + 1)
+            .Select(i => startDate.AddDays(i))
+            .ToList();
+
+        var labels = dates.Select(d => d.ToString("MM/dd")).ToArray();
+        var datasets = new List<object>();
+
+        var colors = new[] { "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899" };
+        var colorIndex = 0;
+
         foreach (var report in reports)
         {
-            var data = await ReportService.GetDailyUsageAsync(report.UserId, startDate, endDate);
-            allData[report.UserId] = data;
+            var dailyData = await ReportService.GetDailyUsageAsync(report.UserId, startDate, endDate);
+            var dataPoints = dates.Select(d => 
+            {
+                var usage = dailyData.FirstOrDefault(dd => dd.Date == d);
+                return usage?.MinutesUsed ?? 0;
+            }).ToArray();
+
+            var color = colors[colorIndex % colors.Length];
+            datasets.Add(new
+            {
+                label = report.Username,
+                data = dataPoints,
+                backgroundColor = color + "80",
+                borderColor = color,
+                borderWidth = 2
+            });
+            colorIndex++;
         }
 
-        // Chart rendering would be done via JavaScript interop
-        // For now, this is a placeholder
+        await JS.InvokeVoidAsync("renderUsageChart", "allUsersChart", labels, datasets);
     }
 
     private async Task RenderUserChart()
     {
-        var data = await ReportService.GetDailyUsageAsync(selectedUserId, startDate, endDate);
-        // Chart rendering would be done via JavaScript interop
+        var dates = Enumerable.Range(0, (endDate.DayNumber - startDate.DayNumber) + 1)
+            .Select(i => startDate.AddDays(i))
+            .ToList();
+
+        var labels = dates.Select(d => d.ToString("MM/dd")).ToArray();
+        
+        // Get daily usage
+        var dailyData = await ReportService.GetDailyUsageAsync(selectedUserId, startDate, endDate);
+        var usedData = dates.Select(d =>
+        {
+            var usage = dailyData.FirstOrDefault(dd => dd.Date == d);
+            return usage?.MinutesUsed ?? 0;
+        }).ToArray();
+
+        // Get daily limits from active profile
+        var profile = await DbContext.TimeProfiles
+            .FirstOrDefaultAsync(p => p.UserId == selectedUserId && p.IsActive);
+
+        var limitData = dates.Select(d =>
+        {
+            if (profile == null) return 0;
+            return d.DayOfWeek switch
+            {
+                DayOfWeek.Monday => profile.MondayLimit,
+                DayOfWeek.Tuesday => profile.TuesdayLimit,
+                DayOfWeek.Wednesday => profile.WednesdayLimit,
+                DayOfWeek.Thursday => profile.ThursdayLimit,
+                DayOfWeek.Friday => profile.FridayLimit,
+                DayOfWeek.Saturday => profile.SaturdayLimit,
+                DayOfWeek.Sunday => profile.SundayLimit,
+                _ => 0
+            };
+        }).ToArray();
+
+        var datasets = new List<object>
+        {
+            new
+            {
+                label = "Time Allotted",
+                data = limitData,
+                backgroundColor = "#10b98180",
+                borderColor = "#10b981",
+                borderWidth = 2
+            },
+            new
+            {
+                label = "Time Used",
+                data = usedData,
+                backgroundColor = "#ef444480",
+                borderColor = "#ef4444",
+                borderWidth = 2
+            }
+        };
+
+        await JS.InvokeVoidAsync("renderUsageChart", "userChart", labels, datasets);
     }
 }
