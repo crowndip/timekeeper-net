@@ -20,6 +20,7 @@ public class ServerSyncService : IServerSyncService
     private readonly ILogger<ServerSyncService> _logger;
     private readonly ILocalCache _cache;
     private Guid? _computerId;
+    private const string ComputerIdPath = @"C:\ProgramData\ParentalControl\computer-id.txt";
     
     public ServerSyncService(HttpClient httpClient, IConfiguration configuration, ILogger<ServerSyncService> logger, ILocalCache cache)
     {
@@ -28,12 +29,8 @@ public class ServerSyncService : IServerSyncService
         _logger = logger;
         _cache = cache;
         
-        // Load ComputerId from config
-        var computerIdStr = configuration["ParentalControl:ComputerId"];
-        if (Guid.TryParse(computerIdStr, out var computerId))
-        {
-            _computerId = computerId;
-        }
+        // Load ComputerId from persistent storage
+        _computerId = LoadComputerId();
         
         var serverUrl = configuration["ParentalControl:ServerUrl"];
         _httpClient.BaseAddress = new Uri(serverUrl!);
@@ -135,27 +132,8 @@ public class ServerSyncService : IServerSyncService
                 _computerId = result!.ComputerId;
                 _logger.LogInformation("Registered: {ComputerId}", result.ComputerId);
                 
-                // Save ComputerId to config
-                var configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
-                var json = await File.ReadAllTextAsync(configPath);
-                var config = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
-                
-                if (config != null)
-                {
-                    if (!config.ContainsKey("ParentalControl"))
-                        config["ParentalControl"] = new Dictionary<string, object>();
-                    
-                    var pcConfig = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
-                        config["ParentalControl"].ToString()!);
-                    pcConfig!["ComputerId"] = result.ComputerId.ToString();
-                    config["ParentalControl"] = pcConfig;
-                    
-                    var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
-                    await File.WriteAllTextAsync(configPath, 
-                        System.Text.Json.JsonSerializer.Serialize(config, options));
-                    
-                    _logger.LogInformation("Saved ComputerId to config");
-                }
+                // Save to persistent storage
+                SaveComputerId(result.ComputerId);
                 
                 return true;
             }
@@ -211,5 +189,43 @@ public class ServerSyncService : IServerSyncService
         }
         
         return null;
+    }
+    
+    private Guid? LoadComputerId()
+    {
+        try
+        {
+            if (File.Exists(ComputerIdPath))
+            {
+                var id = File.ReadAllText(ComputerIdPath).Trim();
+                if (Guid.TryParse(id, out var guid))
+                {
+                    _logger.LogInformation("Loaded ComputerId from persistent storage");
+                    return guid;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load ComputerId");
+        }
+        return null;
+    }
+    
+    private void SaveComputerId(Guid computerId)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(ComputerIdPath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir!);
+            
+            File.WriteAllText(ComputerIdPath, computerId.ToString());
+            _logger.LogInformation("Saved ComputerId to persistent storage");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save ComputerId");
+        }
     }
 }
