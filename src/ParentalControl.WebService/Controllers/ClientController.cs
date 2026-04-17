@@ -115,12 +115,17 @@ public class ClientController : ControllerBase
         
         var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(userId, date);
         var isWithinAllowedHours = await _timeCalc.IsWithinAllowedHoursAsync(userId, request.Timestamp);
+        var minutesUntilAllowedHoursEnd = await _timeCalc.GetMinutesUntilAllowedHoursEndAsync(userId, request.Timestamp);
+        
+        // Effective time remaining is the minimum of time limit and allowed hours
+        var effectiveTimeRemaining = Math.Min(timeRemaining, minutesUntilAllowedHoursEnd);
+        
         var shouldEnforce = !isWithinAllowedHours || await _timeCalc.ShouldEnforceAsync(userId, timeRemaining);
         
         var profile = await _context.TimeProfiles.FirstOrDefaultAsync(p => p.UserId == userId && p.IsActive);
         
         return new UsageReportResponse(
-            timeRemaining,
+            effectiveTimeRemaining,
             shouldEnforce,
             shouldEnforce ? profile?.EnforcementAction : null,
             profile?.WarningTimes ?? []

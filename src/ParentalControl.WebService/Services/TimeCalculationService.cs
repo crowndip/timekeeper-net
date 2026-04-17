@@ -9,6 +9,7 @@ public interface ITimeCalculationService
     Task<int> CalculateTimeRemainingAsync(Guid userId, DateOnly date);
     Task<bool> ShouldEnforceAsync(Guid userId, int timeRemaining);
     Task<bool> IsWithinAllowedHoursAsync(Guid userId, DateTime currentTime);
+    Task<int> GetMinutesUntilAllowedHoursEndAsync(Guid userId, DateTime currentTime);
 }
 
 public class TimeCalculationService : ITimeCalculationService
@@ -70,6 +71,29 @@ public class TimeCalculationService : ITimeCalculationService
             .Any(ah => currentTimeOnly >= ah.StartTime && currentTimeOnly <= ah.EndTime);
         
         return allowed;
+    }
+    
+    public async Task<int> GetMinutesUntilAllowedHoursEndAsync(Guid userId, DateTime currentTime)
+    {
+        var profile = await _context.TimeProfiles
+            .Include(p => p.AllowedHours)
+            .FirstOrDefaultAsync(p => p.UserId == userId && p.IsActive);
+        
+        if (profile == null || !profile.AllowedHours.Any())
+            return int.MaxValue; // No restrictions
+        
+        var dayOfWeek = (int)currentTime.DayOfWeek;
+        var currentTimeOnly = TimeOnly.FromDateTime(currentTime);
+        
+        var todayHours = profile.AllowedHours
+            .Where(ah => ah.DayOfWeek == dayOfWeek && currentTimeOnly >= ah.StartTime && currentTimeOnly <= ah.EndTime)
+            .FirstOrDefault();
+        
+        if (todayHours == null)
+            return 0; // Outside allowed hours
+        
+        var minutesUntilEnd = (int)(todayHours.EndTime.ToTimeSpan() - currentTimeOnly.ToTimeSpan()).TotalMinutes;
+        return minutesUntilEnd;
     }
     
     private static int GetDailyLimit(TimeProfile profile, DayOfWeek day) => day switch
