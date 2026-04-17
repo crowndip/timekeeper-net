@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.1] - 2026-04-17
+
+### Added
+- **Automatic Linux Client Installation**: One-line installation script
+  - Auto-detects system architecture (x64/arm64)
+  - Downloads latest release from GitHub automatically
+  - Configures systemd service
+  - Interactive and non-interactive modes
+  - Usage: `curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/install-linux-client.sh | sudo bash -s -- http://server:8080`
+
+### Changed
+- Updated README.md with automatic installation as recommended option
+- Updated INSTALLATION.md with simplified deployment instructions
+
 ## [1.4.0] - 2026-04-17
 
 ### Added
@@ -89,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Real-time usage monitoring
 - Docker deployment support
 
+[1.4.1]: https://github.com/crowndip/timekeeper-net/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/crowndip/timekeeper-net/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/crowndip/timekeeper-net/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/crowndip/timekeeper-net/compare/v1.1.0...v1.2.0
