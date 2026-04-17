@@ -87,16 +87,66 @@ jobs:
           ### Downloads
           
           **Server**:
-          - `server.tar.gz` - ASP.NET Core web service
+          - `server.tar.gz` - ASP.NET Core web service + Blazor UI
           
           **Linux Client**:
           - `client-linux-x64.tar.gz` - Linux x64 client
-          - `client-linux-arm64.tar.gz` - Linux ARM64 client
+          - `client-linux-arm64.tar.gz` - Linux ARM64 client (Raspberry Pi)
           - `parental-control-client_${{ steps.version.outputs.VERSION }}_amd64.deb` - Ubuntu/Debian package
           
           **Windows Client**:
           - `client-windows-x64.zip` - Windows x64 client
           
-          ### Installation
+          ---
           
-          See [INSTALLATION.md](https://github.com/crowndip/timekeeper-net/blob/main/INSTALLATION.md) for detailed instructions.
+          ### Quick Start
+          
+          #### Server (Docker Compose)
+          ```bash
+          # Set passwords
+          export ADMIN_PASSWORD=your_dashboard_password
+          export LIMIT_ADMIN_PASSWORD=your_admin_password
+          export DB_PASSWORD=your_db_password
+          
+          # Start server
+          docker-compose up -d
+          
+          # Access dashboard at http://localhost:8080
+          ```
+          
+          #### Linux Client (.deb package)
+          ```bash
+          # Install
+          sudo dpkg -i parental-control-client_${{ steps.version.outputs.VERSION }}_amd64.deb
+          
+          # Configure server URL
+          sudo nano /opt/parental-control/appsettings.json
+          # Set "ServerUrl": "http://your-server-ip:8080"
+          
+          # Start service
+          sudo systemctl start parental-control-client
+          
+          # Check status
+          sudo systemctl status parental-control-client
+          ```
+          
+          #### Linux Client (automatic script)
+          ```bash
+          curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/install-linux-client.sh | sudo bash -s -- http://your-server-ip:8080
+          ```
+          
+          #### Windows Client
+          ```powershell
+          # Extract client-windows-x64.zip
+          # Run install-windows-client.ps1 as Administrator
+          .\install-windows-client.ps1 -ServerUrl "http://your-server-ip:8080"
+          ```
+          
+          ---
+          
+          ### Documentation
+          
+          - [Installation Guide](https://github.com/crowndip/timekeeper-net/blob/main/INSTALLATION.md)
+          - [Quick Start](https://github.com/crowndip/timekeeper-net/blob/main/QUICKSTART.md)
+          - [Features](https://github.com/crowndip/timekeeper-net/blob/main/FEATURES.md)
+          - [Windows Client Guide](https://github.com/crowndip/timekeeper-net/blob/main/WINDOWS_CLIENT.md)
