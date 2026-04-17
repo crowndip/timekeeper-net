@@ -162,13 +162,6 @@ jobs:
         path: artifacts/client-linux-x64.tar.gz
         retention-days: 90
     
-    - name: Upload .deb Package
-      uses: actions/upload-artifact@v4
-      with:
-        name: debian-package
-        path: artifacts/parental-control-client_*.deb
-        retention-days: 90
-    
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/v')
       uses: softprops/action-gh-release@v1
@@ -176,7 +169,6 @@ jobs:
         files: |
           artifacts/server-deployment.tar.gz
           artifacts/client-linux-x64.tar.gz
-          artifacts/parental-control-client_*.deb
         body: |
           ## Server Deployment (Portainer)
           Download `server-deployment.tar.gz` and extract:
