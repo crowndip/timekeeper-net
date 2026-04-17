@@ -94,38 +94,38 @@ EOF
         
         # Create postinst script
         cat > ${PKG_DIR}/DEBIAN/postinst << 'EOF'
-        #!/bin/bash
-        set -e
-        
-        # Reload systemd
-        systemctl daemon-reload
-        
-        # Enable service (but don't start - user needs to configure first)
-        systemctl enable parental-control-client.service
-        
-        echo ""
-        echo "Parental Control Client installed successfully!"
-        echo ""
-        echo "Next steps:"
-        echo "1. Edit /opt/parental-control/appsettings.json"
-        echo "2. Set your server URL"
-        echo "3. Start service: sudo systemctl start parental-control-client"
-        echo ""
-        
-        exit 0
-        EOF
+#!/bin/bash
+set -e
+
+# Reload systemd
+systemctl daemon-reload
+
+# Enable service (but don't start - user needs to configure first)
+systemctl enable parental-control-client.service
+
+echo ""
+echo "Parental Control Client installed successfully!"
+echo ""
+echo "Next steps:"
+echo "1. Edit /opt/parental-control/appsettings.json"
+echo "2. Set your server URL"
+echo "3. Start service: sudo systemctl start parental-control-client"
+echo ""
+
+exit 0
+EOF
         
         # Create prerm script
         cat > ${PKG_DIR}/DEBIAN/prerm << 'EOF'
-        #!/bin/bash
-        set -e
-        
-        # Stop service if running
-        systemctl stop parental-control-client.service || true
-        systemctl disable parental-control-client.service || true
-        
-        exit 0
-        EOF
+#!/bin/bash
+set -e
+
+# Stop service if running
+systemctl stop parental-control-client.service || true
+systemctl disable parental-control-client.service || true
+
+exit 0
+EOF
         
         chmod 755 ${PKG_DIR}/DEBIAN/postinst
         chmod 755 ${PKG_DIR}/DEBIAN/prerm
