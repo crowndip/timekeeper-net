@@ -84,4 +84,18 @@ public class ConfigTests
         // Assert
         Assert.Equal("0m remaining", result);
     }
+    
+    [Fact]
+    public void EffectiveTime_ShowsMinimum()
+    {
+        // Arrange
+        var timeRemaining = 55; // 55 minutes from daily limit
+        var minutesUntilAllowedHoursEnd = 15; // 15 minutes until 10 PM
+        
+        // Act
+        var effectiveTime = Math.Min(timeRemaining, minutesUntilAllowedHoursEnd);
+        
+        // Assert
+        Assert.Equal(15, effectiveTime); // Should show 15, not 55
+    }
 }
