@@ -23,13 +23,32 @@ jobs:
         dotnet-version: '8.0.x'
     
     - name: Restore dependencies
-      run: dotnet restore
+      run: |
+        dotnet restore src/ParentalControl.Shared/ParentalControl.Shared.csproj
+        dotnet restore src/ParentalControl.WebService/ParentalControl.WebService.csproj
+        dotnet restore src/ParentalControl.Client/ParentalControl.Client.csproj
+        dotnet restore src/ParentalControl.Client.UI/ParentalControl.Client.UI.csproj
+        dotnet restore src/ParentalControl.Client.Windows/ParentalControl.Client.Windows.csproj
+        dotnet restore tests/ParentalControl.WebService.Tests/ParentalControl.WebService.Tests.csproj
+        dotnet restore tests/ParentalControl.Client.Tests/ParentalControl.Client.Tests.csproj
+        dotnet restore tests/ParentalControl.Client.Windows.Tests/ParentalControl.Client.Windows.Tests.csproj
     
     - name: Build
-      run: dotnet build --no-restore --configuration Release
+      run: |
+        dotnet build src/ParentalControl.Shared/ParentalControl.Shared.csproj --no-restore --configuration Release
+        dotnet build src/ParentalControl.WebService/ParentalControl.WebService.csproj --no-restore --configuration Release
+        dotnet build src/ParentalControl.Client/ParentalControl.Client.csproj --no-restore --configuration Release
+        dotnet build src/ParentalControl.Client.UI/ParentalControl.Client.UI.csproj --no-restore --configuration Release
+        dotnet build src/ParentalControl.Client.Windows/ParentalControl.Client.Windows.csproj --no-restore --configuration Release
+        dotnet build tests/ParentalControl.WebService.Tests/ParentalControl.WebService.Tests.csproj --no-restore --configuration Release
+        dotnet build tests/ParentalControl.Client.Tests/ParentalControl.Client.Tests.csproj --no-restore --configuration Release
+        dotnet build tests/ParentalControl.Client.Windows.Tests/ParentalControl.Client.Windows.Tests.csproj --no-restore --configuration Release
     
     - name: Test
-      run: dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+      run: |
+        dotnet test tests/ParentalControl.WebService.Tests/ParentalControl.WebService.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        dotnet test tests/ParentalControl.Client.Tests/ParentalControl.Client.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
+        dotnet test tests/ParentalControl.Client.Windows.Tests/ParentalControl.Client.Windows.Tests.csproj --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx"
     
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v2
@@ -56,7 +75,7 @@ jobs:
       run: dotnet publish src/ParentalControl.Client.Windows/ParentalControl.Client.Windows.csproj -c Release -r win-x64 --self-contained -o publish/client-windows-x64
     
     - name: Publish Windows Client UI
-      run: dotnet publish src/ParentalControl.Client.Windows.UI/ParentalControl.Client.Windows.UI.csproj -c Release -r win-x64 --self-contained -o publish/client-ui-windows-x64
+      run: dotnet publish src/ParentalControl.Client.Windows.UI/ParentalControl.Client.Windows.UI.csproj -c Release -r win-x64 --self-contained -o publish/client-ui-windows-x64 || echo "WPF UI build skipped on Linux"
     
     - name: Create Deployment Package
       run: |
@@ -80,10 +99,13 @@ jobs:
         # Windows client artifacts
         mkdir -p artifacts/client-windows
         cp -r publish/client-windows-x64/* artifacts/client-windows/
-        cp -r publish/client-ui-windows-x64 artifacts/client-windows/ui
+        if [ -d "publish/client-ui-windows-x64" ]; then
+          cp -r publish/client-ui-windows-x64 artifacts/client-windows/ui
+        fi
         cp scripts/install-windows-client.ps1 artifacts/client-windows/
         cp scripts/uninstall-windows-client.ps1 artifacts/client-windows/
         cp src/ParentalControl.Client.Windows/appsettings.json artifacts/client-windows/appsettings.json.example
+        cp WINDOWS_CLIENT.md artifacts/client-windows/
         
         # Create archives
         cd artifacts/server && tar -czf ../server-deployment.tar.gz * && cd ../..
