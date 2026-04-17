@@ -86,42 +86,37 @@ jobs:
         echo " enforcement, offline mode support, and cross-platform notification UI." >> ${PKG_DIR}/DEBIAN/control
         echo "Homepage: https://github.com/crowndip/timekeeper-net" >> ${PKG_DIR}/DEBIAN/control
         
-        # Create postinst script
-        cat > ${PKG_DIR}/DEBIAN/postinst << 'EOF'
-#!/bin/bash
-set -e
-
-# Reload systemd
-systemctl daemon-reload
-
-# Enable service (but don't start - user needs to configure first)
-systemctl enable parental-control-client.service
-
-echo ""
-echo "Parental Control Client installed successfully!"
-echo ""
-echo "Next steps:"
-echo "1. Edit /opt/parental-control/appsettings.json"
-echo "2. Set your server URL"
-echo "3. Start service: sudo systemctl start parental-control-client"
-echo ""
-
-exit 0
-EOF
-        
-        # Create prerm script
-        cat > ${PKG_DIR}/DEBIAN/prerm << 'EOF'
-#!/bin/bash
-set -e
-
-# Stop service if running
-systemctl stop parental-control-client.service || true
-systemctl disable parental-control-client.service || true
-
-exit 0
-EOF
-        
+        # Create postinst script (using echo to avoid YAML heredoc issues)
+        echo "#!/bin/bash" > ${PKG_DIR}/DEBIAN/postinst
+        echo "set -e" >> ${PKG_DIR}/DEBIAN/postinst
+        echo "" >> ${PKG_DIR}/DEBIAN/postinst
+        echo "# Reload systemd" >> ${PKG_DIR}/DEBIAN/postinst
+        echo "systemctl daemon-reload" >> ${PKG_DIR}/DEBIAN/postinst
+        echo "" >> ${PKG_DIR}/DEBIAN/postinst
+        echo "# Enable service (but don't start - user needs to configure first)" >> ${PKG_DIR}/DEBIAN/postinst
+        echo "systemctl enable parental-control-client.service" >> ${PKG_DIR}/DEBIAN/postinst
+        echo "" >> ${PKG_DIR}/DEBIAN/postinst
+        echo 'echo ""' >> ${PKG_DIR}/DEBIAN/postinst
+        echo 'echo "Parental Control Client installed successfully!"' >> ${PKG_DIR}/DEBIAN/postinst
+        echo 'echo ""' >> ${PKG_DIR}/DEBIAN/postinst
+        echo 'echo "Next steps:"' >> ${PKG_DIR}/DEBIAN/postinst
+        echo 'echo "1. Edit /opt/parental-control/appsettings.json"' >> ${PKG_DIR}/DEBIAN/postinst
+        echo 'echo "2. Set your server URL"' >> ${PKG_DIR}/DEBIAN/postinst
+        echo 'echo "3. Start service: sudo systemctl start parental-control-client"' >> ${PKG_DIR}/DEBIAN/postinst
+        echo 'echo ""' >> ${PKG_DIR}/DEBIAN/postinst
+        echo "" >> ${PKG_DIR}/DEBIAN/postinst
+        echo "exit 0" >> ${PKG_DIR}/DEBIAN/postinst
         chmod 755 ${PKG_DIR}/DEBIAN/postinst
+        
+        # Create prerm script (using echo to avoid YAML heredoc issues)
+        echo "#!/bin/bash" > ${PKG_DIR}/DEBIAN/prerm
+        echo "set -e" >> ${PKG_DIR}/DEBIAN/prerm
+        echo "" >> ${PKG_DIR}/DEBIAN/prerm
+        echo "# Stop service if running" >> ${PKG_DIR}/DEBIAN/prerm
+        echo "systemctl stop parental-control-client.service || true" >> ${PKG_DIR}/DEBIAN/prerm
+        echo "systemctl disable parental-control-client.service || true" >> ${PKG_DIR}/DEBIAN/prerm
+        echo "" >> ${PKG_DIR}/DEBIAN/prerm
+        echo "exit 0" >> ${PKG_DIR}/DEBIAN/prerm
         chmod 755 ${PKG_DIR}/DEBIAN/prerm
         
         # Build package
