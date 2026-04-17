@@ -50,6 +50,9 @@ public class ClientController : ControllerBase
     [HttpPost("session/start")]
     public async Task<ActionResult<SessionStartResponse>> StartSession(SessionStartRequest request)
     {
+        // Auto-create user if not exists
+        await EnsureUserExistsAsync(request.UserId, request.Username);
+        
         var session = new Session
         {
             UserId = request.UserId,
@@ -67,6 +70,9 @@ public class ClientController : ControllerBase
     [HttpPost("usage")]
     public async Task<ActionResult<UsageReportResponse>> ReportUsage(UsageReportRequest request)
     {
+        // Auto-create user if not exists
+        await EnsureUserExistsAsync(request.UserId, request.Username);
+        
         var date = DateOnly.FromDateTime(request.Timestamp);
         
         var usage = await _context.TimeUsage
@@ -151,5 +157,24 @@ public class ClientController : ControllerBase
             .ToListAsync();
         
         return new ClientConfigResponse(users, profiles, allowedHours);
+    }
+    
+    private async Task EnsureUserExistsAsync(Guid userId, string username)
+    {
+        var exists = await _context.Users.AnyAsync(u => u.Id == userId);
+        if (!exists)
+        {
+            var user = new User
+            {
+                Id = userId,
+                Username = username,
+                AccountType = AccountType.Unassigned,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
     }
 }

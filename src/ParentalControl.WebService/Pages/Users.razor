@@ -99,6 +99,7 @@
             <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px; font-weight: 600;">Account Type *</label>
                 <select @bind="formUser.AccountType" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                    <option value="@AccountType.Unassigned">Unassigned (Needs configuration)</option>
                     <option value="@AccountType.Child">Child (Supervised)</option>
                     <option value="@AccountType.Parent">Parent (No limits)</option>
                     <option value="@AccountType.Technical">Technical (System)</option>
@@ -269,6 +270,7 @@
 
     private string GetAccountTypeBg(AccountType type) => type switch
     {
+        AccountType.Unassigned => "#ef4444",
         AccountType.Child => "#f59e0b",
         AccountType.Parent => "#10b981",
         AccountType.Technical => "#6b7280",

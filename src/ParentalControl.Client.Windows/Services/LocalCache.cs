@@ -2,9 +2,11 @@ using ParentalControl.Shared.DTOs;
 
 namespace ParentalControl.Client.Windows.Services;
 
+public record UsageRecord(Guid Id, Guid UserId, string Username, Guid SessionId, int MinutesActive, int MinutesIdle, DateTime Timestamp, bool Synced);
+
 public interface ILocalCache
 {
-    Task IncrementUsageAsync(Guid userId, Guid sessionId, int activeMinutes, int idleMinutes);
+    Task IncrementUsageAsync(Guid userId, string username, Guid sessionId, int activeMinutes, int idleMinutes);
     Task<List<UsageRecord>> GetPendingRecordsAsync();
     Task MarkAsSyncedAsync(List<Guid> recordIds);
     Task<ClientConfigResponse?> GetCachedConfigAsync();
@@ -21,11 +23,12 @@ public class LocalCache : ILocalCache
     private readonly Dictionary<Guid, UsageReportResponse> _lastKnownLimits = new();
     private readonly Dictionary<string, int> _dailyUsage = new();
     
-    public Task IncrementUsageAsync(Guid userId, Guid sessionId, int activeMinutes, int idleMinutes)
+    public Task IncrementUsageAsync(Guid userId, string username, Guid sessionId, int activeMinutes, int idleMinutes)
     {
         _records.Add(new UsageRecord(
             Guid.NewGuid(),
             userId,
+            username,
             sessionId,
             activeMinutes,
             idleMinutes,

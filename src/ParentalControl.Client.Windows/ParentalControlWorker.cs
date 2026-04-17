@@ -65,7 +65,7 @@ public class ParentalControlWorker : BackgroundService
         }
 
         var userId = Guid.NewGuid(); // TODO: Map username to userId from server
-        await _cache.IncrementUsageAsync(userId, _currentSessionId, 1, 0);
+        await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 1, 0);
 
         var pendingRecords = await _cache.GetPendingRecordsAsync();
         var response = await _syncService.SubmitUsageAsync(pendingRecords);

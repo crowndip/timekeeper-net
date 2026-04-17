@@ -4,7 +4,7 @@ namespace ParentalControl.Client.Services;
 
 public interface ILocalCache
 {
-    Task IncrementUsageAsync(Guid userId, Guid sessionId, int activeMinutes, int idleMinutes);
+    Task IncrementUsageAsync(Guid userId, string username, Guid sessionId, int activeMinutes, int idleMinutes);
     Task<List<UsageRecord>> GetPendingRecordsAsync();
     Task MarkAsSyncedAsync(List<Guid> recordIds);
     Task<ClientConfigResponse?> GetCachedConfigAsync();
@@ -21,11 +21,12 @@ public class LocalCache : ILocalCache
     private readonly Dictionary<Guid, UsageReportResponse> _lastKnownLimits = new();
     private readonly Dictionary<string, int> _dailyUsage = new();
     
-    public Task IncrementUsageAsync(Guid userId, Guid sessionId, int activeMinutes, int idleMinutes)
+    public Task IncrementUsageAsync(Guid userId, string username, Guid sessionId, int activeMinutes, int idleMinutes)
     {
         _records.Add(new UsageRecord(
             Guid.NewGuid(),
             userId,
+            username,
             sessionId,
             activeMinutes,
             idleMinutes,

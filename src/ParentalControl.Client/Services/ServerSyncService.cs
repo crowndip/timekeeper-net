@@ -64,6 +64,7 @@ public class ServerSyncService : IServerSyncService
                 var request = new UsageReportRequest(
                     computerId,
                     record.UserId,
+                    record.Username,
                     record.SessionId,
                     record.Timestamp,
                     record.MinutesActive,

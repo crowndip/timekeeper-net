@@ -1,6 +1,6 @@
 namespace ParentalControl.Client.Services;
 
-public record UsageRecord(Guid Id, Guid UserId, Guid SessionId, int MinutesActive, int MinutesIdle, DateTime Timestamp, bool Synced);
+public record UsageRecord(Guid Id, Guid UserId, string Username, Guid SessionId, int MinutesActive, int MinutesIdle, DateTime Timestamp, bool Synced);
 
 public interface ITimeTracker
 {
@@ -26,6 +26,7 @@ public class TimeTracker : ITimeTracker
         
         await _cache.IncrementUsageAsync(
             session.UserId,
+            session.Username,
             Guid.Parse(session.SessionId),
             activeMinutes: isIdle ? 0 : 1,
             idleMinutes: isIdle ? 1 : 0

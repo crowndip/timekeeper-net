@@ -4,9 +4,10 @@ namespace ParentalControl.WebService.Models;
 
 public enum AccountType
 {
-    Child = 0,      // Supervised with limits
-    Parent = 1,     // No limits, can be admin
-    Technical = 2   // System/service accounts, no limits
+    Unassigned = -1, // Auto-created, needs parent configuration
+    Child = 0,       // Supervised with limits
+    Parent = 1,      // No limits, can be admin
+    Technical = 2    // System/service accounts, no limits
 }
 
 public class User

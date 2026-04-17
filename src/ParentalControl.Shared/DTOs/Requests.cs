@@ -5,6 +5,7 @@ public record RegisterComputerRequest(string Hostname, string MachineId, string 
 public record UsageReportRequest(
     Guid ComputerId,
     Guid UserId,
+    string Username,
     Guid? SessionId,
     DateTime Timestamp,
     int MinutesActive,
@@ -29,6 +30,6 @@ public record CreateTimeProfileRequest(
 
 public record TimeAdjustmentRequest(Guid UserId, DateOnly Date, int MinutesAdjustment, string Reason);
 
-public record SessionStartRequest(Guid ComputerId, Guid UserId, DateTime SessionStart);
+public record SessionStartRequest(Guid ComputerId, Guid UserId, string Username, DateTime SessionStart);
 
 public record SessionEndRequest(Guid SessionId, DateTime SessionEnd, string TerminationReason);
