@@ -52,6 +52,12 @@ jobs:
     - name: Publish Client UI (Linux x64)
       run: dotnet publish src/ParentalControl.Client.UI/ParentalControl.Client.UI.csproj -c Release -r linux-x64 --self-contained -o publish/client-ui-linux-x64
     
+    - name: Publish Windows Client
+      run: dotnet publish src/ParentalControl.Client.Windows/ParentalControl.Client.Windows.csproj -c Release -r win-x64 --self-contained -o publish/client-windows-x64
+    
+    - name: Publish Windows Client UI
+      run: dotnet publish src/ParentalControl.Client.Windows.UI/ParentalControl.Client.Windows.UI.csproj -c Release -r win-x64 --self-contained -o publish/client-ui-windows-x64
+    
     - name: Create Deployment Package
       run: |
         mkdir -p artifacts/server
@@ -64,16 +70,25 @@ jobs:
         cp README.md artifacts/server/
         cp PORTAINER_DEPLOYMENT.md artifacts/server/
         
-        # Client artifacts
+        # Linux client artifacts
         cp -r publish/client-linux-x64/* artifacts/client/
         cp -r publish/client-ui-linux-x64 artifacts/client/ui
         cp scripts/install-client.sh artifacts/client/
         cp scripts/parental-control-client.service artifacts/client/
         cp src/ParentalControl.Client/appsettings.json artifacts/client/appsettings.json.example
         
+        # Windows client artifacts
+        mkdir -p artifacts/client-windows
+        cp -r publish/client-windows-x64/* artifacts/client-windows/
+        cp -r publish/client-ui-windows-x64 artifacts/client-windows/ui
+        cp scripts/install-windows-client.ps1 artifacts/client-windows/
+        cp scripts/uninstall-windows-client.ps1 artifacts/client-windows/
+        cp src/ParentalControl.Client.Windows/appsettings.json artifacts/client-windows/appsettings.json.example
+        
         # Create archives
         cd artifacts/server && tar -czf ../server-deployment.tar.gz * && cd ../..
         cd artifacts/client && tar -czf ../client-linux-x64.tar.gz * && cd ../..
+        cd artifacts/client-windows && zip -r ../client-windows-x64.zip * && cd ../..
     
     - name: Upload Server Artifacts
       uses: actions/upload-artifact@v4
@@ -82,11 +97,18 @@ jobs:
         path: artifacts/server-deployment.tar.gz
         retention-days: 90
     
-    - name: Upload Client Artifacts
+    - name: Upload Client Artifacts (Linux)
       uses: actions/upload-artifact@v4
       with:
         name: client-linux-x64
         path: artifacts/client-linux-x64.tar.gz
+        retention-days: 90
+    
+    - name: Upload Client Artifacts (Windows)
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-windows-x64
+        path: artifacts/client-windows-x64.zip
         retention-days: 90
     
     - name: Create Release
@@ -96,6 +118,7 @@ jobs:
         files: |
           artifacts/server-deployment.tar.gz
           artifacts/client-linux-x64.tar.gz
+          artifacts/client-windows-x64.zip
         body: |
           ## Server Deployment (Portainer)
           Download `server-deployment.tar.gz` and extract:
@@ -116,3 +139,10 @@ jobs:
           - Run `sudo ./install-client.sh` to install
           - Edit `/opt/parental-control/appsettings.json` with your server URL
           - Start with `sudo systemctl start parental-control-client`
+          
+          ## Windows Client Installation
+          Download `client-windows-x64.zip` and extract:
+          - Open PowerShell as Administrator
+          - Run `.\install-windows-client.ps1 -ServerUrl "http://your-server-ip:8080"`
+          - Service will start automatically
+          - See `WINDOWS_CLIENT.md` for details

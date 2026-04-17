@@ -5,20 +5,22 @@ A centralized parental control system for Linux with time tracking, enforcement,
 ## Architecture
 
 - **Central Server**: ASP.NET Core 8 web service with PostgreSQL database
-- **Client Agent**: .NET 8 worker service running on Linux clients
+- **Client Agent**: .NET 8 worker service running on Linux and Windows
 - **Admin UI**: Blazor Server web interface
-- **Client UI**: Avalonia cross-platform GUI for notifications
+- **Client UI**: Avalonia (Linux) and WPF (Windows) for notifications
 
 ## Features
 
 - ✅ Centralized time management across multiple computers
+- ✅ Cross-platform support (Linux and Windows)
+- ✅ Time limits shared across all devices
 - ✅ Daily and weekly time limits
 - ✅ Allowed hours configuration
 - ✅ Automatic enforcement (logout/lock)
 - ✅ Real-time usage tracking
 - ✅ Web-based administration
 - ✅ Offline mode support
-- ✅ Cross-platform client UI
+- ✅ Native UI for each platform
 
 ## Quick Start
 
@@ -46,29 +48,9 @@ See [PORTAINER_DEPLOYMENT.md](PORTAINER_DEPLOYMENT.md) for detailed instructions
 
 ### Client Installation
 
-#### Option 1: Ubuntu/Debian (.deb package) - Recommended
+#### Linux Client
 
-Download the latest `.deb` package from [Releases](https://github.com/crowndip/timekeeper-net/releases):
-
-```bash
-# Download and install
-wget https://github.com/crowndip/timekeeper-net/releases/download/v1.0.1/parental-control-client_1.0.1_amd64.deb
-sudo dpkg -i parental-control-client_1.0.1_amd64.deb
-
-# Configure server URL
-sudo nano /opt/parental-control/appsettings.json
-# Set "ServerUrl": "http://your-server-ip:8080"
-
-# Start service
-sudo systemctl start parental-control-client
-
-# Check status
-sudo systemctl status parental-control-client
-```
-
-**Dependencies**: Automatically installs `systemd` and `libicu` libraries.
-
-#### Option 2: Generic Linux (tar.gz)
+##### Option 1: Generic Linux (tar.gz)
 
 Download the latest `client-linux-x64.tar.gz` from [Releases](https://github.com/crowndip/timekeeper-net/releases):
 
@@ -92,7 +74,7 @@ sudo systemctl start parental-control-client
 sudo systemctl status parental-control-client
 ```
 
-#### Option 3: Build from Source
+##### Option 2: Build from Source
 
 ```bash
 # Build client
@@ -104,20 +86,55 @@ cd ../../scripts
 sudo ./install-client.sh
 ```
 
+#### Windows Client
+
+Download the latest `client-windows-x64.zip` from [Releases](https://github.com/crowndip/timekeeper-net/releases):
+
+```powershell
+# Download and extract
+# Open PowerShell as Administrator
+
+# Install
+.\install-windows-client.ps1 -ServerUrl "http://your-server-ip:8080"
+
+# Check service status
+Get-Service ParentalControlClient
+
+# View logs
+Get-Content "C:\ProgramData\ParentalControl\Logs\client-*.log" -Tail 50
+```
+
+See [WINDOWS_CLIENT.md](WINDOWS_CLIENT.md) for detailed Windows installation instructions.
+
+## Cross-Platform Time Sharing
+
+Time limits are shared across all devices:
+
+**Example:**
+- User "john" has 120 minutes/day limit
+- Uses Linux PC for 30 minutes → 90 minutes remaining
+- Switches to Windows PC → Server reports 90 minutes remaining
+- Uses Windows for 90 minutes → 0 minutes remaining
+- Both clients enforce the limit
+
 ## Project Structure
 
 ```
 ParentalControl.sln
 ├── src/
-│   ├── ParentalControl.Shared/       # DTOs and shared models
-│   ├── ParentalControl.WebService/   # ASP.NET Core API + Blazor UI
-│   ├── ParentalControl.Client/       # Background service agent
-│   └── ParentalControl.Client.UI/    # Avalonia notification UI
+│   ├── ParentalControl.Shared/              # DTOs and shared models
+│   ├── ParentalControl.WebService/          # ASP.NET Core API + Blazor UI
+│   ├── ParentalControl.Client/              # Linux background service
+│   ├── ParentalControl.Client.UI/           # Avalonia UI (Linux)
+│   ├── ParentalControl.Client.Windows/      # Windows background service
+│   └── ParentalControl.Client.Windows.UI/   # WPF UI (Windows)
 ├── docker/
 │   ├── Dockerfile.webservice
 │   └── init.sql
 ├── scripts/
-│   ├── install-client.sh
+│   ├── install-client.sh                    # Linux installer
+│   ├── install-windows-client.ps1           # Windows installer
+│   ├── uninstall-windows-client.ps1         # Windows uninstaller
 │   └── parental-control-client.service
 └── docker-compose.yml
 ```
