@@ -114,7 +114,8 @@ public class ClientController : ControllerBase
         await _context.SaveChangesAsync();
         
         var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(userId, date);
-        var shouldEnforce = await _timeCalc.ShouldEnforceAsync(userId, timeRemaining);
+        var isWithinAllowedHours = await _timeCalc.IsWithinAllowedHoursAsync(userId, request.Timestamp);
+        var shouldEnforce = !isWithinAllowedHours || await _timeCalc.ShouldEnforceAsync(userId, timeRemaining);
         
         var profile = await _context.TimeProfiles.FirstOrDefaultAsync(p => p.UserId == userId && p.IsActive);
         
