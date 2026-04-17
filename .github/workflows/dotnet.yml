@@ -1,8 +1,9 @@
-name: .NET Build and Test
+name: Build and Release
 
 on:
   push:
     branches: [ main, develop ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
 
@@ -32,3 +33,74 @@ jobs:
       if: always()
       with:
         files: '**/test-results.trx'
+    
+    - name: Build Docker Image
+      run: |
+        docker build -f docker/Dockerfile.webservice -t parental-control-webservice:${{ github.sha }} .
+        docker save parental-control-webservice:${{ github.sha }} -o webservice-image.tar
+    
+    - name: Publish WebService
+      run: dotnet publish src/ParentalControl.WebService/ParentalControl.WebService.csproj -c Release -o publish/webservice
+    
+    - name: Publish Client (Linux x64)
+      run: dotnet publish src/ParentalControl.Client/ParentalControl.Client.csproj -c Release -r linux-x64 --self-contained -o publish/client-linux-x64
+    
+    - name: Publish Client UI (Linux x64)
+      run: dotnet publish src/ParentalControl.Client.UI/ParentalControl.Client.UI.csproj -c Release -r linux-x64 --self-contained -o publish/client-ui-linux-x64
+    
+    - name: Create Deployment Package
+      run: |
+        mkdir -p artifacts/server
+        mkdir -p artifacts/client
+        
+        # Server artifacts for Portainer
+        cp docker-compose.yml artifacts/server/
+        cp docker/init.sql artifacts/server/
+        cp webservice-image.tar artifacts/server/
+        cp README.md artifacts/server/
+        cp PORTAINER_DEPLOYMENT.md artifacts/server/
+        
+        # Client artifacts
+        cp -r publish/client-linux-x64/* artifacts/client/
+        cp -r publish/client-ui-linux-x64 artifacts/client/ui
+        cp scripts/install-client.sh artifacts/client/
+        cp scripts/parental-control-client.service artifacts/client/
+        cp src/ParentalControl.Client/appsettings.json artifacts/client/appsettings.json.example
+        
+        # Create archives
+        cd artifacts/server && tar -czf ../server-deployment.tar.gz * && cd ../..
+        cd artifacts/client && tar -czf ../client-linux-x64.tar.gz * && cd ../..
+    
+    - name: Upload Server Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: server-deployment
+        path: artifacts/server-deployment.tar.gz
+        retention-days: 90
+    
+    - name: Upload Client Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: client-linux-x64
+        path: artifacts/client-linux-x64.tar.gz
+        retention-days: 90
+    
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/server-deployment.tar.gz
+          artifacts/client-linux-x64.tar.gz
+        body: |
+          ## Server Deployment (Portainer)
+          Download `server-deployment.tar.gz` and extract:
+          - `docker-compose.yml` - Portainer stack configuration
+          - `init.sql` - Database initialization
+          - `webservice-image.tar` - Docker image (load with `docker load -i webservice-image.tar`)
+          
+          ## Client Installation (Linux)
+          Download `client-linux-x64.tar.gz` and extract:
+          - Run `sudo ./install-client.sh` to install
+          - Edit `/opt/parental-control/appsettings.json` with your server URL
+          - Start with `sudo systemctl start parental-control-client`
