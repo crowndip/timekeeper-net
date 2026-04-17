@@ -1,0 +1,76 @@
+@page "/admin-auth"
+@using Microsoft.JSInterop
+@inject NavigationManager Navigation
+@inject IConfiguration Config
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Administrator Authentication</PageTitle>
+
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px;">
+        <h2 style="text-align: center; margin-bottom: 1.5rem; color: #333;">Administrator Access</h2>
+        
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+                @errorMessage
+            </div>
+        }
+        
+        <form @onsubmit="HandleAuth">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: #555;">Administrator Password</label>
+                <input type="password" @bind="password" class="form-control" required autofocus />
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%;" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span>Authenticating...</span>
+                }
+                else
+                {
+                    <span>Authenticate</span>
+                }
+            </button>
+        </form>
+        
+        <div style="margin-top: 1rem; text-align: center;">
+            <a href="/" style="color: #666; text-decoration: none;">← Back to Dashboard</a>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string password = "";
+    private string errorMessage = "";
+    private bool isLoading = false;
+
+    private async Task HandleAuth()
+    {
+        isLoading = true;
+        errorMessage = "";
+        
+        var limitAdminPassword = Config["LimitAdministratorPassword"];
+        
+        if (string.IsNullOrEmpty(limitAdminPassword))
+        {
+            errorMessage = "Administrator password not configured";
+            isLoading = false;
+            return;
+        }
+        
+        if (password == limitAdminPassword)
+        {
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "adminAuthenticated", "true");
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            errorMessage = "Invalid administrator password";
+            password = "";
+        }
+        
+        isLoading = false;
+    }
+}

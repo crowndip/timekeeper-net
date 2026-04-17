@@ -5,15 +5,24 @@
 @using Microsoft.JSInterop
 @inject AppDbContext DbContext
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
 <PageTitle>Users Management</PageTitle>
 
 <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="margin: 0;">👥 Users Management</h1>
-        <button @onclick="ShowAddDialog" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-            + Add User
-        </button>
+        <h1 style="margin: 0;">👥 Users Management @(isReadOnly ? "(Read-Only)" : "")</h1>
+        <div>
+            @if (isReadOnly)
+            {
+                <button @onclick="RequestAdminAuth" style="padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; margin-right: 10px;">
+                    🔒 Unlock Editing
+                </button>
+            }
+            <button @onclick="ShowAddDialog" disabled="@isReadOnly" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-weight: 600; opacity: @(isReadOnly ? "0.5" : "1");">
+                + Add User
+            </button>
+        </div>
     </div>
 
     @if (loading)
@@ -140,10 +149,23 @@
     private User formUser = new();
     private string dialogError = string.Empty;
     private bool saving = false;
+    private bool isReadOnly = true;
 
     protected override async Task OnInitializedAsync()
     {
+        await CheckAdminAuth();
         await LoadUsers();
+    }
+
+    private async Task CheckAdminAuth()
+    {
+        var isAuth = await JS.InvokeAsync<string>("sessionStorage.getItem", "adminAuthenticated");
+        isReadOnly = isAuth != "true";
+    }
+
+    private void RequestAdminAuth()
+    {
+        Navigation.NavigateTo("/admin-auth");
     }
 
     private async Task LoadUsers()
@@ -166,6 +188,7 @@
 
     private void ShowAddDialog()
     {
+        if (isReadOnly) return;
         editingUser = null;
         formUser = new User { IsActive = true, AccountType = AccountType.Child };
         dialogError = string.Empty;
@@ -174,6 +197,7 @@
 
     private void ShowEditDialog(User user)
     {
+        if (isReadOnly) return;
         editingUser = user;
         formUser = new User
         {
@@ -267,6 +291,7 @@
 
     private async Task ToggleActive(User user)
     {
+        if (isReadOnly) return;
         try
         {
             user.IsActive = !user.IsActive;
@@ -282,6 +307,7 @@
 
     private async Task DeleteUser(User user)
     {
+        if (isReadOnly) return;
         if (!await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete user '{user.Username}'?"))
             return;
 
