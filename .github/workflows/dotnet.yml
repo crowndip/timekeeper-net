@@ -48,6 +48,93 @@ jobs:
     - name: Publish Client UI (Linux x64)
       run: dotnet publish src/ParentalControl.Client.UI/ParentalControl.Client.UI.csproj -c Release -r linux-x64 --self-contained -o publish/client-ui-linux-x64
     
+    - name: Build .deb Package
+      run: |
+        VERSION="1.0.0"
+        ARCH="amd64"
+        PKG_NAME="parental-control-client"
+        PKG_DIR="deb-package/${PKG_NAME}_${VERSION}_${ARCH}"
+        
+        # Create package structure
+        mkdir -p ${PKG_DIR}/DEBIAN
+        mkdir -p ${PKG_DIR}/opt/parental-control/bin
+        mkdir -p ${PKG_DIR}/opt/parental-control/ui
+        mkdir -p ${PKG_DIR}/etc/systemd/system
+        
+        # Copy binaries
+        cp -r publish/client-linux-x64/* ${PKG_DIR}/opt/parental-control/bin/
+        cp -r publish/client-ui-linux-x64/* ${PKG_DIR}/opt/parental-control/ui/
+        
+        # Copy systemd service
+        cp scripts/parental-control-client.service ${PKG_DIR}/etc/systemd/system/
+        
+        # Copy config template
+        cp src/ParentalControl.Client/appsettings.json ${PKG_DIR}/opt/parental-control/appsettings.json
+        
+        # Create control file
+        cat > ${PKG_DIR}/DEBIAN/control << EOF
+        Package: ${PKG_NAME}
+        Version: ${VERSION}
+        Section: admin
+        Priority: optional
+        Architecture: ${ARCH}
+        Depends: systemd, libicu74 | libicu72 | libicu70
+        Maintainer: Parental Control Team <support@example.com>
+        Description: Parental Control Client Agent
+         Centralized parental control system client for Linux.
+         Tracks computer usage time and enforces time limits.
+         Features:
+          - Time tracking and enforcement
+          - Offline mode support
+          - Cross-platform notification UI
+          - systemd integration
+        Homepage: https://github.com/crowndip/timekeeper-net
+        EOF
+        
+        # Create postinst script
+        cat > ${PKG_DIR}/DEBIAN/postinst << 'EOF'
+        #!/bin/bash
+        set -e
+        
+        # Reload systemd
+        systemctl daemon-reload
+        
+        # Enable service (but don't start - user needs to configure first)
+        systemctl enable parental-control-client.service
+        
+        echo ""
+        echo "Parental Control Client installed successfully!"
+        echo ""
+        echo "Next steps:"
+        echo "1. Edit /opt/parental-control/appsettings.json"
+        echo "2. Set your server URL"
+        echo "3. Start service: sudo systemctl start parental-control-client"
+        echo ""
+        
+        exit 0
+        EOF
+        
+        # Create prerm script
+        cat > ${PKG_DIR}/DEBIAN/prerm << 'EOF'
+        #!/bin/bash
+        set -e
+        
+        # Stop service if running
+        systemctl stop parental-control-client.service || true
+        systemctl disable parental-control-client.service || true
+        
+        exit 0
+        EOF
+        
+        chmod 755 ${PKG_DIR}/DEBIAN/postinst
+        chmod 755 ${PKG_DIR}/DEBIAN/prerm
+        
+        # Build package
+        dpkg-deb --build ${PKG_DIR}
+        
+        # Move to artifacts
+        mv deb-package/${PKG_NAME}_${VERSION}_${ARCH}.deb artifacts/
+    
     - name: Create Deployment Package
       run: |
         mkdir -p artifacts/server
@@ -85,6 +172,13 @@ jobs:
         path: artifacts/client-linux-x64.tar.gz
         retention-days: 90
     
+    - name: Upload .deb Package
+      uses: actions/upload-artifact@v4
+      with:
+        name: debian-package
+        path: artifacts/parental-control-client_*.deb
+        retention-days: 90
+    
     - name: Create Release
       if: startsWith(github.ref, 'refs/tags/v')
       uses: softprops/action-gh-release@v1
@@ -92,6 +186,7 @@ jobs:
         files: |
           artifacts/server-deployment.tar.gz
           artifacts/client-linux-x64.tar.gz
+          artifacts/parental-control-client_*.deb
         body: |
           ## Server Deployment (Portainer)
           Download `server-deployment.tar.gz` and extract:
@@ -99,7 +194,15 @@ jobs:
           - `init.sql` - Database initialization
           - `webservice-image.tar` - Docker image (load with `docker load -i webservice-image.tar`)
           
-          ## Client Installation (Linux)
+          ## Client Installation (Ubuntu/Debian)
+          **Recommended**: Download `.deb` package:
+          ```bash
+          sudo dpkg -i parental-control-client_1.0.0_amd64.deb
+          sudo nano /opt/parental-control/appsettings.json  # Configure server URL
+          sudo systemctl start parental-control-client
+          ```
+          
+          ## Client Installation (Other Linux)
           Download `client-linux-x64.tar.gz` and extract:
           - Run `sudo ./install-client.sh` to install
           - Edit `/opt/parental-control/appsettings.json` with your server URL
