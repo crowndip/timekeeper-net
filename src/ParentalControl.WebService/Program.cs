@@ -74,7 +74,7 @@ try
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Database check failed. Connection string: {ConnectionString}", 
+            Log.Warning(ex, "Database check failed. Connection string: {ConnectionString}", 
                 connectionString.Replace(builder.Configuration["DbPassword"] ?? "", "***"));
         }
     }

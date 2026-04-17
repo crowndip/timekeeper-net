@@ -1,48 +1,91 @@
 @page "/"
-@using ParentalControl.WebService.Data
-@using Microsoft.EntityFrameworkCore
-@inject AppDbContext DbContext
+@using ParentalControl.WebService.Services
+@inject IDatabaseInitializationService DbInit
+@inject NavigationManager Navigation
 
-<h1>Parental Control Dashboard</h1>
+<PageTitle>Parental Control System</PageTitle>
 
-<div class="stats">
-    <div class="stat-card">
-        <h3>Active Users</h3>
-        <p>@activeUsers</p>
+@if (isChecking)
+{
+    <div class="text-center mt-5">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+        <p class="mt-3">Checking system status...</p>
     </div>
-    
-    <div class="stat-card">
-        <h3>Total Users</h3>
-        <p>@totalUsers</p>
+}
+else if (needsSetup)
+{
+    <div class="container mt-5">
+        <div class="alert alert-warning">
+            <h4 class="alert-heading">⚠️ Database Setup Required</h4>
+            <p>The database has not been initialized yet.</p>
+            <hr>
+            <a href="/setup" class="btn btn-primary">Go to Setup Page</a>
+        </div>
     </div>
-    
-    <div class="stat-card">
-        <h3>Computers</h3>
-        <p>@totalComputers</p>
-    </div>
-    
-    <div class="stat-card">
-        <h3>Active Sessions</h3>
-        <p>@activeSessions</p>
-    </div>
-</div>
+}
+else
+{
+    <h1>Parental Control System</h1>
 
-<div class="activity">
-    <h2>Recent Activity</h2>
-    <p>No recent activity</p>
-</div>
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Users</h5>
+                    <p class="card-text">Manage users and accounts</p>
+                    <a href="/users" class="btn btn-primary">Manage Users</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Time Profiles</h5>
+                    <p class="card-text">Configure time limits</p>
+                    <a href="/profiles" class="btn btn-primary">Manage Profiles</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Reports</h5>
+                    <p class="card-text">View usage reports</p>
+                    <a href="/reports" class="btn btn-primary">View Reports</a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
-    private int activeUsers;
-    private int totalUsers;
-    private int totalComputers;
-    private int activeSessions;
-    
+    private bool isChecking = true;
+    private bool needsSetup = false;
+
     protected override async Task OnInitializedAsync()
     {
-        activeUsers = await DbContext.Users.CountAsync(u => u.IsActive && u.AccountType == Models.AccountType.Child);
-        totalUsers = await DbContext.Users.CountAsync();
-        totalComputers = await DbContext.Computers.CountAsync(c => c.IsActive);
-        activeSessions = await DbContext.Sessions.CountAsync(s => s.IsActive);
+        try
+        {
+            var isInitialized = await DbInit.IsDatabaseInitializedAsync();
+            needsSetup = !isInitialized;
+            
+            if (needsSetup)
+            {
+                // Redirect to setup page
+                Navigation.NavigateTo("/setup", true);
+            }
+        }
+        catch (Exception)
+        {
+            // If check fails, assume needs setup
+            needsSetup = true;
+            Navigation.NavigateTo("/setup", true);
+        }
+        finally
+        {
+            isChecking = false;
+        }
     }
 }
