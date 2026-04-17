@@ -158,7 +158,7 @@ public class ServerSyncService : IServerSyncService
                 computerId,
                 Guid.Empty, // Server will determine from username
                 username,
-                string.Empty,
+                null, // No session ID
                 DateTime.UtcNow,
                 0, // No usage
                 0,

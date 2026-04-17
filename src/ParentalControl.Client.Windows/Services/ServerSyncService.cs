@@ -152,7 +152,7 @@ public class ServerSyncService : IServerSyncService
                 computerId,
                 Guid.Empty,
                 username,
-                string.Empty,
+                null, // No session ID
                 DateTime.UtcNow,
                 0,
                 0,
