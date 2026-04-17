@@ -143,28 +143,79 @@ jobs:
           artifacts/client-windows-x64.zip
         body: |
           ## Server Deployment (Portainer)
-          Download `server-deployment.tar.gz` and extract:
-          - `docker-compose.yml` - Portainer stack configuration
-          - `init.sql` - Database initialization
-          - `webservice-image.tar` - Docker image (load with `docker load -i webservice-image.tar`)
           
-          ## Client Installation (Ubuntu/Debian)
-          **Recommended**: Download `.deb` package:
+          Download `server-deployment.tar.gz` and extract:
+          
+          **IMPORTANT:** You must load and tag the Docker image before deploying in Portainer!
+          
           ```bash
-          sudo dpkg -i parental-control-client_1.0.0_amd64.deb
+          # Extract the package
+          tar -xzf server-deployment.tar.gz
+          
+          # Load the Docker image
+          docker load -i webservice-image.tar
+          # Output: Loaded image: parental-control-webservice:3bc9126e0f620250aa3506827ddb69477b24af69
+          
+          # Tag it as 'latest' (replace <hash> with the one from above)
+          docker tag parental-control-webservice:<hash> parental-control-webservice:latest
+          
+          # Verify
+          docker images | grep parental-control
+          
+          # Prepare database init script
+          sudo mkdir -p /opt/parental-control/db
+          sudo cp init.sql /opt/parental-control/db/init.sql
+          
+          # Now deploy in Portainer with docker-compose.yml
+          # Set DB_PASSWORD environment variable
+          ```
+          
+          **See [PORTAINER_DEPLOYMENT.md](https://github.com/crowndip/timekeeper-net/blob/main/PORTAINER_DEPLOYMENT.md) for complete step-by-step instructions.**
+          
+          ## Linux Client Installation
+          
+          Download `client-linux-x64.tar.gz` and extract:
+          ```bash
+          tar -xzf client-linux-x64.tar.gz
+          cd client-linux-x64
+          sudo ./install-client.sh
           sudo nano /opt/parental-control/appsettings.json  # Configure server URL
           sudo systemctl start parental-control-client
           ```
           
-          ## Client Installation (Other Linux)
-          Download `client-linux-x64.tar.gz` and extract:
-          - Run `sudo ./install-client.sh` to install
-          - Edit `/opt/parental-control/appsettings.json` with your server URL
-          - Start with `sudo systemctl start parental-control-client`
-          
           ## Windows Client Installation
+          
           Download `client-windows-x64.zip` and extract:
-          - Open PowerShell as Administrator
-          - Run `.\install-windows-client.ps1 -ServerUrl "http://your-server-ip:8080"`
-          - Service will start automatically
-          - See `WINDOWS_CLIENT.md` for details
+          ```powershell
+          # Open PowerShell as Administrator
+          .\install-windows-client.ps1 -ServerUrl "http://your-server-ip:8080"
+          
+          # Check service status
+          Get-Service ParentalControlClient
+          ```
+          
+          **See [WINDOWS_CLIENT.md](https://github.com/crowndip/timekeeper-net/blob/main/WINDOWS_CLIENT.md) for detailed Windows installation.**
+          
+          ## What's New in v1.1.1
+          
+          ### Critical Fix
+          - ✅ Server no longer crashes on uninitialized database
+          - ✅ Home page checks database status before queries
+          - ✅ Automatic redirect to /setup if database not initialized
+          - ✅ Clean error handling with no unhandled exceptions
+          
+          ### Improvements
+          - Created Index.razor with database status check
+          - Safe navigation flow with automatic redirects
+          - User-friendly setup experience
+          
+          ### Bug Fixed
+          - Fixed "relation 'Users' does not exist" error on fresh deployment
+          - Fixed server crash when accessing home page before initialization
+          
+          ## Documentation
+          
+          - [PORTAINER_DEPLOYMENT.md](https://github.com/crowndip/timekeeper-net/blob/main/PORTAINER_DEPLOYMENT.md) - Complete server deployment guide
+          - [WINDOWS_CLIENT.md](https://github.com/crowndip/timekeeper-net/blob/main/WINDOWS_CLIENT.md) - Windows client installation
+          - [REVERSE_PROXY.md](https://github.com/crowndip/timekeeper-net/blob/main/REVERSE_PROXY.md) - Reverse proxy setup
+          - [ERROR_SCENARIOS.md](https://github.com/crowndip/timekeeper-net/blob/main/ERROR_SCENARIOS.md) - Troubleshooting guide
