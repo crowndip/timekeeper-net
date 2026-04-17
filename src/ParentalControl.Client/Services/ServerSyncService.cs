@@ -11,6 +11,7 @@ public interface IServerSyncService
     Task<ClientConfigResponse?> GetConfigurationAsync();
     Task<bool> RegisterComputerAsync();
     Task<UsageReportResponse?> CheckTimeRemainingAsync(string username);
+    Task SyncAllUsersAsync(List<string> usernames);
 }
 
 public class ServerSyncService : IServerSyncService
@@ -274,6 +275,38 @@ public class ServerSyncService : IServerSyncService
             File.WriteAllText(ServerUrlPath, serverUrl);
         }
         catch { }
+    }
+    
+    public async Task SyncAllUsersAsync(List<string> usernames)
+    {
+        if (!_computerId.HasValue || usernames.Count == 0)
+            return;
+        
+        try
+        {
+            // Send zero-usage requests for all users to register them with server
+            foreach (var username in usernames)
+            {
+                var request = new UsageReportRequest(
+                    _computerId.Value,
+                    Guid.Empty,
+                    username,
+                    null,
+                    DateTime.UtcNow,
+                    0,
+                    0,
+                    true
+                );
+                
+                await _httpClient.PostAsJsonAsync("/api/client/usage", request);
+            }
+            
+            _logger.LogInformation("Synced {Count} users with server", usernames.Count);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to sync users");
+        }
     }
     
     private static string GetMachineId()

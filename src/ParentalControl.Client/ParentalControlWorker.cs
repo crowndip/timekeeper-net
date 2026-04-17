@@ -39,6 +39,10 @@ public class ParentalControlWorker : BackgroundService
         // Register with server on startup
         await _serverSync.RegisterComputerAsync();
         
+        // Sync all local users with server
+        var allUsers = await _sessionMonitor.GetAllLocalUsersAsync();
+        await _serverSync.SyncAllUsersAsync(allUsers);
+        
         while (!stoppingToken.IsCancellationRequested)
         {
             try

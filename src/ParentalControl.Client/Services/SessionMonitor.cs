@@ -5,6 +5,7 @@ public record UserSession(Guid UserId, string Username, string SessionId, bool I
 public interface ISessionMonitor
 {
     Task<List<UserSession>> GetActiveSessionsAsync();
+    Task<List<string>> GetAllLocalUsersAsync();
     Task<bool> IsSessionIdleAsync(string sessionId);
 }
 
@@ -103,5 +104,38 @@ public class SystemdSessionMonitor : ISessionMonitor
             _logger.LogError(ex, "Error checking idle state for session {SessionId}", sessionId);
             return false;
         }
+    }
+    
+    public async Task<List<string>> GetAllLocalUsersAsync()
+    {
+        var users = new List<string>();
+        
+        try
+        {
+            // Read /etc/passwd to get all users with UID >= 1000 (regular users)
+            var lines = await File.ReadAllLinesAsync("/etc/passwd");
+            foreach (var line in lines)
+            {
+                var parts = line.Split(':');
+                if (parts.Length >= 4)
+                {
+                    var username = parts[0];
+                    var uid = int.Parse(parts[2]);
+                    
+                    // Regular users have UID >= 1000 (skip system users)
+                    if (uid >= 1000 && uid < 65534)
+                    {
+                        users.Add(username);
+                        _logger.LogDebug("Found local user: {Username} (UID: {Uid})", username, uid);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reading local users");
+        }
+        
+        return users;
     }
 }

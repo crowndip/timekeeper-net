@@ -1,5 +1,6 @@
 using System.Management;
 using Microsoft.Win32;
+using System.DirectoryServices.AccountManagement;
 
 namespace ParentalControl.Client.Windows.Services;
 
@@ -35,6 +36,35 @@ public class WindowsSessionMonitor : ISessionMonitor
             _logger.LogError(ex, "Failed to get current user");
         }
         return null;
+    }
+    
+    public async Task<List<string>> GetAllLocalUsersAsync()
+    {
+        var users = new List<string>();
+        
+        await Task.Run(() =>
+        {
+            try
+            {
+                using var context = new PrincipalContext(ContextType.Machine);
+                using var searcher = new PrincipalSearcher(new UserPrincipal(context));
+                
+                foreach (var result in searcher.FindAll())
+                {
+                    if (result is UserPrincipal user && user.Enabled == true)
+                    {
+                        users.Add(user.SamAccountName);
+                        _logger.LogDebug("Found local user: {Username}", user.SamAccountName);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error reading local users");
+            }
+        });
+        
+        return users;
     }
 
     private void OnSessionSwitch(object sender, SessionSwitchEventArgs e)

@@ -38,6 +38,10 @@ public class ParentalControlWorker : BackgroundService
         _logger.LogInformation("Parental Control Windows Client starting");
 
         await _syncService.RegisterComputerAsync();
+        
+        // Sync all local users with server
+        var allUsers = await _sessionMonitor.GetAllLocalUsersAsync();
+        await _syncService.SyncAllUsersAsync(allUsers);
 
         var tickInterval = _configuration.GetValue<int>("ParentalControl:TickIntervalSeconds", 60);
 
