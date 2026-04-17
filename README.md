@@ -66,13 +66,33 @@ See [PORTAINER_DEPLOYMENT.md](PORTAINER_DEPLOYMENT.md) for Portainer deployment 
 
 #### Linux Client
 
-##### Option 1: Generic Linux (tar.gz)
+##### Option 1: Automatic Installation (Recommended)
+
+One-line installation:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/install-linux-client.sh | sudo bash -s -- http://your-server-ip:8080
+```
+
+Or interactive (prompts for server URL):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/install-linux-client.sh | sudo bash
+```
+
+The script will:
+- Download the latest client release
+- Install to `/opt/parental-control`
+- Configure systemd service
+- Start the service automatically
+
+##### Option 2: Manual Installation
 
 Download the latest `client-linux-x64.tar.gz` from [Releases](https://github.com/crowndip/timekeeper-net/releases):
 
 ```bash
 # Download and extract
-wget https://github.com/crowndip/timekeeper-net/releases/download/v1.0.1/client-linux-x64.tar.gz
+wget https://github.com/crowndip/timekeeper-net/releases/download/v1.4.0/client-linux-x64.tar.gz
 tar -xzf client-linux-x64.tar.gz
 cd client-linux-x64
 
@@ -90,7 +110,7 @@ sudo systemctl start parental-control-client
 sudo systemctl status parental-control-client
 ```
 
-##### Option 2: Build from Source
+##### Option 3: Build from Source
 
 ```bash
 # Build client

@@ -1,48 +1,49 @@
 # Installation Guide
 
+**Version**: v1.4.0  
+**Status**: ✅ Production Ready
+
 Complete installation instructions for Parental Control System.
 
 ## Server Installation
 
 ### Prerequisites
 - Docker and Docker Compose
-- Portainer (recommended) or Docker CLI
 - 2GB RAM minimum
 - 10GB disk space
 
-### Portainer Deployment (Recommended)
+### Docker Compose Deployment (Recommended)
 
-1. **Download server deployment package**:
+1. **Clone repository or download docker-compose.yml**:
    ```bash
-   wget https://github.com/crowndip/timekeeper-net/releases/download/v1.0.1/server-deployment.tar.gz
-   tar -xzf server-deployment.tar.gz
-   cd server-deployment
+   wget https://raw.githubusercontent.com/crowndip/timekeeper-net/main/docker-compose.yml
    ```
 
-2. **Load Docker image**:
+2. **Set environment variables**:
    ```bash
-   docker load -i webservice-image.tar
+   export ADMIN_PASSWORD=your_dashboard_password
+   export LIMIT_ADMIN_PASSWORD=your_admin_operations_password
+   export DB_PASSWORD=your_database_password
    ```
 
-3. **Deploy in Portainer**:
-   - Open Portainer web UI
-   - Go to **Stacks** → **Add stack**
-   - Name: `parental-control`
-   - Copy contents of `docker-compose.yml` into editor
-   - Add environment variable: `DB_PASSWORD=your_secure_password`
-   - Click **Deploy the stack**
+3. **Start services**:
+   ```bash
+   docker-compose up -d
+   ```
 
 4. **Verify deployment**:
    - Open http://your-server-ip:8080
-   - You should see the admin dashboard
+   - Login with AdminPassword (default: "admin")
 
-See [PORTAINER_DEPLOYMENT.md](PORTAINER_DEPLOYMENT.md) for detailed instructions.
+See [PORTAINER_DEPLOYMENT.md](PORTAINER_DEPLOYMENT.md) for Portainer deployment instructions.
 
 ### Docker CLI Deployment
 
 ```bash
-# Set database password
-export DB_PASSWORD=your_secure_password
+# Set passwords
+export ADMIN_PASSWORD=your_dashboard_password
+export LIMIT_ADMIN_PASSWORD=your_admin_operations_password
+export DB_PASSWORD=your_database_password
 
 # Start services
 docker-compose up -d
@@ -53,65 +54,40 @@ docker-compose logs -f webservice
 
 ## Client Installation
 
-### Ubuntu/Debian (Recommended)
+### Linux Client
 
-**Prerequisites**: Ubuntu 20.04+, Debian 11+, or compatible
+#### Option 1: Automatic Installation (Recommended)
 
-1. **Download .deb package**:
-   ```bash
-   wget https://github.com/crowndip/timekeeper-net/releases/download/v1.0.1/parental-control-client_1.0.1_amd64.deb
-   ```
+**One-line installation**:
 
-2. **Install package**:
-   ```bash
-   sudo dpkg -i parental-control-client_1.0.1_amd64.deb
-   ```
-   
-   If you get dependency errors:
-   ```bash
-   sudo apt-get install -f
-   ```
+```bash
+curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/install-linux-client.sh | sudo bash -s -- http://your-server-ip:8080
+```
 
-3. **Configure server URL**:
-   ```bash
-   sudo nano /opt/parental-control/appsettings.json
-   ```
-   
-   Update the `ServerUrl`:
-   ```json
-   {
-     "ParentalControl": {
-       "ServerUrl": "http://your-server-ip:8080",
-       "TickIntervalSeconds": 60,
-       "OfflineMode": {
-         "Enabled": true,
-         "CacheDurationMinutes": 1440
-       }
-     }
-   }
-   ```
+**Interactive installation** (prompts for server URL):
 
-4. **Start service**:
-   ```bash
-   sudo systemctl start parental-control-client
-   ```
+```bash
+curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/install-linux-client.sh | sudo bash
+```
 
-5. **Enable auto-start** (already enabled by package):
-   ```bash
-   sudo systemctl enable parental-control-client
-   ```
+The script will:
+- Detect your system architecture (x64/arm64)
+- Download the latest client release
+- Install to `/opt/parental-control`
+- Configure systemd service
+- Start the service automatically
 
-6. **Check status**:
-   ```bash
-   sudo systemctl status parental-control-client
-   ```
+**Check status**:
+```bash
+sudo systemctl status parental-control-client
+```
 
-7. **View logs**:
-   ```bash
-   sudo journalctl -u parental-control-client -f
-   ```
+**View logs**:
+```bash
+sudo journalctl -u parental-control-client -f
+```
 
-### Generic Linux (Other Distributions)
+#### Option 2: Manual Installation
 
 **Prerequisites**: systemd-based Linux distribution
 
