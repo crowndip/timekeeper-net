@@ -28,6 +28,7 @@ services:
       ASPNETCORE_URLS: http://+:80
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=parental_control;Username=pcadmin;Password=${DB_PASSWORD}"
       AdminPassword: ${ADMIN_PASSWORD:-admin}
+      LimitAdministratorPassword: ${LIMIT_ADMIN_PASSWORD}
     ports:
       - "8080:80"
     depends_on:
