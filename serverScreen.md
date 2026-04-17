@@ -1,13 +1,38 @@
 Parental Control
 Dashboard Users Profiles Computers
-⚠️ Database Setup
-✅ Database Connected
-Connection String:
+🛡️ Parental Control System
+Centralized time management and monitoring
 
-Host=postgres;Database=parental_control;Username=pcadmin;Password=chutermuter
-The database is connected but not initialized yet.
+✅
+System Status
+Database
+Online
+Schema Version
+20260417
+Active Users
+0
+Registered Devices
+0
+👥
+Users
+Manage user accounts and permissions
 
-Click the button below to create the required tables and apply migrations.
+Manage Users
+⏱️
+Time Profiles
+Configure time limits and schedules
 
-🚀 Initialize Database
+Manage Profiles
+💻
+Devices
+View and manage registered devices
+
+View Devices
+📊
+Reports
+View usage statistics and reports
+
+View Reports
+Server Version: 1.1.2 | Database Schema: 20260417
+
 An error has occurred. This application may no longer respond until reloaded. Reload 🗙
