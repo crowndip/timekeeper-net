@@ -27,6 +27,8 @@ try
             .EnableDetailedErrors(builder.Environment.IsDevelopment()));
 
     builder.Services.AddScoped<ITimeCalculationService, TimeCalculationService>();
+    builder.Services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
+    builder.Services.AddScoped<IUsageReportService, UsageReportService>();
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
@@ -47,15 +49,23 @@ try
     using (var scope = app.Services.CreateScope())
     {
         var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        var dbInit = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
         try
         {
-            await db.Database.MigrateAsync();
-            Log.Information("Database migrations applied successfully");
+            var isInitialized = await dbInit.IsDatabaseInitializedAsync();
+            if (!isInitialized)
+            {
+                Log.Warning("Database not initialized. Visit /setup to initialize.");
+            }
+            else
+            {
+                await db.Database.MigrateAsync();
+                Log.Information("Database migrations applied successfully");
+            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Failed to apply database migrations");
-            throw;
+            Log.Error(ex, "Database check failed");
         }
     }
 

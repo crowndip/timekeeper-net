@@ -1,0 +1,87 @@
+@page "/setup"
+@using ParentalControl.WebService.Services
+@inject IDatabaseInitializationService DbInit
+@inject NavigationManager Navigation
+
+<PageTitle>Database Setup</PageTitle>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-warning">
+                    <h3 class="mb-0">⚠️ Database Setup Required</h3>
+                </div>
+                <div class="card-body">
+                    @if (isInitializing)
+                    {
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Initializing...</span>
+                            </div>
+                            <p class="lead">Initializing database...</p>
+                            <p class="text-muted">This may take a few moments.</p>
+                        </div>
+                    }
+                    else if (initSuccess)
+                    {
+                        <div class="alert alert-success">
+                            <h4 class="alert-heading">✅ Success!</h4>
+                            <p>Database has been initialized successfully.</p>
+                            <hr>
+                            <p class="mb-0">Redirecting to home page...</p>
+                        </div>
+                    }
+                    else if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">
+                            <h4 class="alert-heading">❌ Error</h4>
+                            <p>@errorMessage</p>
+                            <hr>
+                            <button class="btn btn-warning" @onclick="InitializeDatabase">Try Again</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="lead">The database has not been initialized yet.</p>
+                        <p>Click the button below to create the required tables and stored procedures.</p>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary btn-lg" @onclick="InitializeDatabase">
+                                Initialize Database
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool isInitializing = false;
+    private bool initSuccess = false;
+    private string errorMessage = string.Empty;
+
+    private async Task InitializeDatabase()
+    {
+        isInitializing = true;
+        errorMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            await DbInit.InitializeDatabaseAsync();
+            initSuccess = true;
+            StateHasChanged();
+            await Task.Delay(2000);
+            Navigation.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to initialize database: {ex.Message}";
+            isInitializing = false;
+            StateHasChanged();
+        }
+    }
+}

@@ -1,0 +1,164 @@
+@page "/reports"
+@using ParentalControl.WebService.Services
+@using ParentalControl.WebService.Data
+@using Microsoft.EntityFrameworkCore
+@inject IUsageReportService ReportService
+@inject AppDbContext DbContext
+
+<PageTitle>Usage Reports</PageTitle>
+
+<h3>📊 Usage Reports</h3>
+
+<div class="row mb-3">
+    <div class="col-md-3">
+        <label class="form-label">Start Date</label>
+        <input type="date" class="form-control" @bind="startDate" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">End Date</label>
+        <input type="date" class="form-control" @bind="endDate" />
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">&nbsp;</label>
+        <button class="btn btn-primary d-block" @onclick="LoadReports">Load Reports</button>
+    </div>
+</div>
+
+@if (loading)
+{
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (reports.Any())
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Summary</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Total Minutes</th>
+                                <th>Total Hours</th>
+                                <th>Daily Average</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var report in reports)
+                            {
+                                <tr>
+                                    <td>@report.Username</td>
+                                    <td>@report.TotalMinutes</td>
+                                    <td>@((report.TotalMinutes / 60.0).ToString("F1"))</td>
+                                    <td>@report.DailyAverage.ToString("F1") min/day</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-info" @onclick="() => LoadUserChart(report.UserId, report.Username)">
+                                            View Chart
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5>All Users - Daily Usage</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="allUsersChart" style="max-height: 400px;"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (selectedUserId != Guid.Empty)
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>@selectedUsername - Daily Usage</h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="userChart" style="max-height: 400px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private DateOnly startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7));
+    private DateOnly endDate = DateOnly.FromDateTime(DateTime.Today);
+    private List<UserUsageReport> reports = new();
+    private bool loading = false;
+    private Guid selectedUserId = Guid.Empty;
+    private string selectedUsername = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadReports();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (reports.Any())
+        {
+            await RenderAllUsersChart();
+            if (selectedUserId != Guid.Empty)
+            {
+                await RenderUserChart();
+            }
+        }
+    }
+
+    private async Task LoadReports()
+    {
+        loading = true;
+        reports = await ReportService.GetUsageReportAsync(startDate, endDate);
+        loading = false;
+        StateHasChanged();
+    }
+
+    private async Task LoadUserChart(Guid userId, string username)
+    {
+        selectedUserId = userId;
+        selectedUsername = username;
+        StateHasChanged();
+    }
+
+    private async Task RenderAllUsersChart()
+    {
+        var allData = new Dictionary<Guid, List<DailyUsageData>>();
+        foreach (var report in reports)
+        {
+            var data = await ReportService.GetDailyUsageAsync(report.UserId, startDate, endDate);
+            allData[report.UserId] = data;
+        }
+
+        // Chart rendering would be done via JavaScript interop
+        // For now, this is a placeholder
+    }
+
+    private async Task RenderUserChart()
+    {
+        var data = await ReportService.GetDailyUsageAsync(selectedUserId, startDate, endDate);
+        // Chart rendering would be done via JavaScript interop
+    }
+}
