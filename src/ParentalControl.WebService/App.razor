@@ -1,13 +1,49 @@
+@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.AspNetCore.Components.Routing
-@using ParentalControl.WebService.Shared
+@using Microsoft.JSInterop
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
-<Router AppAssembly="@typeof(Program).Assembly">
+<Router AppAssembly="@typeof(App).Assembly">
     <Found Context="routeData">
-        <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)" />
+        <AuthCheck>
+            <RouteView RouteData="@routeData" />
+        </AuthCheck>
     </Found>
     <NotFound>
-        <LayoutView Layout="@typeof(MainLayout)">
-            <p>Sorry, there's nothing at this address.</p>
-        </LayoutView>
+        <PageTitle>Not found</PageTitle>
+        <p>Sorry, there's nothing at this address.</p>
     </NotFound>
 </Router>
+
+@code {
+    // Auth check component
+    private class AuthCheck : ComponentBase
+    {
+        [Inject] private NavigationManager Nav { get; set; } = default!;
+        [Inject] private IJSRuntime JS { get; set; } = default!;
+        [Parameter] public RenderFragment? ChildContent { get; set; }
+
+        protected override async Task OnAfterRenderAsync(bool firstRender)
+        {
+            if (firstRender)
+            {
+                var uri = new Uri(Nav.Uri);
+                if (uri.AbsolutePath != "/login")
+                {
+                    var isAuth = await JS.InvokeAsync<string>("sessionStorage.getItem", "authenticated");
+                    if (isAuth != "true")
+                    {
+                        Nav.NavigateTo("/login", forceLoad: true);
+                        return;
+                    }
+                }
+            }
+        }
+
+        protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+        {
+            builder.AddContent(0, ChildContent);
+        }
+    }
+}

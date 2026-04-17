@@ -47,6 +47,14 @@ try
 
     builder.Services.AddRazorPages();
     builder.Services.AddServerSideBlazor();
+    
+    builder.Services.AddDistributedMemoryCache();
+    builder.Services.AddSession(options =>
+    {
+        options.IdleTimeout = TimeSpan.FromHours(8);
+        options.Cookie.HttpOnly = true;
+        options.Cookie.IsEssential = true;
+    });
 
     builder.Services.AddHealthChecks()
         .AddNpgSql(connectionString, name: "database");
@@ -96,6 +104,7 @@ try
     app.UseSerilogRequestLogging();
     app.UseStaticFiles();
     app.UseRouting();
+    app.UseSession();
 
     app.MapControllers();
     app.MapBlazorHub();

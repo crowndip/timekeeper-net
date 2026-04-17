@@ -1,0 +1,65 @@
+@page "/login"
+@using Microsoft.JSInterop
+@inject NavigationManager Navigation
+@inject IConfiguration Config
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Login - Parental Control</PageTitle>
+
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+    <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px;">
+        <h2 style="text-align: center; margin-bottom: 1.5rem; color: #333;">Parental Control</h2>
+        
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div style="background: #fee; border: 1px solid #fcc; color: #c33; padding: 0.75rem; border-radius: 4px; margin-bottom: 1rem;">
+                @errorMessage
+            </div>
+        }
+        
+        <form @onsubmit="HandleLogin">
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; margin-bottom: 0.5rem; color: #555;">Password</label>
+                <input type="password" @bind="password" class="form-control" required autofocus />
+            </div>
+            
+            <button type="submit" class="btn btn-primary" style="width: 100%;" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span>Logging in...</span>
+                }
+                else
+                {
+                    <span>Login</span>
+                }
+            </button>
+        </form>
+    </div>
+</div>
+
+@code {
+    private string password = "";
+    private string errorMessage = "";
+    private bool isLoading = false;
+
+    private async Task HandleLogin()
+    {
+        isLoading = true;
+        errorMessage = "";
+        
+        var adminPassword = Config["AdminPassword"] ?? "admin";
+        
+        if (password == adminPassword)
+        {
+            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "authenticated", "true");
+            Navigation.NavigateTo("/", forceLoad: true);
+        }
+        else
+        {
+            errorMessage = "Invalid password";
+            password = "";
+        }
+        
+        isLoading = false;
+    }
+}
