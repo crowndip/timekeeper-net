@@ -237,10 +237,28 @@
             dialogError = "Profile name is required";
             return;
         }
+        
+        if (formProfile.Name.Length > 100)
+        {
+            dialogError = "Profile name too long (max 100 characters)";
+            return;
+        }
 
         if (formProfile.UserId == Guid.Empty)
         {
             dialogError = "Please select a user";
+            return;
+        }
+        
+        if (formProfile.MondayLimit < 0 || formProfile.MondayLimit > 1440 ||
+            formProfile.TuesdayLimit < 0 || formProfile.TuesdayLimit > 1440 ||
+            formProfile.WednesdayLimit < 0 || formProfile.WednesdayLimit > 1440 ||
+            formProfile.ThursdayLimit < 0 || formProfile.ThursdayLimit > 1440 ||
+            formProfile.FridayLimit < 0 || formProfile.FridayLimit > 1440 ||
+            formProfile.SaturdayLimit < 0 || formProfile.SaturdayLimit > 1440 ||
+            formProfile.SundayLimit < 0 || formProfile.SundayLimit > 1440)
+        {
+            dialogError = "Time limits must be between 0 and 1440 minutes";
             return;
         }
 

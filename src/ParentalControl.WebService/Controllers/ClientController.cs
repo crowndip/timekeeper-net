@@ -70,6 +70,12 @@ public class ClientController : ControllerBase
     [HttpPost("usage")]
     public async Task<ActionResult<UsageReportResponse>> ReportUsage(UsageReportRequest request)
     {
+        if (request.MinutesActive < 0 || request.MinutesActive > 1440)
+            return BadRequest("Invalid MinutesActive value");
+        
+        if (request.MinutesIdle < 0 || request.MinutesIdle > 1440)
+            return BadRequest("Invalid MinutesIdle value");
+        
         // Auto-create user if not exists
         await EnsureUserExistsAsync(request.UserId, request.Username);
         

@@ -41,6 +41,12 @@ public class UsersController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateUser([FromBody] User user)
     {
+        if (!ValidationHelper.ValidateUsername(user.Username))
+            return BadRequest(new { success = false, error = "Invalid username. Use only letters, numbers, _, -, . (max 64 chars)" });
+        
+        if (!ValidationHelper.ValidateEmail(user.Email))
+            return BadRequest(new { success = false, error = "Invalid email format" });
+        
         if (await _context.Users.AnyAsync(u => u.Username == user.Username))
             return BadRequest(new { success = false, error = "Username already exists" });
 
@@ -57,6 +63,9 @@ public class UsersController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] User user)
     {
+        if (!ValidationHelper.ValidateEmail(user.Email))
+            return BadRequest(new { success = false, error = "Invalid email format" });
+        
         var existing = await _context.Users.FindAsync(id);
         if (existing == null)
             return NotFound(new { success = false, error = "User not found" });

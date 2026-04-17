@@ -44,6 +44,18 @@ public class ProfilesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateProfile([FromBody] TimeProfile profile)
     {
+        if (!ValidationHelper.ValidateProfileName(profile.Name))
+            return BadRequest(new { success = false, error = "Invalid profile name (max 100 chars)" });
+        
+        if (!ValidationHelper.ValidateTimeLimit(profile.MondayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.TuesdayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.WednesdayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.ThursdayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.FridayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.SaturdayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.SundayLimit))
+            return BadRequest(new { success = false, error = "Time limits must be between 0 and 1440 minutes" });
+        
         if (await _context.TimeProfiles.AnyAsync(p => p.UserId == profile.UserId && p.Name == profile.Name))
             return BadRequest(new { success = false, error = "Profile name already exists for this user" });
 
@@ -68,6 +80,18 @@ public class ProfilesController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] TimeProfile profile)
     {
+        if (!ValidationHelper.ValidateProfileName(profile.Name))
+            return BadRequest(new { success = false, error = "Invalid profile name (max 100 chars)" });
+        
+        if (!ValidationHelper.ValidateTimeLimit(profile.MondayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.TuesdayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.WednesdayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.ThursdayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.FridayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.SaturdayLimit) ||
+            !ValidationHelper.ValidateTimeLimit(profile.SundayLimit))
+            return BadRequest(new { success = false, error = "Time limits must be between 0 and 1440 minutes" });
+        
         var existing = await _context.TimeProfiles.FindAsync(id);
         if (existing == null)
             return NotFound(new { success = false, error = "Profile not found" });

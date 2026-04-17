@@ -202,6 +202,21 @@
             dialogError = "Username is required";
             return;
         }
+        
+        if (formUser.Username.Length > 64 || !formUser.Username.All(c => char.IsLetterOrDigit(c) || c == '_' || c == '-' || c == '.'))
+        {
+            dialogError = "Username can only contain letters, numbers, _, -, . (max 64 chars)";
+            return;
+        }
+        
+        if (!string.IsNullOrWhiteSpace(formUser.Email))
+        {
+            if (formUser.Email.Length > 255 || !new System.ComponentModel.DataAnnotations.EmailAddressAttribute().IsValid(formUser.Email))
+            {
+                dialogError = "Invalid email format";
+                return;
+            }
+        }
 
         saving = true;
         dialogError = string.Empty;
