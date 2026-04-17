@@ -72,8 +72,9 @@ jobs:
         # Copy config template
         cp src/ParentalControl.Client/appsettings.json ${PKG_DIR}/opt/parental-control/appsettings.json
         
+        
         # Create control file
-        cat > ${PKG_DIR}/DEBIAN/control << 'EOF'
+        cat > ${PKG_DIR}/DEBIAN/control <<EOF
 Package: parental-control-client
 Version: 1.0.1
 Section: admin
