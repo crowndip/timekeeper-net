@@ -1,0 +1,48 @@
+@page "/"
+@using ParentalControl.WebService.Data
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext DbContext
+
+<h1>Parental Control Dashboard</h1>
+
+<div class="stats">
+    <div class="stat-card">
+        <h3>Active Users</h3>
+        <p>@activeUsers</p>
+    </div>
+    
+    <div class="stat-card">
+        <h3>Total Users</h3>
+        <p>@totalUsers</p>
+    </div>
+    
+    <div class="stat-card">
+        <h3>Computers</h3>
+        <p>@totalComputers</p>
+    </div>
+    
+    <div class="stat-card">
+        <h3>Active Sessions</h3>
+        <p>@activeSessions</p>
+    </div>
+</div>
+
+<div class="activity">
+    <h2>Recent Activity</h2>
+    <p>No recent activity</p>
+</div>
+
+@code {
+    private int activeUsers;
+    private int totalUsers;
+    private int totalComputers;
+    private int activeSessions;
+    
+    protected override async Task OnInitializedAsync()
+    {
+        activeUsers = await DbContext.Users.CountAsync(u => u.IsActive && u.AccountType == Models.AccountType.Child);
+        totalUsers = await DbContext.Users.CountAsync();
+        totalComputers = await DbContext.Computers.CountAsync(c => c.IsActive);
+        activeSessions = await DbContext.Sessions.CountAsync(s => s.IsActive);
+    }
+}

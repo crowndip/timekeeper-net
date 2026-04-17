@@ -1,0 +1,22 @@
+[Unit]
+Description=Parental Control Client Agent
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/opt/parental-control/ParentalControl.Client
+Restart=always
+RestartSec=10
+User=root
+Environment=DOTNET_ENVIRONMENT=Production
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/parental-control /var/lib/parental-control
+
+[Install]
+WantedBy=multi-user.target

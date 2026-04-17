@@ -1,0 +1,20 @@
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+WORKDIR /app
+EXPOSE 80
+
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY ["src/ParentalControl.WebService/ParentalControl.WebService.csproj", "ParentalControl.WebService/"]
+COPY ["src/ParentalControl.Shared/ParentalControl.Shared.csproj", "ParentalControl.Shared/"]
+RUN dotnet restore "ParentalControl.WebService/ParentalControl.WebService.csproj"
+COPY src/ .
+WORKDIR "/src/ParentalControl.WebService"
+RUN dotnet build "ParentalControl.WebService.csproj" -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish "ParentalControl.WebService.csproj" -c Release -o /app/publish
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "ParentalControl.WebService.dll"]

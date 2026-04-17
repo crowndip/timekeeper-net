@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: parental-control-db
+    environment:
+      POSTGRES_DB: parental_control
+      POSTGRES_USER: pcadmin
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - parental_control_db:/var/lib/postgresql/data
+      - /opt/parental-control/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    networks:
+      - parental-control-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pcadmin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  webservice:
+    image: parental-control-webservice:latest
+    container_name: parental-control-web
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: "Host=postgres;Database=parental_control;Username=pcadmin;Password=${DB_PASSWORD}"
+    ports:
+      - "8080:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - parental-control-net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  parental_control_db:
+    name: parental_control_db
+
+networks:
+  parental-control-net:
+    name: parental-control-net
+    driver: bridge

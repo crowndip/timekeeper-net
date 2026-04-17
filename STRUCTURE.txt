@@ -1,0 +1,67 @@
+ParentalControl.sln
+├── src/
+│   ├── ParentalControl.Shared/
+│   │   ├── DTOs/
+│   │   │   ├── Requests.cs
+│   │   │   └── Responses.cs
+│   │   └── ParentalControl.Shared.csproj
+│   │
+│   ├── ParentalControl.WebService/
+│   │   ├── Controllers/
+│   │   │   └── ClientController.cs
+│   │   ├── Data/
+│   │   │   └── AppDbContext.cs
+│   │   ├── Models/
+│   │   │   └── Entities.cs
+│   │   ├── Services/
+│   │   │   └── TimeCalculationService.cs
+│   │   ├── Pages/
+│   │   │   ├── _Host.cshtml
+│   │   │   └── Index.razor
+│   │   ├── Shared/
+│   │   │   └── MainLayout.razor
+│   │   ├── App.razor
+│   │   ├── _Imports.razor
+│   │   ├── Program.cs
+│   │   ├── appsettings.json
+│   │   └── ParentalControl.WebService.csproj
+│   │
+│   ├── ParentalControl.Client/
+│   │   ├── Services/
+│   │   │   ├── SessionMonitor.cs
+│   │   │   ├── TimeTracker.cs
+│   │   │   ├── ServerSyncService.cs
+│   │   │   ├── EnforcementEngine.cs
+│   │   │   └── LocalCache.cs
+│   │   ├── ParentalControlWorker.cs
+│   │   ├── Program.cs
+│   │   ├── appsettings.json
+│   │   └── ParentalControl.Client.csproj
+│   │
+│   └── ParentalControl.Client.UI/
+│       ├── ViewModels/
+│       │   ├── ViewModelBase.cs
+│       │   └── MainWindowViewModel.cs
+│       ├── Views/
+│       │   ├── MainWindow.axaml
+│       │   └── MainWindow.axaml.cs
+│       ├── App.axaml
+│       ├── App.axaml.cs
+│       ├── Program.cs
+│       └── ParentalControl.Client.UI.csproj
+│
+├── docker/
+│   ├── Dockerfile.webservice
+│   └── init.sql
+│
+├── scripts/
+│   ├── install-client.sh
+│   └── parental-control-client.service
+│
+├── docker-compose.yml
+├── .gitignore
+├── .env.example
+├── README.md
+├── BUILD.md
+├── PROJECT_SUMMARY.md
+└── DevSpecsRewrite.md
