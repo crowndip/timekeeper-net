@@ -82,12 +82,19 @@ jobs:
         mkdir -p artifacts/server
         mkdir -p artifacts/client
         
-        # Server artifacts for Portainer
-        cp docker-compose.yml artifacts/server/
-        cp docker/init.sql artifacts/server/
+        # Package server deployment (image only)
         cp webservice-image.tar artifacts/server/
-        cp README.md artifacts/server/
-        cp PORTAINER_DEPLOYMENT.md artifacts/server/
+        
+        # Copy docker-compose.yml and deployment script as standalone files
+        cp docker-compose.yml artifacts/docker-compose.yml
+        cp scripts/deploy-server.sh artifacts/deploy-server.sh
+        
+        # Package Linux client
+        mkdir -p artifacts/client
+        cp -r publish/client-linux-x64/* artifacts/client/
+        cp scripts/install-client.sh artifacts/client/
+        cp scripts/parental-control-client.service artifacts/client/
+        cp src/ParentalControl.Client/appsettings.json artifacts/client/appsettings.json.example
         
         # Linux client artifacts
         cp -r publish/client-linux-x64/* artifacts/client/
