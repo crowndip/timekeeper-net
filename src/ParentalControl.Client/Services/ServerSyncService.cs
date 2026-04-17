@@ -21,6 +21,7 @@ public class ServerSyncService : IServerSyncService
     private readonly ILocalCache _cache;
     private Guid? _computerId;
     private const string ComputerIdPath = "/etc/parental-control/computer-id";
+    private const string ServerUrlPath = "/etc/parental-control/server-url";
     
     public ServerSyncService(HttpClient httpClient, IConfiguration configuration, ILogger<ServerSyncService> logger, ILocalCache cache)
     {
@@ -32,7 +33,13 @@ public class ServerSyncService : IServerSyncService
         // Load ComputerId from persistent storage
         _computerId = LoadComputerId();
         
-        var serverUrl = configuration["ParentalControl:ServerUrl"];
+        // Load server URL from persistent storage or config
+        var serverUrl = LoadServerUrl() ?? configuration["ParentalControl:ServerUrl"];
+        if (!string.IsNullOrEmpty(serverUrl))
+        {
+            SaveServerUrl(serverUrl); // Save for next time if from config
+        }
+        
         _httpClient.BaseAddress = new Uri(serverUrl!);
         _httpClient.Timeout = TimeSpan.FromSeconds(10); // Short timeout for offline detection
         
@@ -233,6 +240,40 @@ public class ServerSyncService : IServerSyncService
         {
             _logger.LogError(ex, "Failed to save ComputerId");
         }
+    }
+    
+    private string? LoadServerUrl()
+    {
+        try
+        {
+            if (File.Exists(ServerUrlPath))
+            {
+                var url = File.ReadAllText(ServerUrlPath).Trim();
+                if (!string.IsNullOrEmpty(url))
+                {
+                    _logger.LogInformation("Loaded server URL from persistent storage");
+                    return url;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load server URL");
+        }
+        return null;
+    }
+    
+    private void SaveServerUrl(string serverUrl)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(ServerUrlPath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir!);
+            
+            File.WriteAllText(ServerUrlPath, serverUrl);
+        }
+        catch { }
     }
     
     private static string GetMachineId()
