@@ -167,6 +167,8 @@ public class ClientController : ControllerBase
     
     private async Task<Guid> EnsureUserExistsAsync(string username)
     {
+        username = username.ToLowerInvariant();
+        
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         if (user == null)
         {
