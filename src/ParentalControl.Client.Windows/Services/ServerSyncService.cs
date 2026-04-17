@@ -19,6 +19,7 @@ public class ServerSyncService : IServerSyncService
     private readonly IConfiguration _configuration;
     private readonly ILogger<ServerSyncService> _logger;
     private readonly ILocalCache _cache;
+    private Guid? _computerId;
     
     public ServerSyncService(HttpClient httpClient, IConfiguration configuration, ILogger<ServerSyncService> logger, ILocalCache cache)
     {
@@ -26,6 +27,13 @@ public class ServerSyncService : IServerSyncService
         _configuration = configuration;
         _logger = logger;
         _cache = cache;
+        
+        // Load ComputerId from config
+        var computerIdStr = configuration["ParentalControl:ComputerId"];
+        if (Guid.TryParse(computerIdStr, out var computerId))
+        {
+            _computerId = computerId;
+        }
         
         var serverUrl = configuration["ParentalControl:ServerUrl"];
         _httpClient.BaseAddress = new Uri(serverUrl!);
@@ -53,8 +61,7 @@ public class ServerSyncService : IServerSyncService
 
         try
         {
-            var computerIdStr = _configuration["ParentalControl:ComputerId"];
-            if (string.IsNullOrEmpty(computerIdStr) || !Guid.TryParse(computerIdStr, out var computerId))
+            if (!_computerId.HasValue)
             {
                 _logger.LogWarning("ComputerId not configured");
                 return null;
@@ -63,7 +70,7 @@ public class ServerSyncService : IServerSyncService
             foreach (var record in records)
             {
                 var request = new UsageReportRequest(
-                    computerId,
+                    _computerId.Value,
                     record.UserId,
                     record.Username,
                     record.SessionId,
@@ -125,7 +132,8 @@ public class ServerSyncService : IServerSyncService
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<RegisterComputerResponse>();
-                _logger.LogInformation("Registered: {ComputerId}", result!.ComputerId);
+                _computerId = result!.ComputerId;
+                _logger.LogInformation("Registered: {ComputerId}", result.ComputerId);
                 
                 // Save ComputerId to config
                 var configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
@@ -164,15 +172,14 @@ public class ServerSyncService : IServerSyncService
     {
         try
         {
-            var computerIdStr = _configuration["ParentalControl:ComputerId"];
-            if (string.IsNullOrEmpty(computerIdStr) || !Guid.TryParse(computerIdStr, out var computerId))
+            if (!_computerId.HasValue)
             {
                 _logger.LogWarning("ComputerId not configured");
                 return null;
             }
             
             var request = new UsageReportRequest(
-                computerId,
+                _computerId.Value,
                 Guid.Empty,
                 username,
                 null, // No session ID
