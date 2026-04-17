@@ -1,0 +1,11 @@
+Package: parental-control-tray
+Version: 1.8.0
+Section: utils
+Priority: optional
+Architecture: amd64
+Depends: libx11-6, libice6, libsm6
+Maintainer: Parental Control <support@example.com>
+Description: Parental Control Tray Icon
+ Shows remaining time in system tray for the current user.
+ Lightweight application that displays time limits.
+Homepage: https://github.com/crowndip/timekeeper-net
