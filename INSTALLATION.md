@@ -87,7 +87,56 @@ sudo systemctl status parental-control-client
 sudo journalctl -u parental-control-client -f
 ```
 
-#### Option 2: Manual Installation
+#### Option 2: Ubuntu/Debian Package
+
+**Prerequisites**: Ubuntu 20.04+, Debian 11+, or compatible
+
+1. **Download .deb package**:
+   ```bash
+   wget https://github.com/crowndip/timekeeper-net/releases/download/v1.4.1/parental-control-client_1.4.1_amd64.deb
+   ```
+
+2. **Install package**:
+   ```bash
+   sudo dpkg -i parental-control-client_1.4.1_amd64.deb
+   ```
+   
+   If you get dependency errors:
+   ```bash
+   sudo apt-get install -f
+   ```
+
+3. **Configure server URL**:
+   ```bash
+   sudo nano /opt/parental-control/appsettings.json
+   ```
+   
+   Update the `ServerUrl`:
+   ```json
+   {
+     "ParentalControl": {
+       "ServerUrl": "http://your-server-ip:8080",
+       "TickIntervalSeconds": 60
+     }
+   }
+   ```
+
+4. **Start service**:
+   ```bash
+   sudo systemctl start parental-control-client
+   ```
+
+5. **Check status**:
+   ```bash
+   sudo systemctl status parental-control-client
+   ```
+
+6. **View logs**:
+   ```bash
+   sudo journalctl -u parental-control-client -f
+   ```
+
+#### Option 3: Manual Installation
 
 **Prerequisites**: systemd-based Linux distribution
 

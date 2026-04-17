@@ -86,7 +86,25 @@ The script will:
 - Configure systemd service
 - Start the service automatically
 
-##### Option 2: Manual Installation
+##### Option 2: Ubuntu/Debian Package
+
+Download the latest `.deb` package from [Releases](https://github.com/crowndip/timekeeper-net/releases):
+
+```bash
+# Download
+wget https://github.com/crowndip/timekeeper-net/releases/download/v1.4.1/parental-control-client_1.4.1_amd64.deb
+
+# Install
+sudo dpkg -i parental-control-client_1.4.1_amd64.deb
+
+# Configure server URL
+sudo nano /opt/parental-control/appsettings.json
+
+# Start service
+sudo systemctl start parental-control-client
+```
+
+##### Option 3: Manual Installation
 
 Download the latest `client-linux-x64.tar.gz` from [Releases](https://github.com/crowndip/timekeeper-net/releases):
 

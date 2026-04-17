@@ -1,0 +1,44 @@
+name: Build Release Packages
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-deb:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Extract version from tag
+      id: version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Build .deb package
+      run: |
+        cd scripts
+        chmod +x build-deb.sh
+        ./build-deb.sh ${{ steps.version.outputs.VERSION }}
+    
+    - name: Upload .deb package
+      uses: actions/upload-artifact@v3
+      with:
+        name: deb-package
+        path: scripts/parental-control-client_*.deb
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: scripts/parental-control-client_*.deb
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
