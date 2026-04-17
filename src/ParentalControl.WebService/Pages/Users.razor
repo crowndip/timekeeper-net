@@ -1,8 +1,9 @@
 @page "/users"
 @using ParentalControl.WebService.Models
-@using System.Net.Http.Json
+@using ParentalControl.WebService.Data
+@using Microsoft.EntityFrameworkCore
 @using Microsoft.JSInterop
-@inject HttpClient Http
+@inject AppDbContext DbContext
 @inject IJSRuntime JS
 
 <PageTitle>Users Management</PageTitle>
@@ -151,9 +152,7 @@
         errorMessage = string.Empty;
         try
         {
-            var response = await Http.GetFromJsonAsync<ApiResponse<List<User>>>("/api/users");
-            if (response?.Success == true && response.Data != null)
-                users = response.Data;
+            users = await DbContext.Users.OrderBy(u => u.Username).ToListAsync();
         }
         catch (Exception ex)
         {
@@ -210,24 +209,36 @@
         {
             if (editingUser == null)
             {
-                var response = await Http.PostAsJsonAsync("/api/users", formUser);
-                var result = await response.Content.ReadFromJsonAsync<ApiResponse<User>>();
-                if (result?.Success != true)
-                    dialogError = result?.Error ?? "Failed to create user";
+                // Check for duplicate username
+                if (await DbContext.Users.AnyAsync(u => u.Username == formUser.Username))
+                {
+                    dialogError = "Username already exists";
+                    saving = false;
+                    return;
+                }
+
+                formUser.Id = Guid.NewGuid();
+                formUser.CreatedAt = DateTime.UtcNow;
+                formUser.UpdatedAt = DateTime.UtcNow;
+                DbContext.Users.Add(formUser);
             }
             else
             {
-                var response = await Http.PutAsJsonAsync($"/api/users/{formUser.Id}", formUser);
-                var result = await response.Content.ReadFromJsonAsync<ApiResponse<User>>();
-                if (result?.Success != true)
-                    dialogError = result?.Error ?? "Failed to update user";
+                var existing = await DbContext.Users.FindAsync(editingUser.Id);
+                if (existing != null)
+                {
+                    existing.Username = formUser.Username;
+                    existing.FullName = formUser.FullName;
+                    existing.Email = formUser.Email;
+                    existing.AccountType = formUser.AccountType;
+                    existing.IsActive = formUser.IsActive;
+                    existing.UpdatedAt = DateTime.UtcNow;
+                }
             }
 
-            if (string.IsNullOrEmpty(dialogError))
-            {
-                await LoadUsers();
-                CloseDialog();
-            }
+            await DbContext.SaveChangesAsync();
+            await LoadUsers();
+            CloseDialog();
         }
         catch (Exception ex)
         {
@@ -243,7 +254,9 @@
     {
         try
         {
-            await Http.PatchAsync($"/api/users/{user.Id}/active", null);
+            user.IsActive = !user.IsActive;
+            user.UpdatedAt = DateTime.UtcNow;
+            await DbContext.SaveChangesAsync();
             await LoadUsers();
         }
         catch (Exception ex)
@@ -259,7 +272,8 @@
 
         try
         {
-            await Http.DeleteAsync($"/api/users/{user.Id}");
+            DbContext.Users.Remove(user);
+            await DbContext.SaveChangesAsync();
             await LoadUsers();
         }
         catch (Exception ex)
@@ -276,12 +290,4 @@
         AccountType.Technical => "#6b7280",
         _ => "#6b7280"
     };
-
-    private class ApiResponse<T>
-    {
-        public bool Success { get; set; }
-        public T? Data { get; set; }
-        public string? Error { get; set; }
-        public string? Message { get; set; }
-    }
 }
