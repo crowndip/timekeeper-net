@@ -39,6 +39,11 @@ jobs:
         cd src/ParentalControl.Client.Windows
         dotnet publish -c Release -r win-x64 --self-contained -o ../../publish/client-windows-x64
     
+    - name: Build Windows Tray Icon
+      run: |
+        cd src/ParentalControl.TrayIcon.Windows
+        dotnet publish -c Release -r win-x64 --self-contained -o ../../publish/tray-windows-x64
+    
     - name: Build Server
       run: |
         cd src/ParentalControl.WebService
@@ -58,6 +63,11 @@ jobs:
       run: |
         cd publish
         zip -r client-windows-x64.zip client-windows-x64
+    
+    - name: Package Windows Tray Icon
+      run: |
+        cd publish
+        zip -r tray-windows-x64.zip tray-windows-x64
     
     - name: Package Server
       run: |
@@ -83,6 +93,7 @@ jobs:
           publish/client-linux-x64.tar.gz
           publish/client-linux-arm64.tar.gz
           publish/client-windows-x64.zip
+          publish/tray-windows-x64.zip
           publish/server.tar.gz
           build/client-deb/parental-control-client_*.deb
           build/tray-deb/parental-control-tray_*.deb
@@ -101,11 +112,14 @@ jobs:
           - `client-linux-arm64.tar.gz` - Linux ARM64 client (Raspberry Pi)
           - `parental-control-client_${{ steps.version.outputs.VERSION }}_amd64.deb` - Ubuntu/Debian package
           
-          **Tray Icon** (Optional):
+          **Linux Tray Icon** (Optional):
           - `parental-control-tray_${{ steps.version.outputs.VERSION }}_amd64.deb` - System tray icon showing remaining time
           
           **Windows Client**:
           - `client-windows-x64.zip` - Windows x64 client
+          
+          **Windows Tray Icon** (Optional):
+          - `tray-windows-x64.zip` - System tray icon showing remaining time
           
           ---
           
