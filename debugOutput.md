@@ -1,251 +1,747 @@
-[17:05:22 INF] Starting Parental Control Web Service
+[17:19:58 INF] Starting Parental Control Web Service
 
-[17:05:22 INF] Starting Parental Control Web Service
+[17:19:58 INF] Starting Parental Control Web Service
 
-[17:05:23 INF] Database migrations applied successfully
+[17:19:58 INF] Database migrations applied successfully
 
-[17:05:23 INF] Database migrations applied successfully
-
-
-
-3 WRN] Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+[17:19:58 INF] Database migrations applied successfully
 
 
 
-3 WRN] Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+8 WRN] Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
 
-[17:05:23 WRN] No XML encryptor configured. Key {ab91412f-f3e5-4c2c-9607-aee94314247a} may be persisted to storage in unencrypted form.
+
 
-[17:05:23 WRN] No XML encryptor configured. Key {ab91412f-f3e5-4c2c-9607-aee94314247a} may be persisted to storage in unencrypted form.
+8 WRN] Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
 
-[17:05:23 WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:80'.
+[17:19:58 WRN] No XML encryptor configured. Key {538a4343-58e6-424a-805a-ed60527dcd0c} may be persisted to storage in unencrypted form.
 
-[17:05:23 WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:80'.
+[17:19:58 WRN] No XML encryptor configured. Key {538a4343-58e6-424a-805a-ed60527dcd0c} may be persisted to storage in unencrypted form.
 
-[17:05:23 WRN] The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
+[17:19:58 WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:80'.
 
-[17:05:23 WRN] The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
+[17:19:58 WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:80'.
 
-[17:05:23 INF] Now listening on: http://[::]:80
+[17:19:58 WRN] The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
 
-[17:05:23 INF] Now listening on: http://[::]:80
+[17:19:58 WRN] The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
 
-[17:05:23 INF] Application started. Press Ctrl+C to shut down.
+[17:19:58 INF] Now listening on: http://[::]:80
 
-[17:05:23 INF] Application started. Press Ctrl+C to shut down.
+[17:19:58 INF] Now listening on: http://[::]:80
 
-[17:05:23 INF] Hosting environment: Production
+[17:19:58 INF] Application started. Press Ctrl+C to shut down.
 
-[17:05:23 INF] Hosting environment: Production
+[17:19:58 INF] Application started. Press Ctrl+C to shut down.
 
-[17:05:23 INF] Content root path: /app
+[17:19:58 INF] Hosting environment: Production
 
-[17:05:23 INF] Content root path: /app
+[17:19:58 INF] Hosting environment: Production
 
-[17:05:32 INF] HTTP GET / responded 200 in 116.3346 ms
+[17:19:58 INF] Content root path: /app
 
-[17:05:32 INF] HTTP GET / responded 200 in 116.3346 ms
+[17:19:58 INF] Content root path: /app
 
-[17:05:32 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 1.4116 ms
+[17:20:00 INF] HTTP POST /_blazor/negotiate responded 200 in 13.8355 ms
 
-[17:05:32 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 1.4116 ms
+[17:20:00 INF] HTTP POST /_blazor/negotiate responded 200 in 13.8355 ms
 
-[17:05:32 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0753 ms
+[17:20:03 ERR] Failed executing DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
 
-[17:05:32 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0753 ms
+SELECT count(*)::int
 
-[17:05:32 INF] HTTP GET /_framework/blazor.server.js responded 200 in 21.4005 ms
+FROM "Users" AS u
 
-[17:05:32 INF] HTTP GET /_framework/blazor.server.js responded 200 in 21.4005 ms
+[17:20:03 ERR] Failed executing DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
 
-[17:05:32 INF] HTTP GET /_blazor/initializers responded 200 in 3.7237 ms
+SELECT count(*)::int
 
-[17:05:32 INF] HTTP GET /_blazor/initializers responded 200 in 3.7237 ms
+FROM "Users" AS u
 
-[17:05:32 INF] HTTP GET /favicon.ico responded 404 in 0.1004 ms
+[17:20:03 ERR] An exception occurred while iterating over the results of a query for context type 'ParentalControl.WebService.Data.AppDbContext'.
 
-[17:05:32 INF] HTTP GET /favicon.ico responded 404 in 0.1004 ms
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
 
-[17:05:32 INF] HTTP POST /_blazor/negotiate responded 200 in 5.9800 ms
+
+POSITION: 27
 
-[17:05:32 INF] HTTP POST /_blazor/negotiate responded 200 in 5.9800 ms
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
 
-[17:05:55 INF] HTTP GET /users responded 200 in 10.1475 ms
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
 
-[17:05:55 INF] HTTP GET /users responded 200 in 10.1475 ms
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
 
-[17:05:55 INF] HTTP GET /_blazor responded 101 in 22990.3847 ms
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
 
-[17:05:55 INF] HTTP GET /_blazor responded 101 in 22990.3847 ms
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:05:55 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0562 ms
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:05:55 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0562 ms
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:05:55 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0351 ms
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
 
-[17:05:55 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0351 ms
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
 
-[17:05:55 INF] HTTP POST /_blazor/disconnect responded 200 in 10.0143 ms
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
 
-[17:05:55 INF] HTTP POST /_blazor/disconnect responded 200 in 10.0143 ms
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
 
-[17:05:55 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.9068 ms
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
 
-[17:05:55 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.9068 ms
+  Exception data:
 
-[17:05:55 INF] HTTP GET /_blazor/initializers responded 200 in 0.3931 ms
+    Severity: ERROR
 
-[17:05:55 INF] HTTP GET /_blazor/initializers responded 200 in 0.3931 ms
+    SqlState: 42P01
 
-[17:05:55 INF] HTTP POST /_blazor/negotiate responded 200 in 0.5838 ms
+    MessageText: relation "Users" does not exist
 
-[17:05:55 INF] HTTP POST /_blazor/negotiate responded 200 in 0.5838 ms
+    Position: 27
 
-[17:06:14 INF] HTTP GET /computers responded 200 in 4.0945 ms
+    File: parse_relation.c
 
-[17:06:14 INF] HTTP GET /computers responded 200 in 4.0945 ms
+    Line: 1449
 
-[17:06:14 INF] HTTP GET /_blazor responded 101 in 18393.6857 ms
+    Routine: parserOpenTable
 
-[17:06:14 INF] HTTP GET /_blazor responded 101 in 18393.6857 ms
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
 
-[17:06:14 INF] HTTP POST /_blazor/disconnect responded 200 in 1.2456 ms
+
+POSITION: 27
 
-[17:06:14 INF] HTTP POST /_blazor/disconnect responded 200 in 1.2456 ms
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
 
-[17:06:14 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0327 ms
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
 
-[17:06:14 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0327 ms
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
 
-[17:06:14 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0286 ms
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
 
-[17:06:14 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1676 ms
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:06:14 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0286 ms
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:06:14 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1676 ms
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:06:14 INF] HTTP GET /_blazor/initializers responded 200 in 0.1784 ms
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
 
-[17:06:14 INF] HTTP GET /_blazor/initializers responded 200 in 0.1784 ms
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
 
-[17:06:14 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3674 ms
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
 
-[17:06:14 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3674 ms
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
 
-[17:06:16 INF] HTTP GET /profiles responded 200 in 1.4041 ms
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
 
-[17:06:16 INF] HTTP GET /profiles responded 200 in 1.4041 ms
+  Exception data:
 
-[17:06:16 INF] HTTP GET /_blazor responded 101 in 1681.5298 ms
+    Severity: ERROR
 
-[17:06:16 INF] HTTP GET /_blazor responded 101 in 1681.5298 ms
+    SqlState: 42P01
 
-[17:06:16 INF] HTTP POST /_blazor/disconnect responded 200 in 0.6342 ms
+    MessageText: relation "Users" does not exist
 
-[17:06:16 INF] HTTP POST /_blazor/disconnect responded 200 in 0.6342 ms
+    Position: 27
 
-[17:06:16 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0856 ms
+    File: parse_relation.c
 
-[17:06:16 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0856 ms
+    Line: 1449
 
-[17:06:16 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.2690 ms
+    Routine: parserOpenTable
 
-[17:06:16 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.2690 ms
+[17:20:03 ERR] An exception occurred while iterating over the results of a query for context type 'ParentalControl.WebService.Data.AppDbContext'.
 
-[17:06:16 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0213 ms
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
 
-[17:06:16 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0213 ms
+
+POSITION: 27
 
-[17:06:16 INF] HTTP GET /_blazor/initializers responded 200 in 0.2713 ms
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
 
-[17:06:16 INF] HTTP GET /_blazor/initializers responded 200 in 0.2713 ms
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
 
-[17:06:16 INF] HTTP POST /_blazor/negotiate responded 200 in 0.5706 ms
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
 
-[17:06:16 INF] HTTP POST /_blazor/negotiate responded 200 in 0.5706 ms
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
 
-[17:06:18 INF] HTTP GET /users responded 200 in 1.4596 ms
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:06:18 INF] HTTP GET /users responded 200 in 1.4596 ms
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:06:18 INF] HTTP GET /_blazor responded 101 in 2047.9374 ms
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:06:18 INF] HTTP GET /_blazor responded 101 in 2047.9374 ms
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
 
-[17:06:18 INF] HTTP POST /_blazor/disconnect responded 200 in 0.8986 ms
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
 
-[17:06:18 INF] HTTP POST /_blazor/disconnect responded 200 in 0.8986 ms
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
 
-[17:06:18 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0845 ms
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
 
-[17:06:18 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0845 ms
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
 
-[17:06:18 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1619 ms
+  Exception data:
 
-[17:06:18 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0299 ms
+    Severity: ERROR
 
-[17:06:18 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1619 ms
+    SqlState: 42P01
 
-[17:06:18 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0299 ms
+    MessageText: relation "Users" does not exist
 
-[17:06:18 INF] HTTP GET /_blazor/initializers responded 200 in 0.2667 ms
+    Position: 27
 
-[17:06:18 INF] HTTP GET /_blazor/initializers responded 200 in 0.2667 ms
+    File: parse_relation.c
 
-[17:06:18 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3891 ms
+    Line: 1449
 
-[17:06:18 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3891 ms
+    Routine: parserOpenTable
 
-[17:06:31 INF] HTTP GET /profiles responded 200 in 1.1832 ms
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
 
-[17:06:31 INF] HTTP GET /profiles responded 200 in 1.1832 ms
+
+POSITION: 27
 
-[17:06:31 INF] HTTP GET /_blazor responded 101 in 13075.6114 ms
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
 
-[17:06:31 INF] HTTP GET /_blazor responded 101 in 13075.6114 ms
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
 
-[17:06:31 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.1553 ms
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
 
-[17:06:31 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.1553 ms
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
 
-[17:06:31 INF] HTTP POST /_blazor/disconnect responded 200 in 7.4787 ms
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:06:31 INF] HTTP POST /_blazor/disconnect responded 200 in 7.4787 ms
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:06:31 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1356 ms
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
 
-[17:06:31 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1356 ms
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
 
-[17:06:31 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0262 ms
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
 
-[17:06:31 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0262 ms
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
 
-[17:06:31 INF] HTTP GET /_blazor/initializers responded 200 in 0.0736 ms
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
 
-[17:06:31 INF] HTTP GET /_blazor/initializers responded 200 in 0.0736 ms
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
 
-[17:06:31 INF] HTTP POST /_blazor/negotiate responded 200 in 0.2180 ms
+  Exception data:
 
-[17:06:31 INF] HTTP POST /_blazor/negotiate responded 200 in 0.2180 ms
+    Severity: ERROR
 
-[17:06:38 INF] HTTP GET / responded 200 in 19.5625 ms
+    SqlState: 42P01
 
-[17:06:38 INF] HTTP GET / responded 200 in 19.5625 ms
+    MessageText: relation "Users" does not exist
 
-[17:06:38 INF] HTTP GET /_blazor responded 101 in 6802.1806 ms
+    Position: 27
 
-[17:06:38 INF] HTTP GET /_blazor responded 101 in 6802.1806 ms
+    File: parse_relation.c
 
-[17:06:38 INF] HTTP POST /_blazor/disconnect responded 200 in 1.3540 ms
+    Line: 1449
 
-[17:06:38 INF] HTTP POST /_blazor/disconnect responded 200 in 1.3540 ms
+    Routine: parserOpenTable
 
-[17:06:38 INF] HTTP GET /_blazor/initializers responded 200 in 0.0829 ms
+[17:20:03 INF] HTTP GET / responded 302 in 220.1884 ms
 
-[17:06:38 INF] HTTP GET /_blazor/initializers responded 200 in 0.0829 ms
+[17:20:03 INF] HTTP GET / responded 302 in 220.1884 ms
 
-[17:06:38 INF] HTTP POST /_blazor/negotiate responded 200 in 0.1822 ms
+[17:20:03 INF] HTTP GET /setup responded 200 in 84.7566 ms
 
-[17:06:38 INF] HTTP POST /_blazor/negotiate responded 200 in 0.1822 ms
+[17:20:03 INF] HTTP GET /setup responded 200 in 84.7566 ms
+
+[17:20:03 INF] HTTP GET /_blazor responded 101 in 2802.0827 ms
+
+[17:20:03 INF] HTTP GET /_blazor responded 101 in 2802.0827 ms
+
+[17:20:03 INF] HTTP POST /_blazor/disconnect responded 400 in 10.2977 ms
+
+[17:20:03 INF] HTTP POST /_blazor/disconnect responded 400 in 10.2977 ms
+
+[17:20:03 INF] HTTP GET /_framework/blazor.server.js responded 304 in 4.2549 ms
+
+[17:20:03 INF] HTTP GET /_framework/blazor.server.js responded 304 in 4.2549 ms
+
+[17:20:03 INF] HTTP GET /_blazor/initializers responded 200 in 3.4625 ms
+
+[17:20:03 INF] HTTP GET /_blazor/initializers responded 200 in 3.4625 ms
+
+[17:20:03 INF] HTTP POST /_blazor/negotiate responded 200 in 0.7667 ms
+
+[17:20:03 INF] HTTP POST /_blazor/negotiate responded 200 in 0.7667 ms
+
+[17:20:26 INF] Initializing database...
+
+[17:20:26 INF] Initializing database...
+
+[17:20:26 INF] Database initialized successfully
+
+[17:20:26 INF] Database initialized successfully
+
+[17:20:28 ERR] Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+
+SELECT count(*)::int
+
+FROM "Users" AS u
+
+[17:20:28 ERR] Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+
+SELECT count(*)::int
+
+FROM "Users" AS u
+
+[17:20:28 ERR] An exception occurred while iterating over the results of a query for context type 'ParentalControl.WebService.Data.AppDbContext'.
+
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+
+
+POSITION: 27
+
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+
+  Exception data:
+
+    Severity: ERROR
+
+    SqlState: 42P01
+
+    MessageText: relation "Users" does not exist
+
+    Position: 27
+
+    File: parse_relation.c
+
+    Line: 1449
+
+    Routine: parserOpenTable
+
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+
+
+POSITION: 27
+
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+
+  Exception data:
+
+    Severity: ERROR
+
+    SqlState: 42P01
+
+    MessageText: relation "Users" does not exist
+
+    Position: 27
+
+    File: parse_relation.c
+
+    Line: 1449
+
+    Routine: parserOpenTable
+
+[17:20:28 ERR] An exception occurred while iterating over the results of a query for context type 'ParentalControl.WebService.Data.AppDbContext'.
+
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+
+
+POSITION: 27
+
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+
+  Exception data:
+
+    Severity: ERROR
+
+    SqlState: 42P01
+
+    MessageText: relation "Users" does not exist
+
+    Position: 27
+
+    File: parse_relation.c
+
+    Line: 1449
+
+    Routine: parserOpenTable
+
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+
+
+POSITION: 27
+
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+
+  Exception data:
+
+    Severity: ERROR
+
+    SqlState: 42P01
+
+    MessageText: relation "Users" does not exist
+
+    Position: 27
+
+    File: parse_relation.c
+
+    Line: 1449
+
+    Routine: parserOpenTable
+
+[17:20:28 INF] HTTP GET / responded 302 in 29.0346 ms
+
+[17:20:28 INF] HTTP GET / responded 302 in 29.0346 ms
+
+[17:20:28 INF] HTTP GET /setup responded 200 in 7.4231 ms
+
+[17:20:28 INF] HTTP GET /setup responded 200 in 7.4231 ms
+
+[17:20:28 INF] HTTP GET /_blazor responded 101 in 24915.1367 ms
+
+[17:20:28 INF] HTTP GET /_blazor responded 101 in 24915.1367 ms
+
+[17:20:28 INF] HTTP POST /_blazor/disconnect responded 200 in 6.2441 ms
+
+[17:20:28 INF] HTTP POST /_blazor/disconnect responded 200 in 6.2441 ms
+
+[17:20:28 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.4147 ms
+
+[17:20:28 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.4147 ms
+
+[17:20:28 INF] HTTP GET /_blazor/initializers responded 200 in 0.2163 ms
+
+[17:20:28 INF] HTTP GET /_blazor/initializers responded 200 in 0.2163 ms
+
+[17:20:28 INF] HTTP POST /_blazor/negotiate responded 200 in 0.4199 ms
+
+[17:20:28 INF] HTTP POST /_blazor/negotiate responded 200 in 0.4199 ms
+
+[17:20:35 ERR] Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+
+SELECT count(*)::int
+
+FROM "Users" AS u
+
+[17:20:35 ERR] Failed executing DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+
+SELECT count(*)::int
+
+FROM "Users" AS u
+
+[17:20:35 ERR] An exception occurred while iterating over the results of a query for context type 'ParentalControl.WebService.Data.AppDbContext'.
+
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+
+
+POSITION: 27
+
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+
+  Exception data:
+
+    Severity: ERROR
+
+    SqlState: 42P01
+
+    MessageText: relation "Users" does not exist
+
+    Position: 27
+
+    File: parse_relation.c
+
+    Line: 1449
+
+    Routine: parserOpenTable
+
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+
+
+POSITION: 27
+
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+
+  Exception data:
+
+    Severity: ERROR
+
+    SqlState: 42P01
+
+    MessageText: relation "Users" does not exist
+
+    Position: 27
+
+    File: parse_relation.c
+
+    Line: 1449
+
+    Routine: parserOpenTable
+
+[17:20:35 ERR] An exception occurred while iterating over the results of a query for context type 'ParentalControl.WebService.Data.AppDbContext'.
+
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+
+
+POSITION: 27
+
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+
+  Exception data:
+
+    Severity: ERROR
+
+    SqlState: 42P01
+
+    MessageText: relation "Users" does not exist
+
+    Position: 27
+
+    File: parse_relation.c
+
+    Line: 1449
+
+    Routine: parserOpenTable
+
+Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+
+
+POSITION: 27
+
+   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+
+   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+
+   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+
+  Exception data:
+
+    Severity: ERROR
+
+    SqlState: 42P01
+
+    MessageText: relation "Users" does not exist
+
+    Position: 27
+
+    File: parse_relation.c
+
+    Line: 1449
+
+    Routine: parserOpenTable
+
+[17:20:35 INF] HTTP GET /setup responded 200 in 8.7859 ms
+
+[17:20:35 INF] HTTP GET /setup responded 200 in 8.7859 ms
+
+[17:20:35 INF] HTTP GET /_blazor responded 101 in 6802.9449 ms
+
+[17:20:35 INF] HTTP GET /_blazor responded 101 in 6802.9449 ms
+
+[17:20:35 INF] HTTP POST /_blazor/disconnect responded 200 in 1.0831 ms
+
+[17:20:35 INF] HTTP POST /_blazor/disconnect responded 200 in 1.0831 ms
+
+[17:20:35 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.2075 ms
+
+[17:20:35 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.2075 ms
+
+[17:20:35 INF] HTTP GET /_blazor/initializers responded 200 in 0.3558 ms
+
+[17:20:35 INF] HTTP GET /_blazor/initializers responded 200 in 0.3558 ms
+
+[17:20:35 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3946 ms
+
+[17:20:35 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3946 ms
+
+[17:20:44 INF] HTTP GET /setup responded 200 in 9.9195 ms
+
+[17:20:44 INF] HTTP GET /setup responded 200 in 9.9195 ms
+
+[17:20:44 INF] HTTP GET /_blazor responded 101 in 8595.1737 ms
+
+[17:20:44 INF] HTTP GET /_blazor responded 101 in 8595.1737 ms
+
+[17:20:44 INF] HTTP POST /_blazor/disconnect responded 200 in 0.6488 ms
+
+[17:20:44 INF] HTTP POST /_blazor/disconnect responded 200 in 0.6488 ms
+
+[17:20:44 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1232 ms
+
+[17:20:44 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1232 ms
+
+[17:20:44 INF] HTTP GET /_blazor/initializers responded 200 in 0.0907 ms
+
+[17:20:44 INF] HTTP GET /_blazor/initializers responded 200 in 0.0907 ms
+
+[17:20:44 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3260 ms
+
+[17:20:44 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3260 ms

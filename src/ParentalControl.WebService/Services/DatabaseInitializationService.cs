@@ -112,7 +112,21 @@ public class DatabaseInitializationService : IDatabaseInitializationService
             if (!await CanConnectToDatabaseAsync())
                 return false;
             
-            return await _context.Database.GetPendingMigrationsAsync().ContinueWith(t => !t.Result.Any());
+            // Check if migrations have been applied
+            var pendingMigrations = await _context.Database.GetPendingMigrationsAsync();
+            if (pendingMigrations.Any())
+                return false;
+            
+            // Verify that tables actually exist by checking if we can query Users table
+            try
+            {
+                await _context.Users.AnyAsync();
+                return true;
+            }
+            catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P01") // Table does not exist
+            {
+                return false;
+            }
         }
         catch
         {

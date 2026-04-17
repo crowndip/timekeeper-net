@@ -421,9 +421,19 @@ else
                     dbVersion = "1.0.0";
                 }
 
-                // Get counts
-                userCount = await DbContext.Users.CountAsync();
-                computerCount = await DbContext.Computers.CountAsync();
+                // Get counts - wrap in try-catch to handle case where tables don't exist yet
+                try
+                {
+                    userCount = await DbContext.Users.CountAsync();
+                    computerCount = await DbContext.Computers.CountAsync();
+                }
+                catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P01") // Table does not exist
+                {
+                    // Tables don't exist yet, redirect to setup
+                    needsSetup = true;
+                    Navigation.NavigateTo("/setup", true);
+                    return;
+                }
             }
         }
         catch (Exception)
