@@ -231,15 +231,20 @@ public class ServerSyncService : IServerSyncService
         try
         {
             var dir = Path.GetDirectoryName(ComputerIdPath);
+            _logger.LogInformation("Attempting to save ComputerId to {Path}, directory: {Dir}", ComputerIdPath, dir);
+            
             if (!Directory.Exists(dir))
+            {
+                _logger.LogInformation("Creating directory: {Dir}", dir);
                 Directory.CreateDirectory(dir!);
+            }
             
             File.WriteAllText(ComputerIdPath, computerId.ToString());
-            _logger.LogInformation("Saved ComputerId to persistent storage");
+            _logger.LogInformation("Saved ComputerId to persistent storage: {Path}", ComputerIdPath);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to save ComputerId");
+            _logger.LogError(ex, "Failed to save ComputerId to {Path}", ComputerIdPath);
         }
     }
     
@@ -269,12 +274,21 @@ public class ServerSyncService : IServerSyncService
         try
         {
             var dir = Path.GetDirectoryName(ServerUrlPath);
+            _logger.LogInformation("Attempting to save server URL to {Path}, directory: {Dir}", ServerUrlPath, dir);
+            
             if (!Directory.Exists(dir))
+            {
+                _logger.LogInformation("Creating directory: {Dir}", dir);
                 Directory.CreateDirectory(dir!);
+            }
             
             File.WriteAllText(ServerUrlPath, serverUrl);
+            _logger.LogInformation("Saved server URL to persistent storage: {Path}", ServerUrlPath);
         }
-        catch { }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save server URL to {Path}", ServerUrlPath);
+        }
     }
     
     public async Task SyncAllUsersAsync(List<string> usernames)
