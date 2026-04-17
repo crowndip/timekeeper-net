@@ -126,6 +126,29 @@ public class ServerSyncService : IServerSyncService
             {
                 var result = await response.Content.ReadFromJsonAsync<RegisterComputerResponse>();
                 _logger.LogInformation("Registered: {ComputerId}", result!.ComputerId);
+                
+                // Save ComputerId to config
+                var configPath = Path.Combine(AppContext.BaseDirectory, "appsettings.json");
+                var json = await File.ReadAllTextAsync(configPath);
+                var config = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json);
+                
+                if (config != null)
+                {
+                    if (!config.ContainsKey("ParentalControl"))
+                        config["ParentalControl"] = new Dictionary<string, object>();
+                    
+                    var pcConfig = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+                        config["ParentalControl"].ToString()!);
+                    pcConfig!["ComputerId"] = result.ComputerId.ToString();
+                    config["ParentalControl"] = pcConfig;
+                    
+                    var options = new System.Text.Json.JsonSerializerOptions { WriteIndented = true };
+                    await File.WriteAllTextAsync(configPath, 
+                        System.Text.Json.JsonSerializer.Serialize(config, options));
+                    
+                    _logger.LogInformation("Saved ComputerId to config");
+                }
+                
                 return true;
             }
         }

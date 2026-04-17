@@ -36,6 +36,9 @@ public class ParentalControlWorker : BackgroundService
         // Wait for system to stabilize
         await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         
+        // Register with server on startup
+        await _serverSync.RegisterComputerAsync();
+        
         while (!stoppingToken.IsCancellationRequested)
         {
             try
