@@ -3,6 +3,7 @@ namespace ParentalControl.Client.Windows.Services;
 public interface ISessionMonitor
 {
     string? GetCurrentUser();
+    Task<List<string>> GetAllLocalUsersAsync();
     event EventHandler<SessionChangeEventArgs>? SessionChanged;
 }
 
