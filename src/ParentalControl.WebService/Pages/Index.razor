@@ -1,68 +1,392 @@
 @page "/"
 @using ParentalControl.WebService.Services
+@using ParentalControl.WebService.Data
 @inject IDatabaseInitializationService DbInit
+@inject ApplicationDbContext DbContext
 @inject NavigationManager Navigation
 
 <PageTitle>Parental Control System</PageTitle>
 
 @if (isChecking)
 {
-    <div class="text-center mt-5">
-        <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-        <p class="mt-3">Checking system status...</p>
+    <div class="loading-container">
+        <div class="spinner"></div>
+        <p>Checking system status...</p>
     </div>
 }
 else if (needsSetup)
 {
-    <div class="container mt-5">
+    <div class="container">
         <div class="alert alert-warning">
-            <h4 class="alert-heading">⚠️ Database Setup Required</h4>
+            <h4>⚠️ Database Setup Required</h4>
             <p>The database has not been initialized yet.</p>
-            <hr>
             <a href="/setup" class="btn btn-primary">Go to Setup Page</a>
         </div>
     </div>
 }
 else
 {
-    <h1>Parental Control System</h1>
+    <div class="dashboard">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1>🛡️ Parental Control System</h1>
+            <p class="subtitle">Centralized time management and monitoring</p>
+        </div>
 
-    <div class="row mt-4">
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Users</h5>
-                    <p class="card-text">Manage users and accounts</p>
-                    <a href="/users" class="btn btn-primary">Manage Users</a>
+        <!-- System Status Card -->
+        <div class="status-card">
+            <div class="status-header">
+                <span class="status-icon">✅</span>
+                <span class="status-title">System Status</span>
+            </div>
+            <div class="status-grid">
+                <div class="status-item">
+                    <span class="status-label">Database</span>
+                    <span class="status-value status-online">Online</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Schema Version</span>
+                    <span class="status-value">@dbVersion</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Active Users</span>
+                    <span class="status-value">@userCount</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Registered Devices</span>
+                    <span class="status-value">@computerCount</span>
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Time Profiles</h5>
-                    <p class="card-text">Configure time limits</p>
-                    <a href="/profiles" class="btn btn-primary">Manage Profiles</a>
-                </div>
+
+        <!-- Quick Actions -->
+        <div class="cards-grid">
+            <div class="card card-users">
+                <div class="card-icon">👥</div>
+                <h3>Users</h3>
+                <p>Manage user accounts and permissions</p>
+                <a href="/users" class="card-btn">Manage Users</a>
+            </div>
+
+            <div class="card card-profiles">
+                <div class="card-icon">⏱️</div>
+                <h3>Time Profiles</h3>
+                <p>Configure time limits and schedules</p>
+                <a href="/profiles" class="card-btn">Manage Profiles</a>
+            </div>
+
+            <div class="card card-computers">
+                <div class="card-icon">💻</div>
+                <h3>Devices</h3>
+                <p>View and manage registered devices</p>
+                <a href="/computers" class="card-btn">View Devices</a>
+            </div>
+
+            <div class="card card-reports">
+                <div class="card-icon">📊</div>
+                <h3>Reports</h3>
+                <p>View usage statistics and reports</p>
+                <a href="/reports" class="card-btn">View Reports</a>
             </div>
         </div>
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Reports</h5>
-                    <p class="card-text">View usage reports</p>
-                    <a href="/reports" class="btn btn-primary">View Reports</a>
-                </div>
-            </div>
+
+        <!-- Footer Info -->
+        <div class="footer-info">
+            <p>Server Version: 1.1.2 | Database Schema: @dbVersion</p>
         </div>
     </div>
 }
 
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+    }
+
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 80vh;
+        color: white;
+    }
+
+    .spinner {
+        width: 50px;
+        height: 50px;
+        border: 4px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .alert {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .alert-warning {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .dashboard {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .dashboard-header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+    }
+
+    .dashboard-header h1 {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-bottom: 10px;
+    }
+
+    .subtitle {
+        font-size: 1.1rem;
+        opacity: 0.9;
+    }
+
+    .status-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .status-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 2px solid #f3f4f6;
+    }
+
+    .status-icon {
+        font-size: 1.5rem;
+    }
+
+    .status-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 20px;
+    }
+
+    .status-item {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .status-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        font-weight: 500;
+    }
+
+    .status-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+    }
+
+    .status-online {
+        color: #10b981;
+    }
+
+    .cards-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .card {
+        background: white;
+        border-radius: 16px;
+        padding: 28px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-icon {
+        font-size: 3rem;
+        margin-bottom: 16px;
+    }
+
+    .card h3 {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #1f2937;
+        margin-bottom: 12px;
+    }
+
+    .card p {
+        color: #6b7280;
+        margin-bottom: 20px;
+        line-height: 1.5;
+    }
+
+    .card-btn {
+        display: inline-block;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        width: 100%;
+        max-width: 200px;
+    }
+
+    .card-users .card-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .card-profiles .card-btn {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .card-computers .card-btn {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    .card-reports .card-btn {
+        background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+        color: white;
+    }
+
+    .card-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    .footer-info {
+        text-align: center;
+        color: white;
+        opacity: 0.8;
+        font-size: 0.875rem;
+        padding: 20px 0;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 24px;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: transform 0.3s ease;
+    }
+
+    .btn-primary:hover {
+        transform: scale(1.05);
+    }
+
+    /* Mobile Responsive */
+    @@media (max-width: 768px) {
+        body {
+            padding: 10px;
+        }
+
+        .dashboard-header h1 {
+            font-size: 1.75rem;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+        }
+
+        .status-card {
+            padding: 16px;
+        }
+
+        .status-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .status-value {
+            font-size: 1.25rem;
+        }
+
+        .cards-grid {
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .card {
+            padding: 20px;
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+        }
+
+        .card h3 {
+            font-size: 1.25rem;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .status-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
 @code {
     private bool isChecking = true;
     private bool needsSetup = false;
+    private string dbVersion = "Unknown";
+    private int userCount = 0;
+    private int computerCount = 0;
 
     protected override async Task OnInitializedAsync()
     {
@@ -73,13 +397,36 @@ else
             
             if (needsSetup)
             {
-                // Redirect to setup page
                 Navigation.NavigateTo("/setup", true);
+            }
+            else
+            {
+                // Get database version from migrations table
+                try
+                {
+                    var latestMigration = await DbContext.Database
+                        .SqlQueryRaw<string>("SELECT \"MigrationId\" FROM \"__EFMigrationsHistory\" ORDER BY \"MigrationId\" DESC LIMIT 1")
+                        .ToListAsync();
+                    
+                    if (latestMigration.Any())
+                    {
+                        // Extract version from migration ID (e.g., "20240101000000_InitialCreate" -> "20240101")
+                        var migrationId = latestMigration.First();
+                        dbVersion = migrationId.Length >= 8 ? migrationId.Substring(0, 8) : migrationId;
+                    }
+                }
+                catch
+                {
+                    dbVersion = "1.0.0";
+                }
+
+                // Get counts
+                userCount = await DbContext.Users.CountAsync();
+                computerCount = await DbContext.Computers.CountAsync();
             }
         }
         catch (Exception)
         {
-            // If check fails, assume needs setup
             needsSetup = true;
             Navigation.NavigateTo("/setup", true);
         }

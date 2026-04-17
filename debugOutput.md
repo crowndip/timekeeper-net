@@ -1,243 +1,251 @@
-[16:26:10 INF] Starting Parental Control Web Service
+[17:05:22 INF] Starting Parental Control Web Service
 
-[16:26:10 INF] Starting Parental Control Web Service
+[17:05:22 INF] Starting Parental Control Web Service
 
-[16:26:11 INF] Database migrations applied successfully
+[17:05:23 INF] Database migrations applied successfully
 
-[16:26:11 INF] Database migrations applied successfully
-
-
-
-1 WRN] Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+[17:05:23 INF] Database migrations applied successfully
 
 
 
-1 WRN] Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
+3 WRN] Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
 
-[16:26:11 WRN] No XML encryptor configured. Key {cd513940-2146-4bb2-8390-823e71f8dae1} may be persisted to storage in unencrypted form.
+
 
-[16:26:11 WRN] No XML encryptor configured. Key {cd513940-2146-4bb2-8390-823e71f8dae1} may be persisted to storage in unencrypted form.
+3 WRN] Storing keys in a directory '/root/.aspnet/DataProtection-Keys' that may not be persisted outside of the container. Protected data will be unavailable when container is destroyed. For more information go to https://aka.ms/aspnet/dataprotectionwarning
 
-[16:26:11 WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:80'.
+[17:05:23 WRN] No XML encryptor configured. Key {ab91412f-f3e5-4c2c-9607-aee94314247a} may be persisted to storage in unencrypted form.
 
-[16:26:11 WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:80'.
+[17:05:23 WRN] No XML encryptor configured. Key {ab91412f-f3e5-4c2c-9607-aee94314247a} may be persisted to storage in unencrypted form.
 
-[16:26:11 WRN] The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
+[17:05:23 WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:80'.
 
-[16:26:11 WRN] The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
+[17:05:23 WRN] Overriding HTTP_PORTS '8080' and HTTPS_PORTS ''. Binding to values defined by URLS instead 'http://+:80'.
 
-[16:26:11 INF] Now listening on: http://[::]:80
+[17:05:23 WRN] The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
 
-[16:26:11 INF] Now listening on: http://[::]:80
+[17:05:23 WRN] The WebRootPath was not found: /app/wwwroot. Static files may be unavailable.
 
-[16:26:11 INF] Application started. Press Ctrl+C to shut down.
+[17:05:23 INF] Now listening on: http://[::]:80
 
-[16:26:11 INF] Application started. Press Ctrl+C to shut down.
+[17:05:23 INF] Now listening on: http://[::]:80
 
-[16:26:11 INF] Hosting environment: Production
+[17:05:23 INF] Application started. Press Ctrl+C to shut down.
 
-[16:26:11 INF] Hosting environment: Production
+[17:05:23 INF] Application started. Press Ctrl+C to shut down.
 
-[16:26:11 INF] Content root path: /app
+[17:05:23 INF] Hosting environment: Production
 
-[16:26:11 INF] Content root path: /app
+[17:05:23 INF] Hosting environment: Production
 
-[16:26:31 ERR] Failed executing DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[17:05:23 INF] Content root path: /app
 
-SELECT count(*)::int
+[17:05:23 INF] Content root path: /app
 
-FROM "Users" AS u
+[17:05:32 INF] HTTP GET / responded 200 in 116.3346 ms
 
-WHERE u."IsActive" AND u."AccountType" = 'Child'
+[17:05:32 INF] HTTP GET / responded 200 in 116.3346 ms
 
-[16:26:31 ERR] Failed executing DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+[17:05:32 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 1.4116 ms
 
-SELECT count(*)::int
+[17:05:32 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 1.4116 ms
 
-FROM "Users" AS u
+[17:05:32 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0753 ms
 
-WHERE u."IsActive" AND u."AccountType" = 'Child'
+[17:05:32 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0753 ms
 
-[16:26:31 ERR] An exception occurred while iterating over the results of a query for context type 'ParentalControl.WebService.Data.AppDbContext'.
+[17:05:32 INF] HTTP GET /_framework/blazor.server.js responded 200 in 21.4005 ms
 
-Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+[17:05:32 INF] HTTP GET /_framework/blazor.server.js responded 200 in 21.4005 ms
 
-
-POSITION: 27
+[17:05:32 INF] HTTP GET /_blazor/initializers responded 200 in 3.7237 ms
 
-   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[17:05:32 INF] HTTP GET /_blazor/initializers responded 200 in 3.7237 ms
 
-   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+[17:05:32 INF] HTTP GET /favicon.ico responded 404 in 0.1004 ms
 
-   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[17:05:32 INF] HTTP GET /favicon.ico responded 404 in 0.1004 ms
 
-   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[17:05:32 INF] HTTP POST /_blazor/negotiate responded 200 in 5.9800 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[17:05:32 INF] HTTP POST /_blazor/negotiate responded 200 in 5.9800 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[17:05:55 INF] HTTP GET /users responded 200 in 10.1475 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+[17:05:55 INF] HTTP GET /users responded 200 in 10.1475 ms
 
-   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[17:05:55 INF] HTTP GET /_blazor responded 101 in 22990.3847 ms
 
-   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[17:05:55 INF] HTTP GET /_blazor responded 101 in 22990.3847 ms
 
-   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+[17:05:55 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0562 ms
 
-   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+[17:05:55 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0562 ms
 
-   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+[17:05:55 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0351 ms
 
-  Exception data:
+[17:05:55 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0351 ms
 
-    Severity: ERROR
+[17:05:55 INF] HTTP POST /_blazor/disconnect responded 200 in 10.0143 ms
 
-    SqlState: 42P01
+[17:05:55 INF] HTTP POST /_blazor/disconnect responded 200 in 10.0143 ms
 
-    MessageText: relation "Users" does not exist
+[17:05:55 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.9068 ms
 
-    Position: 27
+[17:05:55 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.9068 ms
 
-    File: parse_relation.c
+[17:05:55 INF] HTTP GET /_blazor/initializers responded 200 in 0.3931 ms
 
-    Line: 1449
+[17:05:55 INF] HTTP GET /_blazor/initializers responded 200 in 0.3931 ms
 
-    Routine: parserOpenTable
+[17:05:55 INF] HTTP POST /_blazor/negotiate responded 200 in 0.5838 ms
 
-Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+[17:05:55 INF] HTTP POST /_blazor/negotiate responded 200 in 0.5838 ms
 
-
-POSITION: 27
+[17:06:14 INF] HTTP GET /computers responded 200 in 4.0945 ms
 
-   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[17:06:14 INF] HTTP GET /computers responded 200 in 4.0945 ms
 
-   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+[17:06:14 INF] HTTP GET /_blazor responded 101 in 18393.6857 ms
 
-   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[17:06:14 INF] HTTP GET /_blazor responded 101 in 18393.6857 ms
 
-   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[17:06:14 INF] HTTP POST /_blazor/disconnect responded 200 in 1.2456 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[17:06:14 INF] HTTP POST /_blazor/disconnect responded 200 in 1.2456 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[17:06:14 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0327 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+[17:06:14 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0327 ms
 
-   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[17:06:14 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0286 ms
 
-   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[17:06:14 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1676 ms
 
-   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+[17:06:14 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0286 ms
 
-   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+[17:06:14 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1676 ms
 
-   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+[17:06:14 INF] HTTP GET /_blazor/initializers responded 200 in 0.1784 ms
 
-  Exception data:
+[17:06:14 INF] HTTP GET /_blazor/initializers responded 200 in 0.1784 ms
 
-    Severity: ERROR
+[17:06:14 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3674 ms
 
-    SqlState: 42P01
+[17:06:14 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3674 ms
 
-    MessageText: relation "Users" does not exist
+[17:06:16 INF] HTTP GET /profiles responded 200 in 1.4041 ms
 
-    Position: 27
+[17:06:16 INF] HTTP GET /profiles responded 200 in 1.4041 ms
 
-    File: parse_relation.c
+[17:06:16 INF] HTTP GET /_blazor responded 101 in 1681.5298 ms
 
-    Line: 1449
+[17:06:16 INF] HTTP GET /_blazor responded 101 in 1681.5298 ms
 
-    Routine: parserOpenTable
+[17:06:16 INF] HTTP POST /_blazor/disconnect responded 200 in 0.6342 ms
 
-[16:26:31 ERR] An exception occurred while iterating over the results of a query for context type 'ParentalControl.WebService.Data.AppDbContext'.
+[17:06:16 INF] HTTP POST /_blazor/disconnect responded 200 in 0.6342 ms
 
-Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+[17:06:16 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0856 ms
 
-
-POSITION: 27
+[17:06:16 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0856 ms
 
-   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[17:06:16 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.2690 ms
 
-   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+[17:06:16 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.2690 ms
 
-   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[17:06:16 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0213 ms
 
-   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[17:06:16 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0213 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[17:06:16 INF] HTTP GET /_blazor/initializers responded 200 in 0.2713 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[17:06:16 INF] HTTP GET /_blazor/initializers responded 200 in 0.2713 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+[17:06:16 INF] HTTP POST /_blazor/negotiate responded 200 in 0.5706 ms
 
-   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[17:06:16 INF] HTTP POST /_blazor/negotiate responded 200 in 0.5706 ms
 
-   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[17:06:18 INF] HTTP GET /users responded 200 in 1.4596 ms
 
-   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+[17:06:18 INF] HTTP GET /users responded 200 in 1.4596 ms
 
-   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+[17:06:18 INF] HTTP GET /_blazor responded 101 in 2047.9374 ms
 
-   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+[17:06:18 INF] HTTP GET /_blazor responded 101 in 2047.9374 ms
 
-  Exception data:
+[17:06:18 INF] HTTP POST /_blazor/disconnect responded 200 in 0.8986 ms
 
-    Severity: ERROR
+[17:06:18 INF] HTTP POST /_blazor/disconnect responded 200 in 0.8986 ms
 
-    SqlState: 42P01
+[17:06:18 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0845 ms
 
-    MessageText: relation "Users" does not exist
+[17:06:18 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.0845 ms
 
-    Position: 27
+[17:06:18 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1619 ms
 
-    File: parse_relation.c
+[17:06:18 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0299 ms
 
-    Line: 1449
+[17:06:18 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1619 ms
 
-    Routine: parserOpenTable
+[17:06:18 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0299 ms
 
-Npgsql.PostgresException (0x80004005): 42P01: relation "Users" does not exist
+[17:06:18 INF] HTTP GET /_blazor/initializers responded 200 in 0.2667 ms
 
-
-POSITION: 27
+[17:06:18 INF] HTTP GET /_blazor/initializers responded 200 in 0.2667 ms
 
-   at Npgsql.Internal.NpgsqlConnector.ReadMessageLong(Boolean async, DataRowLoadingMode dataRowLoadingMode, Boolean readingNotifications, Boolean isReadingPrependedMessage)
+[17:06:18 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3891 ms
 
-   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+[17:06:18 INF] HTTP POST /_blazor/negotiate responded 200 in 0.3891 ms
 
-   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[17:06:31 INF] HTTP GET /profiles responded 200 in 1.1832 ms
 
-   at Npgsql.NpgsqlDataReader.NextResult(Boolean async, Boolean isConsuming, CancellationToken cancellationToken)
+[17:06:31 INF] HTTP GET /profiles responded 200 in 1.1832 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[17:06:31 INF] HTTP GET /_blazor responded 101 in 13075.6114 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteReader(Boolean async, CommandBehavior behavior, CancellationToken cancellationToken)
+[17:06:31 INF] HTTP GET /_blazor responded 101 in 13075.6114 ms
 
-   at Npgsql.NpgsqlCommand.ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken)
+[17:06:31 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.1553 ms
 
-   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[17:06:31 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.css responded 404 in 0.1553 ms
 
-   at Microsoft.EntityFrameworkCore.Storage.RelationalCommand.ExecuteReaderAsync(RelationalCommandParameterObject parameterObject, CancellationToken cancellationToken)
+[17:06:31 INF] HTTP POST /_blazor/disconnect responded 200 in 7.4787 ms
 
-   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.InitializeReaderAsync(AsyncEnumerator enumerator, CancellationToken cancellationToken)
+[17:06:31 INF] HTTP POST /_blazor/disconnect responded 200 in 7.4787 ms
 
-   at Npgsql.EntityFrameworkCore.PostgreSQL.Storage.Internal.NpgsqlExecutionStrategy.ExecuteAsync[TState,TResult](TState state, Func`4 operation, Func`4 verifySucceeded, CancellationToken cancellationToken)
+[17:06:31 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1356 ms
 
-   at Microsoft.EntityFrameworkCore.Query.Internal.SingleQueryingEnumerable`1.AsyncEnumerator.MoveNextAsync()
+[17:06:31 INF] HTTP GET /_framework/blazor.server.js responded 304 in 0.1356 ms
 
-  Exception data:
+[17:06:31 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0262 ms
 
-    Severity: ERROR
+[17:06:31 INF] HTTP GET /_content/MudBlazor/MudBlazor.min.js responded 404 in 0.0262 ms
 
-    SqlState: 42P01
+[17:06:31 INF] HTTP GET /_blazor/initializers responded 200 in 0.0736 ms
 
-    MessageText: relation "Users" does not exist
+[17:06:31 INF] HTTP GET /_blazor/initializers responded 200 in 0.0736 ms
 
-    Position: 27
+[17:06:31 INF] HTTP POST /_blazor/negotiate responded 200 in 0.2180 ms
 
-    File: parse_relation.c
+[17:06:31 INF] HTTP POST /_blazor/negotiate responded 200 in 0.2180 ms
 
-    Line: 1449
+[17:06:38 INF] HTTP GET / responded 200 in 19.5625 ms
 
-    Routine: parserOpenTable
+[17:06:38 INF] HTTP GET / responded 200 in 19.5625 ms
+
+[17:06:38 INF] HTTP GET /_blazor responded 101 in 6802.1806 ms
+
+[17:06:38 INF] HTTP GET /_blazor responded 101 in 6802.1806 ms
+
+[17:06:38 INF] HTTP POST /_blazor/disconnect responded 200 in 1.3540 ms
+
+[17:06:38 INF] HTTP POST /_blazor/disconnect responded 200 in 1.3540 ms
+
+[17:06:38 INF] HTTP GET /_blazor/initializers responded 200 in 0.0829 ms
+
+[17:06:38 INF] HTTP GET /_blazor/initializers responded 200 in 0.0829 ms
+
+[17:06:38 INF] HTTP POST /_blazor/negotiate responded 200 in 0.1822 ms
+
+[17:06:38 INF] HTTP POST /_blazor/negotiate responded 200 in 0.1822 ms
