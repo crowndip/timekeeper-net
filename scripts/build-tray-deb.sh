@@ -9,7 +9,7 @@ fi
 
 ARCH="amd64"
 PACKAGE_NAME="parental-control-tray"
-BUILD_DIR="build/tray-deb"
+BUILD_DIR="../build/tray-deb"
 PACKAGE_DIR="${BUILD_DIR}/${PACKAGE_NAME}_${VERSION}_${ARCH}"
 
 # Clean and create directories
@@ -20,7 +20,7 @@ mkdir -p "${PACKAGE_DIR}/etc/xdg/autostart"
 
 # Build the tray application
 echo "Building tray application..."
-dotnet publish src/ParentalControl.TrayIcon/ParentalControl.TrayIcon.csproj \
+dotnet publish ../src/ParentalControl.TrayIcon/ParentalControl.TrayIcon.csproj \
     -c Release \
     -r linux-x64 \
     --self-contained \

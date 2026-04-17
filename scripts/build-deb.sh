@@ -1,13 +1,10 @@
 #!/bin/bash
 set -e
 
-# Build .deb package for Parental Control Client
-# Usage: ./build-deb.sh [version]
-
 VERSION="${1:-1.4.1}"
 ARCH="amd64"
 PACKAGE_NAME="parental-control-client"
-BUILD_DIR="build/deb"
+BUILD_DIR="../build/client-deb"
 PACKAGE_DIR="${BUILD_DIR}/${PACKAGE_NAME}_${VERSION}_${ARCH}"
 
 echo "Building ${PACKAGE_NAME} ${VERSION} for ${ARCH}"
@@ -18,17 +15,13 @@ mkdir -p "$PACKAGE_DIR"
 
 # Build the client
 echo "Building client..."
-cd ../src/ParentalControl.Client
-dotnet publish -c Release -r linux-x64 --self-contained -o ../../scripts/build/publish
-cd ../../scripts
+dotnet publish ../src/ParentalControl.Client/ParentalControl.Client.csproj \
+    -c Release -r linux-x64 --self-contained \
+    -o "${PACKAGE_DIR}/opt/parental-control"
 
 # Create package structure
-mkdir -p "${PACKAGE_DIR}/opt/parental-control"
 mkdir -p "${PACKAGE_DIR}/etc/systemd/system"
 mkdir -p "${PACKAGE_DIR}/DEBIAN"
-
-# Copy application files
-cp -r build/publish/* "${PACKAGE_DIR}/opt/parental-control/"
 
 # Create default config
 cat > "${PACKAGE_DIR}/opt/parental-control/appsettings.json" << 'EOF'
@@ -141,17 +134,6 @@ chmod 755 "${PACKAGE_DIR}/opt/parental-control/ParentalControl.Client"
 echo "Building .deb package..."
 dpkg-deb --build "$PACKAGE_DIR"
 
-# Move to output
-mv "${BUILD_DIR}/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb" .
-
-# Cleanup
-rm -rf "$BUILD_DIR"
-
 echo ""
 echo "✅ Package built successfully!"
-echo "File: ${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
-echo ""
-echo "Install with:"
-echo "  sudo dpkg -i ${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
-echo ""
-echo "Or upload to GitHub releases"
+echo "File: ${BUILD_DIR}/${PACKAGE_NAME}_${VERSION}_${ARCH}.deb"
