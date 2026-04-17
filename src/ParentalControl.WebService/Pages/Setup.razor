@@ -7,10 +7,10 @@
 
 <div class="container mt-5">
     <div class="row justify-content-center">
-        <div class="col-md-8">
+        <div class="col-md-10">
             <div class="card">
                 <div class="card-header bg-warning">
-                    <h3 class="mb-0">⚠️ Database Setup Required</h3>
+                    <h3 class="mb-0">⚠️ Database Setup</h3>
                 </div>
                 <div class="card-body">
                     @if (isChecking)
@@ -22,24 +22,53 @@
                             <p class="lead">Checking database connection...</p>
                         </div>
                     }
-                    else if (!canConnect)
+                    else if (connectionResult != null && !connectionResult.CanConnect)
                     {
                         <div class="alert alert-danger">
-                            <h4 class="alert-heading">❌ Database Not Accessible</h4>
-                            <p>Cannot connect to the database.</p>
+                            <h4 class="alert-heading">❌ @connectionResult.ErrorType Error</h4>
+                            <p class="lead">@connectionResult.ErrorMessage</p>
                             <hr>
                             <p class="mb-0"><strong>Connection String:</strong></p>
                             <code class="d-block mt-2 p-2 bg-light">@connectionString</code>
                             <hr>
-                            <p class="mb-0 mt-3"><strong>Possible Issues:</strong></p>
-                            <ul class="mt-2">
-                                <li>Database server is not running</li>
-                                <li>Incorrect connection string</li>
-                                <li>Network connectivity issues</li>
-                                <li>Firewall blocking connection</li>
-                                <li>Invalid credentials</li>
-                            </ul>
-                            <button class="btn btn-warning mt-3" @onclick="CheckConnection">Retry Connection</button>
+                            <div class="alert alert-info mb-0 mt-3">
+                                <strong>💡 Suggestion:</strong> @connectionResult.Suggestion
+                            </div>
+                            @if (connectionResult.ErrorType == "DatabaseNotFound")
+                            {
+                                <div class="mt-3">
+                                    <p><strong>To create the database, run:</strong></p>
+                                    <code class="d-block p-2 bg-dark text-light">
+                                        psql -U postgres<br/>
+                                        CREATE DATABASE parental_control;<br/>
+                                        \q
+                                    </code>
+                                </div>
+                            }
+                            @if (connectionResult.ErrorType == "Authentication")
+                            {
+                                <div class="mt-3">
+                                    <p><strong>Check your connection string in:</strong></p>
+                                    <ul>
+                                        <li>appsettings.json</li>
+                                        <li>Environment variables</li>
+                                        <li>Docker secrets</li>
+                                    </ul>
+                                </div>
+                            }
+                            @if (connectionResult.ErrorType == "ConnectionRefused")
+                            {
+                                <div class="mt-3">
+                                    <p><strong>Troubleshooting steps:</strong></p>
+                                    <ol>
+                                        <li>Check if PostgreSQL is running: <code>systemctl status postgresql</code></li>
+                                        <li>Verify host and port in connection string</li>
+                                        <li>Check if PostgreSQL is listening on the correct interface</li>
+                                        <li>Verify pg_hba.conf allows connections</li>
+                                    </ol>
+                                </div>
+                            }
+                            <button class="btn btn-warning mt-3" @onclick="CheckConnection">🔄 Retry Connection</button>
                         </div>
                     }
                     else if (isInitializing)
@@ -49,7 +78,7 @@
                                 <span class="visually-hidden">Initializing...</span>
                             </div>
                             <p class="lead">Initializing database...</p>
-                            <p class="text-muted">This may take a few moments.</p>
+                            <p class="text-muted">Creating tables and applying migrations. This may take a few moments.</p>
                         </div>
                     }
                     else if (initSuccess)
@@ -57,31 +86,47 @@
                         <div class="alert alert-success">
                             <h4 class="alert-heading">✅ Success!</h4>
                             <p>Database has been initialized successfully.</p>
-                            <hr>
                             <p class="mb-0">Redirecting to home page...</p>
                         </div>
                     }
                     else if (!string.IsNullOrEmpty(errorMessage))
                     {
                         <div class="alert alert-danger">
-                            <h4 class="alert-heading">❌ Error</h4>
+                            <h4 class="alert-heading">❌ Initialization Failed</h4>
                             <p>@errorMessage</p>
                             <hr>
-                            <button class="btn btn-warning" @onclick="InitializeDatabase">Try Again</button>
+                            @if (errorMessage.Contains("permission"))
+                            {
+                                <div class="alert alert-warning mb-0">
+                                    <strong>💡 Solution:</strong> Grant the database user CREATE TABLE and CREATE SCHEMA permissions:
+                                    <code class="d-block mt-2 p-2 bg-dark text-light">
+                                        GRANT CREATE ON DATABASE parental_control TO your_user;<br/>
+                                        GRANT ALL PRIVILEGES ON DATABASE parental_control TO your_user;
+                                    </code>
+                                </div>
+                            }
+                            @if (errorMessage.Contains("disk") || errorMessage.Contains("space"))
+                            {
+                                <div class="alert alert-warning mb-0">
+                                    <strong>💡 Solution:</strong> Free up disk space on the database server and try again.
+                                </div>
+                            }
+                            <button class="btn btn-warning mt-3" @onclick="InitializeDatabase">🔄 Try Again</button>
                         </div>
                     }
                     else
                     {
-                        <div class="alert alert-info">
+                        <div class="alert alert-success">
+                            <h4 class="alert-heading">✅ Database Connected</h4>
                             <p class="mb-0"><strong>Connection String:</strong></p>
                             <code class="d-block mt-2 p-2 bg-light">@connectionString</code>
                         </div>
-                        <p class="lead">The database has not been initialized yet.</p>
-                        <p>Click the button below to create the required tables and stored procedures.</p>
+                        <p class="lead mt-3">The database is connected but not initialized yet.</p>
+                        <p>Click the button below to create the required tables and apply migrations.</p>
                         <hr>
                         <div class="d-grid gap-2">
                             <button class="btn btn-primary btn-lg" @onclick="InitializeDatabase">
-                                Initialize Database
+                                🚀 Initialize Database
                             </button>
                         </div>
                     }
@@ -93,11 +138,11 @@
 
 @code {
     private bool isChecking = true;
-    private bool canConnect = false;
     private bool isInitializing = false;
     private bool initSuccess = false;
     private string errorMessage = string.Empty;
     private string connectionString = string.Empty;
+    private DatabaseConnectionResult? connectionResult;
 
     protected override async Task OnInitializedAsync()
     {
@@ -113,12 +158,17 @@
         try
         {
             connectionString = DbInit.GetConnectionString();
-            canConnect = await DbInit.CanConnectToDatabaseAsync();
+            connectionResult = await DbInit.CheckConnectionAsync();
         }
         catch (Exception ex)
         {
-            errorMessage = $"Error checking connection: {ex.Message}";
-            canConnect = false;
+            connectionResult = new DatabaseConnectionResult
+            {
+                CanConnect = false,
+                ErrorType = "Unexpected",
+                ErrorMessage = $"Unexpected error: {ex.Message}",
+                Suggestion = "Check the application logs for more details"
+            };
         }
         finally
         {
@@ -129,7 +179,7 @@
 
     private async Task InitializeDatabase()
     {
-        if (!canConnect)
+        if (connectionResult == null || !connectionResult.CanConnect)
         {
             errorMessage = "Cannot initialize database: No connection to database server.";
             StateHasChanged();
@@ -148,9 +198,15 @@
             await Task.Delay(2000);
             Navigation.NavigateTo("/", true);
         }
+        catch (InvalidOperationException ex)
+        {
+            errorMessage = ex.Message;
+            isInitializing = false;
+            StateHasChanged();
+        }
         catch (Exception ex)
         {
-            errorMessage = $"Failed to initialize database: {ex.Message}";
+            errorMessage = $"Unexpected error: {ex.Message}";
             isInitializing = false;
             StateHasChanged();
         }
