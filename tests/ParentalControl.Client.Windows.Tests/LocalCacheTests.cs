@@ -13,7 +13,7 @@ public class LocalCacheTests
         var userId = Guid.NewGuid();
         var sessionId = Guid.NewGuid();
 
-        await cache.IncrementUsageAsync(userId, sessionId, 5, 0);
+        await cache.IncrementUsageAsync(userId, "testuser", sessionId, 5, 0);
         var records = await cache.GetPendingRecordsAsync();
 
         Assert.Single(records);
@@ -29,8 +29,8 @@ public class LocalCacheTests
         var sessionId = Guid.NewGuid();
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
-        await cache.IncrementUsageAsync(userId, sessionId, 10, 0);
-        await cache.IncrementUsageAsync(userId, sessionId, 15, 0);
+        await cache.IncrementUsageAsync(userId, "testuser", sessionId, 10, 0);
+        await cache.IncrementUsageAsync(userId, "testuser", sessionId, 15, 0);
         var usage = await cache.GetTodayUsageAsync(userId, today);
 
         Assert.Equal(25, usage);
@@ -57,7 +57,7 @@ public class LocalCacheTests
         var userId = Guid.NewGuid();
         var sessionId = Guid.NewGuid();
 
-        await cache.IncrementUsageAsync(userId, sessionId, 5, 0);
+        await cache.IncrementUsageAsync(userId, "testuser", sessionId, 5, 0);
         var records = await cache.GetPendingRecordsAsync();
         var recordIds = records.Select(r => r.Id).ToList();
 
