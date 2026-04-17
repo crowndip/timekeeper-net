@@ -24,3 +24,15 @@
 2026-04-17 23:56:40.361 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
 2026-04-17 23:56:40.372 +02:00 [INF] Received HTTP response headers after 10.4327ms - 200
 2026-04-17 23:56:40.372 +02:00 [INF] End processing HTTP request after 10.8038ms - 200
+2026-04-17 23:57:40.400 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-17 23:57:40.400 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-17 23:57:40.412 +02:00 [INF] Received HTTP response headers after 11.966ms - 200
+2026-04-17 23:57:40.412 +02:00 [INF] End processing HTTP request after 12.5096ms - 200
+2026-04-17 23:58:40.424 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-17 23:58:40.424 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-17 23:58:40.431 +02:00 [INF] Received HTTP response headers after 6.6616ms - 200
+2026-04-17 23:58:40.431 +02:00 [INF] End processing HTTP request after 7.1718ms - 200
+2026-04-17 23:59:40.443 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-17 23:59:40.443 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-17 23:59:40.455 +02:00 [INF] Received HTTP response headers after 11.7444ms - 200
+2026-04-17 23:59:40.455 +02:00 [INF] End processing HTTP request after 12.2796ms - 200

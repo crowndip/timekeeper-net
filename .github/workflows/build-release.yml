@@ -70,6 +70,12 @@ jobs:
         chmod +x build-deb.sh
         ./build-deb.sh ${{ steps.version.outputs.VERSION }}
     
+    - name: Build Tray Icon .deb package
+      run: |
+        cd scripts
+        chmod +x build-tray-deb.sh
+        ./build-tray-deb.sh ${{ steps.version.outputs.VERSION }}
+    
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
@@ -78,7 +84,8 @@ jobs:
           publish/client-linux-arm64.tar.gz
           publish/client-windows-x64.zip
           publish/server.tar.gz
-          scripts/parental-control-client_*.deb
+          build/client-deb/parental-control-client_*.deb
+          build/tray-deb/parental-control-tray_*.deb
         draft: false
         prerelease: false
         body: |
@@ -93,6 +100,9 @@ jobs:
           - `client-linux-x64.tar.gz` - Linux x64 client
           - `client-linux-arm64.tar.gz` - Linux ARM64 client (Raspberry Pi)
           - `parental-control-client_${{ steps.version.outputs.VERSION }}_amd64.deb` - Ubuntu/Debian package
+          
+          **Tray Icon** (Optional):
+          - `parental-control-tray_${{ steps.version.outputs.VERSION }}_amd64.deb` - System tray icon showing remaining time
           
           **Windows Client**:
           - `client-windows-x64.zip` - Windows x64 client
