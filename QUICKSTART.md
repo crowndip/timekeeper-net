@@ -1,16 +1,33 @@
 # Quick Reference Guide
 
+**Version**: v1.4.0  
+**Status**: ✅ Production Ready
+
 ## 🚀 Getting Started
 
-### 1. Install .NET 10 SDK
+### 1. Install .NET 8 SDK
 ```bash
 wget https://dot.net/v1/dotnet-install.sh
 chmod +x dotnet-install.sh
-./dotnet-install.sh --channel 10.0
+./dotnet-install.sh --channel 8.0
 export PATH="$HOME/.dotnet:$PATH"
 ```
 
-### 2. Start the Server (Development)
+### 2. Start the Server (Docker Compose)
+```bash
+# Set environment variables
+export ADMIN_PASSWORD=your_dashboard_password
+export LIMIT_ADMIN_PASSWORD=your_admin_operations_password
+export DB_PASSWORD=your_database_password
+
+# Start services
+docker-compose up -d
+
+# Access admin UI
+open http://localhost:8080
+```
+
+### 3. Start the Server (Development)
 ```bash
 # Start PostgreSQL
 docker-compose up -d postgres
@@ -18,19 +35,8 @@ docker-compose up -d postgres
 # Run web service
 cd src/ParentalControl.WebService
 dotnet run
-```
 
-### 3. Start the Server (Portainer)
-```bash
-# Build Docker image
-./scripts/build-docker-image.sh
-
-# Prepare database init script
-sudo mkdir -p /opt/parental-control/db
-sudo cp docker/init.sql /opt/parental-control/db/init.sql
-
-# Deploy via Portainer Web UI
-# See PORTAINER_DEPLOYMENT.md for details
+# Access at http://localhost:5000
 ```
 
 ### 4. Build Client Agent
@@ -45,14 +51,33 @@ cd src/ParentalControl.Client.UI
 dotnet publish -c Release -r linux-x64 --self-contained -o publish
 ```
 
+## 🔐 Authentication
+
+### Dashboard Login
+- **URL**: http://localhost:8080/login
+- **Default Password**: "admin" (set via `AdminPassword` environment variable)
+- **Session**: 8 hours
+
+### Administrator Operations
+- **Unlock Editing**: Click "🔒 Unlock Editing" button
+- **Password**: Set via `LimitAdministratorPassword` environment variable
+- **Required for**: Creating/editing/deleting users, profiles, time adjustments
+
 ## 📡 API Endpoints
 
 ### Client Endpoints
 - `POST /api/client/register` - Register computer
-- `POST /api/client/session/start` - Start session
+- `POST /api/client/session/start` - Start session (username-based)
 - `POST /api/client/usage` - Report usage
 - `POST /api/client/session/end` - End session
-- `GET /api/client/config/{id}` - Get config
+
+### Management Endpoints
+- `GET /api/users` - List users
+- `POST /api/users` - Create user
+- `PUT /api/users/{id}` - Update user
+- `DELETE /api/users/{id}` - Delete user
+- `POST /api/users/{id}/adjust-time` - Grant emergency time
+- `GET /api/users/{id}/time-status` - Get time status
 
 ### System Endpoints
 - `GET /health` - Health check

@@ -9,3 +9,5 @@ logs/
 postgres_data/
 .env
 appsettings.Development.json
+# Work folder is tracked but can be ignored in local development
+# work/

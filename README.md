@@ -1,50 +1,66 @@
 # Parental Control System - .NET 8
 
-A centralized parental control system for Linux with time tracking, enforcement, and web-based administration.
+**Version**: v1.4.0  
+**Status**: ✅ Production Ready
+
+A centralized parental control system for Linux and Windows with time tracking, enforcement, and web-based administration.
 
 ## Architecture
 
 - **Central Server**: ASP.NET Core 8 web service with PostgreSQL database
 - **Client Agent**: .NET 8 worker service running on Linux and Windows
-- **Admin UI**: Blazor Server web interface
+- **Admin UI**: Blazor Server web interface with authentication
 - **Client UI**: Avalonia (Linux) and WPF (Windows) for notifications
 
 ## Features
 
+### Core Functionality
 - ✅ Centralized time management across multiple computers
 - ✅ Cross-platform support (Linux and Windows)
 - ✅ Time limits shared across all devices
-- ✅ Daily and weekly time limits
+- ✅ Per-day time limits (Monday-Sunday)
+- ✅ Weekly time limits
 - ✅ Allowed hours configuration
 - ✅ Automatic enforcement (logout/lock)
 - ✅ Real-time usage tracking
-- ✅ Web-based administration
 - ✅ Offline mode support
 - ✅ Native UI for each platform
 
+### Security & Administration (v1.4.0)
+- ✅ **Dashboard Authentication** - Password-protected admin interface
+- ✅ **Two-Tier Security** - Separate passwords for viewing and editing
+- ✅ **Read-Only Mode** - View-only access by default
+- ✅ **Emergency Time Adjustment** - Grant extra time for exceptional situations
+- ✅ **Input Validation** - Comprehensive validation on all inputs
+- ✅ **Username Normalization** - Case-insensitive user identification
+
+### User Management
+- ✅ **Auto-User Creation** - Users automatically created on first login
+- ✅ **Account Types** - Parent, Child, Unassigned
+- ✅ **Multiple Profiles** - Different time limits per user
+- ✅ **Cross-Device Tracking** - Same user across Linux and Windows
+
 ## Quick Start
 
-### Server Deployment (Portainer)
+### Server Deployment (Docker Compose)
 
 ```bash
-# 1. Build Docker image
-./scripts/build-docker-image.sh
+# 1. Set environment variables
+export ADMIN_PASSWORD=your_dashboard_password
+export LIMIT_ADMIN_PASSWORD=your_admin_operations_password
+export DB_PASSWORD=your_database_password
 
-# 2. Prepare database init script
-sudo mkdir -p /opt/parental-control/db
-sudo cp docker/init.sql /opt/parental-control/db/init.sql
+# 2. Start services
+docker-compose up -d
 
-# 3. Deploy via Portainer Web UI
-# - Create new stack named "parental-control"
-# - Paste docker-compose.yml content
-# - Set environment variable: DB_PASSWORD=your_secure_password
-# - Deploy
-
-# 4. Access admin UI
+# 3. Access admin UI
 open http://localhost:8080
+
+# 4. Login with AdminPassword
+# Default: "admin" (change via environment variable)
 ```
 
-See [PORTAINER_DEPLOYMENT.md](PORTAINER_DEPLOYMENT.md) for detailed instructions.
+See [PORTAINER_DEPLOYMENT.md](PORTAINER_DEPLOYMENT.md) for Portainer deployment instructions.
 
 ### Client Installation
 
@@ -151,6 +167,8 @@ ParentalControl.sln
 ### Server
 
 Edit `docker-compose.yml` or set environment variables:
+- `AdminPassword`: Dashboard login password (default: "admin")
+- `LimitAdministratorPassword`: Administrator operations password
 - `DB_PASSWORD`: PostgreSQL password
 - `ConnectionStrings__DefaultConnection`: Database connection string
 
