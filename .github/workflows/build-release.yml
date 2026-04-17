@@ -37,12 +37,12 @@ jobs:
     - name: Build Windows Client (x64)
       run: |
         cd src/ParentalControl.Client.Windows
-        dotnet publish -c Release -r win-x64 --self-contained -o ../../publish/client-windows-x64
+        dotnet publish -c Release -r win-x64 --self-contained -o ../../publish/client-windows-x64 /p:EnableWindowsTargeting=true
     
     - name: Build Windows Tray Icon
       run: |
         cd src/ParentalControl.TrayIcon.Windows
-        dotnet publish -c Release -r win-x64 --self-contained -o ../../publish/tray-windows-x64
+        dotnet publish -c Release -r win-x64 --self-contained -o ../../publish/tray-windows-x64 /p:EnableWindowsTargeting=true
     
     - name: Build Server
       run: |
