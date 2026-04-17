@@ -82,13 +82,8 @@ Architecture: amd64
 Depends: systemd, libicu74 | libicu72 | libicu70
 Maintainer: Parental Control Team <support@example.com>
 Description: Parental Control Client Agent
- Centralized parental control system client for Linux.
- Tracks computer usage time and enforces time limits.
- Features:
-  - Time tracking and enforcement
-  - Offline mode support
-  - Cross-platform notification UI
-  - systemd integration
+ Centralized parental control system client for Linux with time tracking,
+ enforcement, offline mode support, and cross-platform notification UI.
 Homepage: https://github.com/crowndip/timekeeper-net
 EOF
         
