@@ -1,11 +1,11 @@
-# Parental Control System - .NET 10
+# Parental Control System - .NET 8
 
 A centralized parental control system for Linux with time tracking, enforcement, and web-based administration.
 
 ## Architecture
 
-- **Central Server**: ASP.NET Core 10 web service with PostgreSQL database
-- **Client Agent**: .NET 10 worker service running on Linux clients
+- **Central Server**: ASP.NET Core 8 web service with PostgreSQL database
+- **Client Agent**: .NET 8 worker service running on Linux clients
 - **Admin UI**: Blazor Server web interface
 - **Client UI**: Avalonia cross-platform GUI for notifications
 
@@ -124,7 +124,7 @@ ParentalControl.sln
 
 ## Requirements
 
-- .NET 10 SDK
+- .NET 8 SDK
 - PostgreSQL 16+
 - Docker & Docker Compose (for server)
 - Linux with systemd (for client)
