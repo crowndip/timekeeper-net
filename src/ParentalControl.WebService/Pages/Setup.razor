@@ -13,7 +13,36 @@
                     <h3 class="mb-0">⚠️ Database Setup Required</h3>
                 </div>
                 <div class="card-body">
-                    @if (isInitializing)
+                    @if (isChecking)
+                    {
+                        <div class="text-center">
+                            <div class="spinner-border text-primary mb-3" role="status">
+                                <span class="visually-hidden">Checking...</span>
+                            </div>
+                            <p class="lead">Checking database connection...</p>
+                        </div>
+                    }
+                    else if (!canConnect)
+                    {
+                        <div class="alert alert-danger">
+                            <h4 class="alert-heading">❌ Database Not Accessible</h4>
+                            <p>Cannot connect to the database.</p>
+                            <hr>
+                            <p class="mb-0"><strong>Connection String:</strong></p>
+                            <code class="d-block mt-2 p-2 bg-light">@connectionString</code>
+                            <hr>
+                            <p class="mb-0 mt-3"><strong>Possible Issues:</strong></p>
+                            <ul class="mt-2">
+                                <li>Database server is not running</li>
+                                <li>Incorrect connection string</li>
+                                <li>Network connectivity issues</li>
+                                <li>Firewall blocking connection</li>
+                                <li>Invalid credentials</li>
+                            </ul>
+                            <button class="btn btn-warning mt-3" @onclick="CheckConnection">Retry Connection</button>
+                        </div>
+                    }
+                    else if (isInitializing)
                     {
                         <div class="text-center">
                             <div class="spinner-border text-primary mb-3" role="status">
@@ -43,6 +72,10 @@
                     }
                     else
                     {
+                        <div class="alert alert-info">
+                            <p class="mb-0"><strong>Connection String:</strong></p>
+                            <code class="d-block mt-2 p-2 bg-light">@connectionString</code>
+                        </div>
                         <p class="lead">The database has not been initialized yet.</p>
                         <p>Click the button below to create the required tables and stored procedures.</p>
                         <hr>
@@ -59,12 +92,50 @@
 </div>
 
 @code {
+    private bool isChecking = true;
+    private bool canConnect = false;
     private bool isInitializing = false;
     private bool initSuccess = false;
     private string errorMessage = string.Empty;
+    private string connectionString = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckConnection();
+    }
+
+    private async Task CheckConnection()
+    {
+        isChecking = true;
+        errorMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            connectionString = DbInit.GetConnectionString();
+            canConnect = await DbInit.CanConnectToDatabaseAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error checking connection: {ex.Message}";
+            canConnect = false;
+        }
+        finally
+        {
+            isChecking = false;
+            StateHasChanged();
+        }
+    }
 
     private async Task InitializeDatabase()
     {
+        if (!canConnect)
+        {
+            errorMessage = "Cannot initialize database: No connection to database server.";
+            StateHasChanged();
+            return;
+        }
+
         isInitializing = true;
         errorMessage = string.Empty;
         StateHasChanged();

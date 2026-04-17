@@ -52,20 +52,30 @@ try
         var dbInit = scope.ServiceProvider.GetRequiredService<IDatabaseInitializationService>();
         try
         {
-            var isInitialized = await dbInit.IsDatabaseInitializedAsync();
-            if (!isInitialized)
+            var canConnect = await db.Database.CanConnectAsync();
+            if (!canConnect)
             {
-                Log.Warning("Database not initialized. Visit /setup to initialize.");
+                Log.Warning("Cannot connect to database. Connection string: {ConnectionString}", 
+                    connectionString.Replace(builder.Configuration["DbPassword"] ?? "", "***"));
             }
             else
             {
-                await db.Database.MigrateAsync();
-                Log.Information("Database migrations applied successfully");
+                var isInitialized = await dbInit.IsDatabaseInitializedAsync();
+                if (!isInitialized)
+                {
+                    Log.Warning("Database not initialized. Visit /setup to initialize.");
+                }
+                else
+                {
+                    await db.Database.MigrateAsync();
+                    Log.Information("Database migrations applied successfully");
+                }
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Database check failed");
+            Log.Error(ex, "Database check failed. Connection string: {ConnectionString}", 
+                connectionString.Replace(builder.Configuration["DbPassword"] ?? "", "***"));
         }
     }
 
