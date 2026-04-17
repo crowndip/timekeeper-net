@@ -1,8 +1,9 @@
 @page "/"
 @using ParentalControl.WebService.Services
 @using ParentalControl.WebService.Data
+@using Microsoft.EntityFrameworkCore
 @inject IDatabaseInitializationService DbInit
-@inject ApplicationDbContext DbContext
+@inject AppDbContext DbContext
 @inject NavigationManager Navigation
 
 <PageTitle>Parental Control System</PageTitle>
