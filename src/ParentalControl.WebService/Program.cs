@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Microsoft.EntityFrameworkCore;
 using ParentalControl.WebService.Data;
 using ParentalControl.WebService.Services;
@@ -29,6 +30,13 @@ try
     builder.Services.AddScoped<ITimeCalculationService, TimeCalculationService>();
     builder.Services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
     builder.Services.AddScoped<IUsageReportService, UsageReportService>();
+
+    builder.Services.AddHttpClient();
+    builder.Services.AddScoped(sp => 
+    {
+        var navigationManager = sp.GetRequiredService<NavigationManager>();
+        return new HttpClient { BaseAddress = new Uri(navigationManager.BaseUri) };
+    });
 
     builder.Services.AddControllers();
     builder.Services.AddEndpointsApiExplorer();
