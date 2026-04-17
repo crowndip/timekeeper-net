@@ -91,21 +91,9 @@ mkdir -p "$INSTALL_DIR"
 # Copy files
 cp -r client-linux-${ARCH}/* "$INSTALL_DIR/"
 
-# Create appsettings.json
-cat > "$INSTALL_DIR/appsettings.json" << EOF
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.Hosting.Lifetime": "Information"
-    }
-  },
-  "ParentalControl": {
-    "ServerUrl": "$SERVER_URL",
-    "TickIntervalSeconds": 60
-  }
-}
-EOF
+# Set server URL using command-line
+echo "Configuring server URL..."
+"$INSTALL_DIR/ParentalControl.Client" set server-url "$SERVER_URL"
 
 # Create systemd service
 cat > /etc/systemd/system/${SERVICE_NAME}.service << EOF
@@ -153,8 +141,11 @@ if systemctl is-active --quiet "$SERVICE_NAME"; then
     echo "Service status:"
     systemctl status "$SERVICE_NAME" --no-pager -l
     echo ""
-    echo "Configuration file: $INSTALL_DIR/appsettings.json"
     echo "Logs: journalctl -u $SERVICE_NAME -f"
+    echo ""
+    echo "To change server URL:"
+    echo "  sudo $INSTALL_DIR/ParentalControl.Client set server-url <new-url>"
+    echo "  sudo systemctl restart $SERVICE_NAME"
     echo ""
     echo "To uninstall:"
     echo "  sudo systemctl stop $SERVICE_NAME"

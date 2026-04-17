@@ -32,27 +32,10 @@ New-Item -ItemType Directory -Force -Path "$dataPath\Logs" | Out-Null
 Write-Host "Copying binaries..." -ForegroundColor Yellow
 Copy-Item -Path ".\*" -Destination $installPath -Recurse -Force
 
-# Create configuration file
-Write-Host "Creating configuration..." -ForegroundColor Yellow
-$config = @"
-{
-  "ParentalControl": {
-    "ServerUrl": "$ServerUrl",
-    "TickIntervalSeconds": 60,
-    "OfflineMode": {
-      "Enabled": true,
-      "CacheDurationMinutes": 1440
-    }
-  },
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.Hosting.Lifetime": "Information"
-    }
-  }
-}
-"@
-$config | Out-File -FilePath "$dataPath\appsettings.json" -Encoding UTF8
+# Set server URL using command-line
+Write-Host "Configuring server URL..." -ForegroundColor Yellow
+$exePath = Join-Path $installPath "ParentalControl.Client.Windows.exe"
+& $exePath set server-url $ServerUrl
 
 # Stop service if exists
 $existingService = Get-Service -Name $serviceName -ErrorAction SilentlyContinue
@@ -91,10 +74,10 @@ if ($service.Status -eq "Running") {
     Write-Host "Service Status: Running" -ForegroundColor Green
     Write-Host "Install Path: $installPath" -ForegroundColor Cyan
     Write-Host "Data Path: $dataPath" -ForegroundColor Cyan
-    Write-Host "Configuration: $dataPath\appsettings.json" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "To change server URL, edit: $dataPath\appsettings.json" -ForegroundColor Yellow
-    Write-Host "Then restart service: Restart-Service $serviceName" -ForegroundColor Yellow
+    Write-Host "To change server URL, run:" -ForegroundColor Yellow
+    Write-Host "  $exePath set server-url <new-url>" -ForegroundColor Cyan
+    Write-Host "  Restart-Service $serviceName" -ForegroundColor Cyan
 } else {
     Write-Host ""
     Write-Host "WARNING: Service installed but not running" -ForegroundColor Yellow
