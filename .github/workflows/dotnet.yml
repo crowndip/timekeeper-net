@@ -73,24 +73,24 @@ jobs:
         cp src/ParentalControl.Client/appsettings.json ${PKG_DIR}/opt/parental-control/appsettings.json
         
         # Create control file
-        cat > ${PKG_DIR}/DEBIAN/control << EOF
-        Package: ${PKG_NAME}
-        Version: ${VERSION}
-        Section: admin
-        Priority: optional
-        Architecture: ${ARCH}
-        Depends: systemd, libicu74 | libicu72 | libicu70
-        Maintainer: Parental Control Team <support@example.com>
-        Description: Parental Control Client Agent
-         Centralized parental control system client for Linux.
-         Tracks computer usage time and enforces time limits.
-         Features:
-          - Time tracking and enforcement
-          - Offline mode support
-          - Cross-platform notification UI
-          - systemd integration
-        Homepage: https://github.com/crowndip/timekeeper-net
-        EOF
+        cat > ${PKG_DIR}/DEBIAN/control << 'EOF'
+Package: parental-control-client
+Version: 1.0.1
+Section: admin
+Priority: optional
+Architecture: amd64
+Depends: systemd, libicu74 | libicu72 | libicu70
+Maintainer: Parental Control Team <support@example.com>
+Description: Parental Control Client Agent
+ Centralized parental control system client for Linux.
+ Tracks computer usage time and enforces time limits.
+ Features:
+  - Time tracking and enforcement
+  - Offline mode support
+  - Cross-platform notification UI
+  - systemd integration
+Homepage: https://github.com/crowndip/timekeeper-net
+EOF
         
         # Create postinst script
         cat > ${PKG_DIR}/DEBIAN/postinst << 'EOF'
