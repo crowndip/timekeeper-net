@@ -108,15 +108,15 @@ jobs:
         cp WINDOWS_CLIENT.md artifacts/client-windows/
         
         # Create archives
-        cd artifacts/server && tar -czf ../server-deployment.tar.gz * && cd ../..
+        cd artifacts/server && tar -czf ../webservice-image.tar.gz * && cd ../..
         cd artifacts/client && tar -czf ../client-linux-x64.tar.gz * && cd ../..
         cd artifacts/client-windows && zip -r ../client-windows-x64.zip * && cd ../..
     
     - name: Upload Server Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: server-deployment
-        path: artifacts/server-deployment.tar.gz
+        name: webservice-image
+        path: artifacts/webservice-image.tar.gz
         retention-days: 90
     
     - name: Upload Client Artifacts (Linux)
@@ -138,39 +138,66 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: |
-          artifacts/server-deployment.tar.gz
+          artifacts/webservice-image.tar.gz
+          artifacts/docker-compose.yml
+          artifacts/deploy-server.sh
           artifacts/client-linux-x64.tar.gz
           artifacts/client-windows-x64.zip
         body: |
-          ## Server Deployment (Portainer)
+          ## 🚀 Server Deployment (Portainer)
           
-          Download `server-deployment.tar.gz` and extract:
+          ### Option 1: Automated Deployment (Recommended)
           
-          **IMPORTANT:** You must load and tag the Docker image before deploying in Portainer!
+          Download and run the automated deployment script:
           
           ```bash
-          # Extract the package
-          tar -xzf server-deployment.tar.gz
+          # Download the script
+          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/deploy-server.sh
           
-          # Load the Docker image
-          docker load -i webservice-image.tar
-          # Output: Loaded image: parental-control-webservice:3bc9126e0f620250aa3506827ddb69477b24af69
+          # Make it executable
+          chmod +x deploy-server.sh
           
-          # Tag it as 'latest' (replace <hash> with the one from above)
-          docker tag parental-control-webservice:<hash> parental-control-webservice:latest
-          
-          # Verify
-          docker images | grep parental-control
-          
-          # Prepare database init script
-          sudo mkdir -p /opt/parental-control/db
-          sudo cp init.sql /opt/parental-control/db/init.sql
-          
-          # Now deploy in Portainer with docker-compose.yml
-          # Set DB_PASSWORD environment variable
+          # Run with sudo
+          sudo ./deploy-server.sh
           ```
           
-          **See [PORTAINER_DEPLOYMENT.md](https://github.com/crowndip/timekeeper-net/blob/main/PORTAINER_DEPLOYMENT.md) for complete step-by-step instructions.**
+          The script will:
+          - ✅ Download the latest Docker image
+          - ✅ Extract and load it into Docker
+          - ✅ Tag it as 'latest'
+          - ✅ Verify the installation
+          - ✅ Clean up temporary files
+          
+          Then simply **reload your Portainer stack** to use the new image!
+          
+          ### Option 2: Manual Deployment
+          
+          **First Time Setup:**
+          
+          1. **Copy `docker-compose.yml`** from this release page
+          2. **Create new stack in Portainer** (name it "parental-control")
+          3. **Paste the docker-compose.yml content**
+          4. **Set environment variable:** `DB_PASSWORD=your_secure_password`
+          5. **Deploy the stack**
+          6. **Run the deployment script** (see Option 1 above)
+          7. **Reload the stack in Portainer**
+          8. **Visit** `http://localhost:8080/setup` to initialize the database
+          
+          **Updating Existing Installation:**
+          
+          ```bash
+          # Download and extract
+          wget https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/webservice-image.tar.gz
+          tar -xzf webservice-image.tar.gz
+          
+          # Load and tag
+          docker load -i webservice-image.tar
+          docker tag parental-control-webservice:<hash> parental-control-webservice:latest
+          
+          # Reload stack in Portainer
+          ```
+          
+          **Note:** Database initialization is handled through the web UI at `/setup` - no SQL scripts needed!
           
           ## Linux Client Installation
           
