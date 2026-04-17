@@ -1,0 +1,142 @@
+@page "/dbinfo"
+@using ParentalControl.WebService.Data
+@using ParentalControl.WebService.Models
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext DbContext
+
+<PageTitle>Database Info</PageTitle>
+
+<div style="padding: 20px; font-family: monospace;">
+    <h2>Database Information</h2>
+    
+    @if (isLoading)
+    {
+        <p>Loading...</p>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div style="color: red; padding: 10px; background: #fee; border: 1px solid red;">
+            <strong>Error:</strong> @errorMessage
+        </div>
+    }
+    else
+    {
+        <h3>Tables</h3>
+        <table style="border-collapse: collapse; width: 100%;">
+            <thead>
+                <tr style="background: #eee;">
+                    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Table Name</th>
+                    <th style="border: 1px solid #ccc; padding: 8px; text-align: left;">Row Count</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var table in tableCounts)
+                {
+                    <tr>
+                        <td style="border: 1px solid #ccc; padding: 8px;">@table.Key</td>
+                        <td style="border: 1px solid #ccc; padding: 8px;">@table.Value</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <h3 style="margin-top: 30px;">Users Table</h3>
+        @if (users.Any())
+        {
+            <table style="border-collapse: collapse; width: 100%;">
+                <thead>
+                    <tr style="background: #eee;">
+                        <th style="border: 1px solid #ccc; padding: 8px;">ID</th>
+                        <th style="border: 1px solid #ccc; padding: 8px;">Username</th>
+                        <th style="border: 1px solid #ccc; padding: 8px;">Display Name</th>
+                        <th style="border: 1px solid #ccc; padding: 8px;">Is Active</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var user in users)
+                    {
+                        <tr>
+                            <td style="border: 1px solid #ccc; padding: 8px;">@user.Id</td>
+                            <td style="border: 1px solid #ccc; padding: 8px;">@user.Username</td>
+                            <td style="border: 1px solid #ccc; padding: 8px;">@user.FullName</td>
+                            <td style="border: 1px solid #ccc; padding: 8px;">@user.IsActive</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No users found.</p>
+        }
+
+        <h3 style="margin-top: 30px;">Computers Table</h3>
+        @if (computers.Any())
+        {
+            <table style="border-collapse: collapse; width: 100%;">
+                <thead>
+                    <tr style="background: #eee;">
+                        <th style="border: 1px solid #ccc; padding: 8px;">ID</th>
+                        <th style="border: 1px solid #ccc; padding: 8px;">Hostname</th>
+                        <th style="border: 1px solid #ccc; padding: 8px;">Last Seen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var computer in computers)
+                    {
+                        <tr>
+                            <td style="border: 1px solid #ccc; padding: 8px;">@computer.Id</td>
+                            <td style="border: 1px solid #ccc; padding: 8px;">@computer.Hostname</td>
+                            <td style="border: 1px solid #ccc; padding: 8px;">@computer.LastSeenAt</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <p>No computers found.</p>
+        }
+
+        <div style="margin-top: 30px;">
+            <a href="/" style="padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px;">Back to Dashboard</a>
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+    private Dictionary<string, int> tableCounts = new();
+    private List<User> users = new();
+    private List<Computer> computers = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Get table counts
+            tableCounts["Users"] = await DbContext.Users.CountAsync();
+            tableCounts["TimeProfiles"] = await DbContext.TimeProfiles.CountAsync();
+            tableCounts["Computers"] = await DbContext.Computers.CountAsync();
+            tableCounts["Sessions"] = await DbContext.Sessions.CountAsync();
+            tableCounts["TimeUsage"] = await DbContext.TimeUsage.CountAsync();
+            tableCounts["AllowedHours"] = await DbContext.AllowedHours.CountAsync();
+            tableCounts["TimeAdjustments"] = await DbContext.TimeAdjustments.CountAsync();
+
+            // Get users
+            users = await DbContext.Users.ToListAsync();
+
+            // Get computers
+            computers = await DbContext.Computers.ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"{ex.GetType().Name}: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+}
