@@ -64,7 +64,8 @@ public class ParentalControlWorker : BackgroundService
             return;
         }
 
-        var userId = Guid.NewGuid(); // TODO: Map username to userId from server
+        // Server will map username to userId automatically
+        var userId = Guid.Empty; // Placeholder, server determines actual userId
         await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 1, 0);
 
         var pendingRecords = await _cache.GetPendingRecordsAsync();

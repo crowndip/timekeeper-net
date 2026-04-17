@@ -50,12 +50,12 @@ public class ClientController : ControllerBase
     [HttpPost("session/start")]
     public async Task<ActionResult<SessionStartResponse>> StartSession(SessionStartRequest request)
     {
-        // Auto-create user if not exists
-        await EnsureUserExistsAsync(request.UserId, request.Username);
+        // Get or create user by username
+        var userId = await EnsureUserExistsAsync(request.Username);
         
         var session = new Session
         {
-            UserId = request.UserId,
+            UserId = userId,
             ComputerId = request.ComputerId,
             SessionStart = request.SessionStart
         };
@@ -63,7 +63,7 @@ public class ClientController : ControllerBase
         _context.Sessions.Add(session);
         await _context.SaveChangesAsync();
         
-        var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(request.UserId, DateOnly.FromDateTime(request.SessionStart));
+        var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(userId, DateOnly.FromDateTime(request.SessionStart));
         return new SessionStartResponse(session.Id, timeRemaining);
     }
     
@@ -76,19 +76,19 @@ public class ClientController : ControllerBase
         if (request.MinutesIdle < 0 || request.MinutesIdle > 1440)
             return BadRequest("Invalid MinutesIdle value");
         
-        // Auto-create user if not exists
-        await EnsureUserExistsAsync(request.UserId, request.Username);
+        // Get or create user by username
+        var userId = await EnsureUserExistsAsync(request.Username);
         
         var date = DateOnly.FromDateTime(request.Timestamp);
         
         var usage = await _context.TimeUsage
-            .FirstOrDefaultAsync(u => u.UserId == request.UserId && u.ComputerId == request.ComputerId && u.UsageDate == date);
+            .FirstOrDefaultAsync(u => u.UserId == userId && u.ComputerId == request.ComputerId && u.UsageDate == date);
         
         if (usage == null)
         {
             usage = new TimeUsage
             {
-                UserId = request.UserId,
+                UserId = userId,
                 ComputerId = request.ComputerId,
                 UsageDate = date,
                 SessionId = request.SessionId
@@ -113,10 +113,10 @@ public class ClientController : ControllerBase
         
         await _context.SaveChangesAsync();
         
-        var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(request.UserId, date);
-        var shouldEnforce = await _timeCalc.ShouldEnforceAsync(request.UserId, timeRemaining);
+        var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(userId, date);
+        var shouldEnforce = await _timeCalc.ShouldEnforceAsync(userId, timeRemaining);
         
-        var profile = await _context.TimeProfiles.FirstOrDefaultAsync(p => p.UserId == request.UserId && p.IsActive);
+        var profile = await _context.TimeProfiles.FirstOrDefaultAsync(p => p.UserId == userId && p.IsActive);
         
         return new UsageReportResponse(
             timeRemaining,
@@ -165,14 +165,14 @@ public class ClientController : ControllerBase
         return new ClientConfigResponse(users, profiles, allowedHours);
     }
     
-    private async Task EnsureUserExistsAsync(Guid userId, string username)
+    private async Task<Guid> EnsureUserExistsAsync(string username)
     {
-        var exists = await _context.Users.AnyAsync(u => u.Id == userId);
-        if (!exists)
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
+        if (user == null)
         {
-            var user = new User
+            user = new User
             {
-                Id = userId,
+                Id = Guid.NewGuid(),
                 Username = username,
                 AccountType = AccountType.Unassigned,
                 IsActive = true,
@@ -182,5 +182,6 @@ public class ClientController : ControllerBase
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
         }
+        return user.Id;
     }
 }
