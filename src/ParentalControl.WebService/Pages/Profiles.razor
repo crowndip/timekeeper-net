@@ -1,13 +1,326 @@
 @page "/profiles"
+@using ParentalControl.WebService.Models
+@using ParentalControl.WebService.Data
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.JSInterop
+@inject AppDbContext DbContext
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Time Profiles</PageTitle>
 
-<div style="padding: 40px; text-align: center;">
-    <h1>⏱️ Time Profiles</h1>
-    <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">This page is under construction.</p>
-    <p>Time profile management features will be available in a future release.</p>
-    <div style="margin-top: 30px;">
-        <a href="/" style="padding: 12px 24px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Back to Dashboard</a>
-        <a href="/dbinfo" style="margin-left: 10px; padding: 12px 24px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">View Database Info</a>
+<div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0;">⏱️ Time Profiles</h1>
+        <button @onclick="ShowAddDialog" style="padding: 10px 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            + Add Profile
+        </button>
+    </div>
+
+    @if (loading)
+    {
+        <p>Loading profiles...</p>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div style="padding: 15px; background: #fee; border: 1px solid #f00; border-radius: 8px; color: #c00; margin-bottom: 20px;">
+            @errorMessage
+        </div>
+    }
+    else
+    {
+        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <thead style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
+                <tr>
+                    <th style="padding: 12px; text-align: left;">Profile Name</th>
+                    <th style="padding: 12px; text-align: left;">User</th>
+                    <th style="padding: 12px; text-align: center;">Status</th>
+                    <th style="padding: 12px; text-align: center;">Daily Limits</th>
+                    <th style="padding: 12px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var profile in profiles)
+                {
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 12px;">@profile.Name</td>
+                        <td style="padding: 12px;">@GetUsername(profile.UserId)</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: @(profile.IsActive ? "#10b981" : "#6b7280"); color: white;">
+                                @(profile.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </td>
+                        <td style="padding: 12px; text-align: center; font-size: 12px;">
+                            M:@profile.MondayLimit T:@profile.TuesdayLimit W:@profile.WednesdayLimit<br/>
+                            Th:@profile.ThursdayLimit F:@profile.FridayLimit Sa:@profile.SaturdayLimit Su:@profile.SundayLimit
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button @onclick="() => ShowEditDialog(profile)" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">Edit</button>
+                            <button @onclick="() => DeleteProfile(profile)" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (profiles.Count == 0)
+        {
+            <p style="text-align: center; padding: 40px; color: #6b7280;">No profiles found. Click "Add Profile" to create one.</p>
+        }
+    }
+
+    <div style="margin-top: 20px;">
+        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; display: inline-block;">Back to Dashboard</a>
     </div>
 </div>
+
+@if (showDialog)
+{
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @onclick="CloseDialog">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;" @onclick:stopPropagation="true">
+            <h2 style="margin-top: 0;">@(editingProfile == null ? "Add Profile" : "Edit Profile")</h2>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Profile Name *</label>
+                <input @bind="formProfile.Name" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">User *</label>
+                <select @bind="formProfile.UserId" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                    <option value="@Guid.Empty">Select User</option>
+                    @foreach (var user in users.Where(u => u.AccountType == AccountType.Child))
+                    {
+                        <option value="@user.Id">@user.Username</option>
+                    }
+                </select>
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Daily Limits (minutes, 0 = no limit)</label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div>
+                        <label style="font-size: 12px;">Monday</label>
+                        <input type="number" @bind="formProfile.MondayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                    </div>
+                    <div>
+                        <label style="font-size: 12px;">Tuesday</label>
+                        <input type="number" @bind="formProfile.TuesdayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                    </div>
+                    <div>
+                        <label style="font-size: 12px;">Wednesday</label>
+                        <input type="number" @bind="formProfile.WednesdayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                    </div>
+                    <div>
+                        <label style="font-size: 12px;">Thursday</label>
+                        <input type="number" @bind="formProfile.ThursdayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                    </div>
+                    <div>
+                        <label style="font-size: 12px;">Friday</label>
+                        <input type="number" @bind="formProfile.FridayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                    </div>
+                    <div>
+                        <label style="font-size: 12px;">Saturday</label>
+                        <input type="number" @bind="formProfile.SaturdayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                    </div>
+                    <div>
+                        <label style="font-size: 12px;">Sunday</label>
+                        <input type="number" @bind="formProfile.SundayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" @bind="formProfile.IsActive" style="margin-right: 8px;" />
+                    <span>Active (deactivates other profiles for this user)</span>
+                </label>
+            </div>
+
+            @if (!string.IsNullOrEmpty(dialogError))
+            {
+                <div style="padding: 10px; background: #fee; border: 1px solid #f00; border-radius: 4px; color: #c00; margin-bottom: 15px;">
+                    @dialogError
+                </div>
+            }
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button @onclick="CloseDialog" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer;">Cancel</button>
+                <button @onclick="SaveProfile" disabled="@saving" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer;">
+                    @(saving ? "Saving..." : "Save")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<TimeProfile> profiles = new();
+    private List<User> users = new();
+    private bool loading = true;
+    private string errorMessage = string.Empty;
+    private bool showDialog = false;
+    private TimeProfile? editingProfile = null;
+    private TimeProfile formProfile = new();
+    private string dialogError = string.Empty;
+    private bool saving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        loading = true;
+        errorMessage = string.Empty;
+        try
+        {
+            profiles = await DbContext.TimeProfiles.OrderBy(p => p.Name).ToListAsync();
+            users = await DbContext.Users.Where(u => u.IsActive).OrderBy(u => u.Username).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load data: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private string GetUsername(Guid userId)
+    {
+        return users.FirstOrDefault(u => u.Id == userId)?.Username ?? "Unknown";
+    }
+
+    private void ShowAddDialog()
+    {
+        editingProfile = null;
+        formProfile = new TimeProfile { IsActive = false };
+        dialogError = string.Empty;
+        showDialog = true;
+    }
+
+    private void ShowEditDialog(TimeProfile profile)
+    {
+        editingProfile = profile;
+        formProfile = new TimeProfile
+        {
+            Id = profile.Id,
+            UserId = profile.UserId,
+            Name = profile.Name,
+            MondayLimit = profile.MondayLimit,
+            TuesdayLimit = profile.TuesdayLimit,
+            WednesdayLimit = profile.WednesdayLimit,
+            ThursdayLimit = profile.ThursdayLimit,
+            FridayLimit = profile.FridayLimit,
+            SaturdayLimit = profile.SaturdayLimit,
+            SundayLimit = profile.SundayLimit,
+            IsActive = profile.IsActive
+        };
+        dialogError = string.Empty;
+        showDialog = true;
+    }
+
+    private void CloseDialog()
+    {
+        showDialog = false;
+        editingProfile = null;
+        dialogError = string.Empty;
+    }
+
+    private async Task SaveProfile()
+    {
+        if (string.IsNullOrWhiteSpace(formProfile.Name))
+        {
+            dialogError = "Profile name is required";
+            return;
+        }
+
+        if (formProfile.UserId == Guid.Empty)
+        {
+            dialogError = "Please select a user";
+            return;
+        }
+
+        saving = true;
+        dialogError = string.Empty;
+        try
+        {
+            if (editingProfile == null)
+            {
+                // Create new
+                formProfile.Id = Guid.NewGuid();
+                formProfile.CreatedAt = DateTime.UtcNow;
+                formProfile.UpdatedAt = DateTime.UtcNow;
+                
+                if (formProfile.IsActive)
+                {
+                    var otherProfiles = await DbContext.TimeProfiles
+                        .Where(p => p.UserId == formProfile.UserId && p.IsActive)
+                        .ToListAsync();
+                    otherProfiles.ForEach(p => p.IsActive = false);
+                }
+                
+                DbContext.TimeProfiles.Add(formProfile);
+            }
+            else
+            {
+                // Update existing
+                var existing = await DbContext.TimeProfiles.FindAsync(editingProfile.Id);
+                if (existing != null)
+                {
+                    existing.Name = formProfile.Name;
+                    existing.UserId = formProfile.UserId;
+                    existing.MondayLimit = formProfile.MondayLimit;
+                    existing.TuesdayLimit = formProfile.TuesdayLimit;
+                    existing.WednesdayLimit = formProfile.WednesdayLimit;
+                    existing.ThursdayLimit = formProfile.ThursdayLimit;
+                    existing.FridayLimit = formProfile.FridayLimit;
+                    existing.SaturdayLimit = formProfile.SaturdayLimit;
+                    existing.SundayLimit = formProfile.SundayLimit;
+                    existing.IsActive = formProfile.IsActive;
+                    existing.UpdatedAt = DateTime.UtcNow;
+
+                    if (formProfile.IsActive)
+                    {
+                        var otherProfiles = await DbContext.TimeProfiles
+                            .Where(p => p.UserId == formProfile.UserId && p.Id != existing.Id && p.IsActive)
+                            .ToListAsync();
+                        otherProfiles.ForEach(p => p.IsActive = false);
+                    }
+                }
+            }
+
+            await DbContext.SaveChangesAsync();
+            await LoadData();
+            CloseDialog();
+        }
+        catch (Exception ex)
+        {
+            dialogError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task DeleteProfile(TimeProfile profile)
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete profile '{profile.Name}'?"))
+            return;
+
+        try
+        {
+            DbContext.TimeProfiles.Remove(profile);
+            await DbContext.SaveChangesAsync();
+            await LoadData();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete profile: {ex.Message}";
+        }
+    }
+}

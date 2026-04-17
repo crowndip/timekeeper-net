@@ -1,13 +1,243 @@
 @page "/computers"
+@using ParentalControl.WebService.Models
+@using ParentalControl.WebService.Data
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.JSInterop
+@inject AppDbContext DbContext
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Devices</PageTitle>
 
-<div style="padding: 40px; text-align: center;">
-    <h1>💻 Registered Devices</h1>
-    <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">This page is under construction.</p>
-    <p>Device management features will be available in a future release.</p>
-    <div style="margin-top: 30px;">
-        <a href="/" style="padding: 12px 24px; background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Back to Dashboard</a>
-        <a href="/dbinfo" style="margin-left: 10px; padding: 12px 24px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">View Database Info</a>
+<div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+    <h1 style="margin-bottom: 20px;">💻 Registered Devices</h1>
+
+    @if (loading)
+    {
+        <p>Loading devices...</p>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div style="padding: 15px; background: #fee; border: 1px solid #f00; border-radius: 8px; color: #c00; margin-bottom: 20px;">
+            @errorMessage
+        </div>
+    }
+    else
+    {
+        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <thead style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
+                <tr>
+                    <th style="padding: 12px; text-align: left;">Hostname</th>
+                    <th style="padding: 12px; text-align: left;">Machine ID</th>
+                    <th style="padding: 12px; text-align: left;">OS Info</th>
+                    <th style="padding: 12px; text-align: center;">Status</th>
+                    <th style="padding: 12px; text-align: center;">Last Seen</th>
+                    <th style="padding: 12px; text-align: center;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var computer in computers)
+                {
+                    var isOnline = computer.LastSeenAt.HasValue && (DateTime.UtcNow - computer.LastSeenAt.Value).TotalMinutes < 5;
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 12px;">@computer.Hostname</td>
+                        <td style="padding: 12px; font-family: monospace; font-size: 12px;">@computer.MachineId</td>
+                        <td style="padding: 12px;">@(computer.OsInfo ?? "Unknown")</td>
+                        <td style="padding: 12px; text-align: center;">
+                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: @(computer.IsActive ? (isOnline ? "#10b981" : "#f59e0b") : "#6b7280"); color: white;">
+                                @(computer.IsActive ? (isOnline ? "Online" : "Offline") : "Inactive")
+                            </span>
+                        </td>
+                        <td style="padding: 12px; text-align: center; font-size: 12px;">
+                            @(computer.LastSeenAt.HasValue ? GetRelativeTime(computer.LastSeenAt.Value) : "Never")
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button @onclick="() => ShowDetails(computer)" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">Details</button>
+                            <button @onclick="() => ToggleActive(computer)" style="padding: 6px 12px; margin-right: 5px; background: @(computer.IsActive ? "#f59e0b" : "#10b981"); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                @(computer.IsActive ? "Disable" : "Enable")
+                            </button>
+                            <button @onclick="() => DeleteComputer(computer)" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (computers.Count == 0)
+        {
+            <p style="text-align: center; padding: 40px; color: #6b7280;">No devices registered yet. Devices will appear here when clients connect.</p>
+        }
+    }
+
+    <div style="margin-top: 20px;">
+        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; display: inline-block;">Back to Dashboard</a>
     </div>
 </div>
+
+@if (showDetailsDialog && selectedComputer != null)
+{
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @onclick="CloseDetails">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%;" @onclick:stopPropagation="true">
+            <h2 style="margin-top: 0;">Device Details</h2>
+            
+            <div style="margin-bottom: 15px;">
+                <strong>Hostname:</strong> @selectedComputer.Hostname
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>Machine ID:</strong><br/>
+                <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; display: block; word-break: break-all;">@selectedComputer.MachineId</code>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>OS Info:</strong> @(selectedComputer.OsInfo ?? "Unknown")
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>Last Seen:</strong> @(selectedComputer.LastSeenAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Never")
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>Status:</strong> @(selectedComputer.IsActive ? "Active" : "Inactive")
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>API Key:</strong><br/>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; flex: 1; word-break: break-all;">
+                        @(showApiKey ? selectedComputer.ApiKey : "••••••••••••••••")
+                    </code>
+                    <button @onclick="ToggleApiKey" style="padding: 6px 12px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        @(showApiKey ? "Hide" : "Show")
+                    </button>
+                </div>
+            </div>
+            <div style="margin-bottom: 20px;">
+                <button @onclick="RegenerateApiKey" style="padding: 8px 16px; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    Regenerate API Key
+                </button>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+                <button @onclick="CloseDetails" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<Computer> computers = new();
+    private bool loading = true;
+    private string errorMessage = string.Empty;
+    private bool showDetailsDialog = false;
+    private Computer? selectedComputer = null;
+    private bool showApiKey = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadComputers();
+    }
+
+    private async Task LoadComputers()
+    {
+        loading = true;
+        errorMessage = string.Empty;
+        try
+        {
+            computers = await DbContext.Computers.OrderByDescending(c => c.LastSeenAt).ToListAsync();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load devices: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private string GetRelativeTime(DateTime dateTime)
+    {
+        var diff = DateTime.UtcNow - dateTime;
+        if (diff.TotalMinutes < 1) return "Just now";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
+        return $"{(int)diff.TotalDays}d ago";
+    }
+
+    private void ShowDetails(Computer computer)
+    {
+        selectedComputer = computer;
+        showApiKey = false;
+        showDetailsDialog = true;
+    }
+
+    private void CloseDetails()
+    {
+        showDetailsDialog = false;
+        selectedComputer = null;
+        showApiKey = false;
+    }
+
+    private void ToggleApiKey()
+    {
+        showApiKey = !showApiKey;
+    }
+
+    private async Task ToggleActive(Computer computer)
+    {
+        try
+        {
+            computer.IsActive = !computer.IsActive;
+            await DbContext.SaveChangesAsync();
+            await LoadComputers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to toggle status: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteComputer(Computer computer)
+    {
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete device '{computer.Hostname}'?"))
+            return;
+
+        try
+        {
+            DbContext.Computers.Remove(computer);
+            await DbContext.SaveChangesAsync();
+            await LoadComputers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete device: {ex.Message}";
+        }
+    }
+
+    private async Task RegenerateApiKey()
+    {
+        if (selectedComputer == null) return;
+
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to regenerate the API key? The client will need to be reconfigured."))
+            return;
+
+        try
+        {
+            var computer = await DbContext.Computers.FindAsync(selectedComputer.Id);
+            if (computer != null)
+            {
+                computer.ApiKey = GenerateApiKey();
+                await DbContext.SaveChangesAsync();
+                selectedComputer = computer;
+                await LoadComputers();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to regenerate API key: {ex.Message}";
+        }
+    }
+
+    private static string GenerateApiKey()
+    {
+        var bytes = new byte[32];
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+        rng.GetBytes(bytes);
+        return Convert.ToBase64String(bytes).Replace("+", "").Replace("/", "").Replace("=", "")[..32];
+    }
+}
