@@ -46,6 +46,54 @@ See [PORTAINER_DEPLOYMENT.md](PORTAINER_DEPLOYMENT.md) for detailed instructions
 
 ### Client Installation
 
+#### Option 1: Ubuntu/Debian (.deb package) - Recommended
+
+Download the latest `.deb` package from [Releases](https://github.com/crowndip/timekeeper-net/releases):
+
+```bash
+# Download and install
+wget https://github.com/crowndip/timekeeper-net/releases/download/v1.0.1/parental-control-client_1.0.1_amd64.deb
+sudo dpkg -i parental-control-client_1.0.1_amd64.deb
+
+# Configure server URL
+sudo nano /opt/parental-control/appsettings.json
+# Set "ServerUrl": "http://your-server-ip:8080"
+
+# Start service
+sudo systemctl start parental-control-client
+
+# Check status
+sudo systemctl status parental-control-client
+```
+
+**Dependencies**: Automatically installs `systemd` and `libicu` libraries.
+
+#### Option 2: Generic Linux (tar.gz)
+
+Download the latest `client-linux-x64.tar.gz` from [Releases](https://github.com/crowndip/timekeeper-net/releases):
+
+```bash
+# Download and extract
+wget https://github.com/crowndip/timekeeper-net/releases/download/v1.0.1/client-linux-x64.tar.gz
+tar -xzf client-linux-x64.tar.gz
+cd client-linux-x64
+
+# Install
+sudo ./install-client.sh
+
+# Configure server URL
+sudo nano /opt/parental-control/appsettings.json
+# Set "ServerUrl": "http://your-server-ip:8080"
+
+# Start service
+sudo systemctl start parental-control-client
+
+# Check status
+sudo systemctl status parental-control-client
+```
+
+#### Option 3: Build from Source
+
 ```bash
 # Build client
 cd src/ParentalControl.Client
