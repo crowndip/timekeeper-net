@@ -24,13 +24,24 @@ public class TimeTracker : ITimeTracker
     {
         var isIdle = await _sessionMonitor.IsSessionIdleAsync(session.SessionId);
         
+        // Generate a consistent Guid from the session ID string
+        var sessionGuid = GenerateGuidFromString(session.SessionId);
+        
         await _cache.IncrementUsageAsync(
             session.UserId,
             session.Username,
-            Guid.Parse(session.SessionId),
+            sessionGuid,
             activeMinutes: isIdle ? 0 : 1,
             idleMinutes: isIdle ? 1 : 0
         );
+    }
+    
+    private static Guid GenerateGuidFromString(string input)
+    {
+        // Create a deterministic Guid from a string
+        using var md5 = System.Security.Cryptography.MD5.Create();
+        var hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
+        return new Guid(hash);
     }
     
     public Task<List<UsageRecord>> GetPendingUsageAsync() => _cache.GetPendingRecordsAsync();
