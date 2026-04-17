@@ -1,13 +1,285 @@
 @page "/users"
+@using ParentalControl.WebService.Models
+@using System.Net.Http.Json
+@using Microsoft.JSInterop
+@inject HttpClient Http
+@inject IJSRuntime JS
 
-<PageTitle>Users</PageTitle>
+<PageTitle>Users Management</PageTitle>
 
-<div style="padding: 40px; text-align: center;">
-    <h1>👥 Users Management</h1>
-    <p style="font-size: 1.2rem; color: #666; margin: 20px 0;">This page is under construction.</p>
-    <p>User management features will be available in a future release.</p>
-    <div style="margin-top: 30px;">
-        <a href="/" style="padding: 12px 24px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">Back to Dashboard</a>
-        <a href="/dbinfo" style="margin-left: 10px; padding: 12px 24px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 600;">View Database Info</a>
+<div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0;">👥 Users Management</h1>
+        <button @onclick="ShowAddDialog" style="padding: 10px 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+            + Add User
+        </button>
+    </div>
+
+    @if (loading)
+    {
+        <p>Loading users...</p>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div style="padding: 15px; background: #fee; border: 1px solid #f00; border-radius: 8px; color: #c00; margin-bottom: 20px;">
+            @errorMessage
+        </div>
+    }
+    else
+    {
+        <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <thead style="background: #f3f4f6;">
+                <tr>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Username</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Full Name</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Email</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Account Type</th>
+                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;">Active</th>
+                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in users)
+                {
+                    <tr style="border-bottom: 1px solid #e5e7eb;">
+                        <td style="padding: 12px;">@user.Username</td>
+                        <td style="padding: 12px;">@(user.FullName ?? "-")</td>
+                        <td style="padding: 12px;">@(user.Email ?? "-")</td>
+                        <td style="padding: 12px;">
+                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: @GetAccountTypeBg(user.AccountType); color: white;">
+                                @user.AccountType
+                            </span>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button @onclick="() => ToggleActive(user)" style="padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer; background: @(user.IsActive ? "#10b981" : "#6b7280"); color: white;">
+                                @(user.IsActive ? "Active" : "Inactive")
+                            </button>
+                        </td>
+                        <td style="padding: 12px; text-align: center;">
+                            <button @onclick="() => ShowEditDialog(user)" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">Edit</button>
+                            <button @onclick="() => DeleteUser(user)" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        @if (users.Count == 0)
+        {
+            <p style="text-align: center; padding: 40px; color: #6b7280;">No users found. Click "Add User" to create one.</p>
+        }
+    }
+
+    <div style="margin-top: 20px;">
+        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; display: inline-block;">Back to Dashboard</a>
     </div>
 </div>
+
+@if (showDialog)
+{
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @onclick="CloseDialog">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;" @onclick:stopPropagation="true">
+            <h2 style="margin-top: 0;">@(editingUser == null ? "Add User" : "Edit User")</h2>
+            
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Username *</label>
+                <input @bind="formUser.Username" disabled="@(editingUser != null)" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Full Name</label>
+                <input @bind="formUser.FullName" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Email</label>
+                <input @bind="formUser.Email" type="email" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+            </div>
+
+            <div style="margin-bottom: 15px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Account Type *</label>
+                <select @bind="formUser.AccountType" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                    <option value="@AccountType.Child">Child (Supervised)</option>
+                    <option value="@AccountType.Parent">Parent (No limits)</option>
+                    <option value="@AccountType.Technical">Technical (System)</option>
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" @bind="formUser.IsActive" style="margin-right: 8px;" />
+                    <span>Active</span>
+                </label>
+            </div>
+
+            @if (!string.IsNullOrEmpty(dialogError))
+            {
+                <div style="padding: 10px; background: #fee; border: 1px solid #f00; border-radius: 4px; color: #c00; margin-bottom: 15px;">
+                    @dialogError
+                </div>
+            }
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button @onclick="CloseDialog" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                <button @onclick="SaveUser" disabled="@saving" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                    @(saving ? "Saving..." : "Save")
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private List<User> users = new();
+    private bool loading = true;
+    private string errorMessage = string.Empty;
+    private bool showDialog = false;
+    private User? editingUser = null;
+    private User formUser = new();
+    private string dialogError = string.Empty;
+    private bool saving = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsers();
+    }
+
+    private async Task LoadUsers()
+    {
+        loading = true;
+        errorMessage = string.Empty;
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<User>>>("/api/users");
+            if (response?.Success == true && response.Data != null)
+                users = response.Data;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to load users: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void ShowAddDialog()
+    {
+        editingUser = null;
+        formUser = new User { IsActive = true, AccountType = AccountType.Child };
+        dialogError = string.Empty;
+        showDialog = true;
+    }
+
+    private void ShowEditDialog(User user)
+    {
+        editingUser = user;
+        formUser = new User
+        {
+            Id = user.Id,
+            Username = user.Username,
+            FullName = user.FullName,
+            Email = user.Email,
+            AccountType = user.AccountType,
+            IsActive = user.IsActive
+        };
+        dialogError = string.Empty;
+        showDialog = true;
+    }
+
+    private void CloseDialog()
+    {
+        showDialog = false;
+        editingUser = null;
+        dialogError = string.Empty;
+    }
+
+    private async Task SaveUser()
+    {
+        if (string.IsNullOrWhiteSpace(formUser.Username))
+        {
+            dialogError = "Username is required";
+            return;
+        }
+
+        saving = true;
+        dialogError = string.Empty;
+        try
+        {
+            if (editingUser == null)
+            {
+                var response = await Http.PostAsJsonAsync("/api/users", formUser);
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse<User>>();
+                if (result?.Success != true)
+                    dialogError = result?.Error ?? "Failed to create user";
+            }
+            else
+            {
+                var response = await Http.PutAsJsonAsync($"/api/users/{formUser.Id}", formUser);
+                var result = await response.Content.ReadFromJsonAsync<ApiResponse<User>>();
+                if (result?.Success != true)
+                    dialogError = result?.Error ?? "Failed to update user";
+            }
+
+            if (string.IsNullOrEmpty(dialogError))
+            {
+                await LoadUsers();
+                CloseDialog();
+            }
+        }
+        catch (Exception ex)
+        {
+            dialogError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            saving = false;
+        }
+    }
+
+    private async Task ToggleActive(User user)
+    {
+        try
+        {
+            await Http.PatchAsync($"/api/users/{user.Id}/active", null);
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to toggle status: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteUser(User user)
+    {
+        if (!await JS.InvokeAsync<bool>("confirm", $"Are you sure you want to delete user '{user.Username}'?"))
+            return;
+
+        try
+        {
+            await Http.DeleteAsync($"/api/users/{user.Id}");
+            await LoadUsers();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Failed to delete user: {ex.Message}";
+        }
+    }
+
+    private string GetAccountTypeBg(AccountType type) => type switch
+    {
+        AccountType.Child => "#f59e0b",
+        AccountType.Parent => "#10b981",
+        AccountType.Technical => "#6b7280",
+        _ => "#6b7280"
+    };
+
+    private class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public T? Data { get; set; }
+        public string? Error { get; set; }
+        public string? Message { get; set; }
+    }
+}
