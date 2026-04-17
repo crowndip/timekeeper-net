@@ -79,6 +79,13 @@ public class ClientController : ControllerBase
         // Get or create user by username
         var userId = await EnsureUserExistsAsync(request.Username);
         
+        // Update computer last seen
+        var computer = await _context.Computers.FindAsync(request.ComputerId);
+        if (computer != null)
+        {
+            computer.LastSeenAt = DateTime.UtcNow;
+        }
+        
         var date = DateOnly.FromDateTime(request.Timestamp);
         
         var usage = await _context.TimeUsage
