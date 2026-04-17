@@ -73,20 +73,18 @@ jobs:
         cp src/ParentalControl.Client/appsettings.json ${PKG_DIR}/opt/parental-control/appsettings.json
         
         
-        # Create control file
-        cat > ${PKG_DIR}/DEBIAN/control <<EOF
-Package: parental-control-client
-Version: 1.0.1
-Section: admin
-Priority: optional
-Architecture: amd64
-Depends: systemd, libicu74 | libicu72 | libicu70
-Maintainer: Parental Control Team <support@example.com>
-Description: Parental Control Client Agent
- Centralized parental control system client for Linux with time tracking,
- enforcement, offline mode support, and cross-platform notification UI.
-Homepage: https://github.com/crowndip/timekeeper-net
-EOF
+        # Create control file (using echo to avoid YAML heredoc issues)
+        echo "Package: parental-control-client" > ${PKG_DIR}/DEBIAN/control
+        echo "Version: 1.0.1" >> ${PKG_DIR}/DEBIAN/control
+        echo "Section: admin" >> ${PKG_DIR}/DEBIAN/control
+        echo "Priority: optional" >> ${PKG_DIR}/DEBIAN/control
+        echo "Architecture: amd64" >> ${PKG_DIR}/DEBIAN/control
+        echo "Depends: systemd, libicu74 | libicu72 | libicu70" >> ${PKG_DIR}/DEBIAN/control
+        echo "Maintainer: Parental Control Team <support@example.com>" >> ${PKG_DIR}/DEBIAN/control
+        echo "Description: Parental Control Client Agent" >> ${PKG_DIR}/DEBIAN/control
+        echo " Centralized parental control system client for Linux with time tracking," >> ${PKG_DIR}/DEBIAN/control
+        echo " enforcement, offline mode support, and cross-platform notification UI." >> ${PKG_DIR}/DEBIAN/control
+        echo "Homepage: https://github.com/crowndip/timekeeper-net" >> ${PKG_DIR}/DEBIAN/control
         
         # Create postinst script
         cat > ${PKG_DIR}/DEBIAN/postinst << 'EOF'
