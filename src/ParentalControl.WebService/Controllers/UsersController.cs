@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ParentalControl.WebService.Data;
 using ParentalControl.WebService.Models;
+using ParentalControl.WebService.Services;
 
 namespace ParentalControl.WebService.Controllers;
 
@@ -92,6 +93,63 @@ public class UsersController : ControllerBase
         await _context.SaveChangesAsync();
         
         return Ok(new { success = true, message = "User deleted successfully" });
+    }
+    
+    [HttpPost("{id}/adjust-time")]
+    public async Task<IActionResult> AdjustTime(Guid id, [FromBody] TimeAdjustmentRequest request)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+            return NotFound(new { success = false, error = "User not found" });
+        
+        if (request.MinutesAdjustment < -1440 || request.MinutesAdjustment > 1440)
+            return BadRequest(new { success = false, error = "Adjustment must be between -1440 and 1440 minutes" });
+        
+        var adjustment = new TimeAdjustment
+        {
+            UserId = id,
+            AdjustmentDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            MinutesAdjustment = request.MinutesAdjustment,
+            Reason = request.Reason ?? "Manual adjustment",
+            CreatedBy = "Admin"
+        };
+        
+        _context.TimeAdjustments.Add(adjustment);
+        await _context.SaveChangesAsync();
+        
+        return Ok(new { success = true, message = $"Added {request.MinutesAdjustment} minutes for today", data = adjustment });
+    }
+    
+    [HttpGet("{id}/time-status")]
+    public async Task<IActionResult> GetTimeStatus(Guid id)
+    {
+        var user = await _context.Users.FindAsync(id);
+        if (user == null)
+            return NotFound(new { success = false, error = "User not found" });
+        
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var timeCalc = HttpContext.RequestServices.GetRequiredService<ITimeCalculationService>();
+        var timeRemaining = await timeCalc.CalculateTimeRemainingAsync(id, today);
+        
+        var usedToday = await _context.TimeUsage
+            .Where(u => u.UserId == id && u.UsageDate == today)
+            .SumAsync(u => u.MinutesUsed);
+        
+        var adjustmentsToday = await _context.TimeAdjustments
+            .Where(a => a.UserId == id && a.AdjustmentDate == today)
+            .OrderByDescending(a => a.CreatedAt)
+            .Select(a => new { a.MinutesAdjustment, a.Reason, a.CreatedAt })
+            .ToListAsync();
+        
+        return Ok(new { 
+            success = true, 
+            data = new { 
+                timeRemaining, 
+                usedToday, 
+                adjustmentsToday,
+                totalAdjustments = adjustmentsToday.Sum(a => a.MinutesAdjustment)
+            } 
+        });
     }
 
     [HttpPatch("{id}/active")]

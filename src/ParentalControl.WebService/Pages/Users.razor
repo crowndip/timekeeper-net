@@ -3,6 +3,7 @@
 @using ParentalControl.WebService.Data
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.JSInterop
+@using System.Net.Http.Json
 @inject AppDbContext DbContext
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
@@ -66,8 +67,9 @@
                             </button>
                         </td>
                         <td style="padding: 12px; text-align: center;">
-                            <button @onclick="() => ShowEditDialog(user)" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">Edit</button>
-                            <button @onclick="() => DeleteUser(user)" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;">Delete</button>
+                            <button @onclick="() => ShowEditDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">Edit</button>
+                            <button @onclick="() => ShowTimeAdjustDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">⏱️ Time</button>
+                            <button @onclick="() => DeleteUser(user)" disabled="@isReadOnly" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">Delete</button>
                         </td>
                     </tr>
                 }
@@ -140,6 +142,58 @@
     </div>
 }
 
+@if (showTimeDialog)
+{
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @onclick="CloseTimeDialog">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%;" @onclick:stopPropagation="true">
+            <h2 style="margin-top: 0;">⏱️ Adjust Time for @timeAdjustUser?.Username</h2>
+            
+            @if (timeStatus != null)
+            {
+                <div style="background: #f3f4f6; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="margin-bottom: 10px;">
+                        <strong>Time Remaining:</strong> @(timeStatus.TimeRemaining == int.MaxValue ? "Unlimited" : $"{timeStatus.TimeRemaining} minutes")
+                    </div>
+                    <div style="margin-bottom: 10px;">
+                        <strong>Used Today:</strong> @timeStatus.UsedToday minutes
+                    </div>
+                    <div>
+                        <strong>Adjustments Today:</strong> @timeStatus.TotalAdjustments minutes
+                    </div>
+                </div>
+            }
+            
+            <p style="margin-bottom: 20px; color: #666;">Add extra time for today only. This will not affect other days.</p>
+            
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 20px;">
+                <button @onclick="() => AdjustTime(5)" disabled="@adjusting" style="padding: 15px; background: #10b981; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                    +5 min
+                </button>
+                <button @onclick="() => AdjustTime(15)" disabled="@adjusting" style="padding: 15px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                    +15 min
+                </button>
+                <button @onclick="() => AdjustTime(30)" disabled="@adjusting" style="padding: 15px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                    +30 min
+                </button>
+                <button @onclick="() => AdjustTime(60)" disabled="@adjusting" style="padding: 15px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: 600;">
+                    +60 min
+                </button>
+            </div>
+            
+            @if (!string.IsNullOrEmpty(timeDialogMessage))
+            {
+                <div style="padding: 10px; background: #d1fae5; border: 1px solid #10b981; border-radius: 4px; color: #065f46; margin-bottom: 15px;">
+                    @timeDialogMessage
+                </div>
+            }
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button @onclick="CloseTimeDialog" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<User> users = new();
     private bool loading = true;
@@ -150,6 +204,12 @@
     private string dialogError = string.Empty;
     private bool saving = false;
     private bool isReadOnly = true;
+    
+    private bool showTimeDialog = false;
+    private User? timeAdjustUser = null;
+    private TimeStatusResponse? timeStatus = null;
+    private bool adjusting = false;
+    private string timeDialogMessage = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -167,6 +227,72 @@
     {
         Navigation.NavigateTo("/admin-auth");
     }
+    
+    private async Task ShowTimeAdjustDialog(User user)
+    {
+        if (isReadOnly) return;
+        timeAdjustUser = user;
+        timeDialogMessage = string.Empty;
+        await LoadTimeStatus(user.Id);
+        showTimeDialog = true;
+    }
+    
+    private async Task LoadTimeStatus(Guid userId)
+    {
+        try
+        {
+            var response = await new HttpClient { BaseAddress = new Uri(Navigation.BaseUri) }
+                .GetFromJsonAsync<ApiResponse<TimeStatusResponse>>($"/api/users/{userId}/time-status");
+            timeStatus = response?.Data;
+        }
+        catch (Exception ex)
+        {
+            timeDialogMessage = $"Error loading time status: {ex.Message}";
+        }
+    }
+    
+    private async Task AdjustTime(int minutes)
+    {
+        if (timeAdjustUser == null) return;
+        adjusting = true;
+        timeDialogMessage = string.Empty;
+        
+        try
+        {
+            var client = new HttpClient { BaseAddress = new Uri(Navigation.BaseUri) };
+            var response = await client.PostAsJsonAsync($"/api/users/{timeAdjustUser.Id}/adjust-time", 
+                new { MinutesAdjustment = minutes, Reason = "Manual adjustment by admin" });
+            
+            if (response.IsSuccessStatusCode)
+            {
+                timeDialogMessage = $"✅ Added {minutes} minutes for today";
+                await LoadTimeStatus(timeAdjustUser.Id);
+            }
+            else
+            {
+                timeDialogMessage = "❌ Failed to adjust time";
+            }
+        }
+        catch (Exception ex)
+        {
+            timeDialogMessage = $"❌ Error: {ex.Message}";
+        }
+        finally
+        {
+            adjusting = false;
+        }
+    }
+    
+    private void CloseTimeDialog()
+    {
+        showTimeDialog = false;
+        timeAdjustUser = null;
+        timeStatus = null;
+        timeDialogMessage = string.Empty;
+    }
+    
+    private record TimeStatusResponse(int TimeRemaining, int UsedToday, int TotalAdjustments);
+    private record ApiResponse<T>(bool Success, T? Data);
 
     private async Task LoadUsers()
     {
