@@ -108,9 +108,9 @@ public class ParentalControlWorker : BackgroundService
     {
         var remaining = TimeSpan.FromMinutes(limits.TimeRemainingMinutes);
 
-        if (remaining <= TimeSpan.Zero)
+        if (limits.ShouldEnforce)
         {
-            _logger.LogWarning("Time limit exceeded, enforcing logoff");
+            _logger.LogWarning("Enforcement required (time limit or allowed hours), enforcing logoff");
             _enforcement.LogoffUser();
         }
         else if (remaining <= TimeSpan.FromMinutes(5))
