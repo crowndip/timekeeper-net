@@ -185,8 +185,7 @@ jobs:
           sudo dpkg -i parental-control-client_${{ steps.version.outputs.VERSION }}_amd64.deb
           
           # Configure server URL
-          sudo nano /opt/parental-control/appsettings.json
-          # Set "ServerUrl": "http://your-server-ip:8080"
+          sudo /opt/parental-control/ParentalControl.Client set server-url http://your-server-ip:8080
           
           # Start service
           sudo systemctl start parental-control-client
@@ -215,21 +214,11 @@ jobs:
           
           **Linux Client:**
           ```bash
-          # Set server URL (without credentials)
+          # Set server URL
           sudo /opt/parental-control/ParentalControl.Client set server-url https://tracking.yourdomain.com
           
-          # Configure basic auth
-          sudo tee /opt/parental-control/appsettings.json > /dev/null <<EOF
-          {
-            "ParentalControl": {
-              "ReverseProxy": {
-                "Enabled": true,
-                "Username": "your_username",
-                "Password": "your_password"
-              }
-            }
-          }
-          EOF
+          # Set proxy credentials
+          sudo /opt/parental-control/ParentalControl.Client set proxy your_username your_password
           
           # Restart service
           sudo systemctl restart parental-control-client
@@ -237,28 +226,19 @@ jobs:
           
           **Windows Client:**
           ```powershell
-          # Set server URL (without credentials)
+          # Set server URL
           & "C:\Program Files\ParentalControl\ParentalControl.Client.Windows.exe" set server-url https://tracking.yourdomain.com
           
-          # Configure basic auth
-          $config = @"
-          {
-            "ParentalControl": {
-              "ReverseProxy": {
-                "Enabled": true,
-                "Username": "your_username",
-                "Password": "your_password"
-              }
-            }
-          }
-          "@
-          $config | Out-File -FilePath "C:\ProgramData\ParentalControl\appsettings.json" -Encoding UTF8
+          # Set proxy credentials
+          & "C:\Program Files\ParentalControl\ParentalControl.Client.Windows.exe" set proxy your_username your_password
           
           # Restart service
           Restart-Service ParentalControlClient
           ```
           
-          **Note:** Both client and tray applications use the same configuration file.
+          **Configuration Files (for reference):**
+          - Linux: `/etc/parental-control/server-url`, `/etc/parental-control/proxy-user`, `/etc/parental-control/proxy-pass`
+          - Windows: `C:\ProgramData\ParentalControl\server-url.txt`, `proxy-user.txt`, `proxy-pass.txt`
           
           ---
           
