@@ -35,11 +35,11 @@ try
             await File.WriteAllTextAsync(Path.Combine(configDir, "proxy-user"), username);
             await File.WriteAllTextAsync(Path.Combine(configDir, "proxy-pass"), password);
             
-            // Set restrictive permissions on password file
+            // Set permissions - readable by all (needed for tray app running as user)
             if (OperatingSystem.IsLinux())
             {
                 File.SetUnixFileMode(Path.Combine(configDir, "proxy-pass"), 
-                    UnixFileMode.UserRead | UnixFileMode.UserWrite);
+                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
             }
             
             Console.WriteLine($"Proxy credentials set for user: {username}");

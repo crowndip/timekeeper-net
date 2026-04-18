@@ -367,10 +367,11 @@ public class ServerSyncService : IServerSyncService
             
             File.WriteAllText(ProxyPassPath, password);
             
-            // Set restrictive permissions (owner read/write only)
+            // Set permissions - readable by all (needed for tray app running as user)
             if (OperatingSystem.IsLinux())
             {
-                File.SetUnixFileMode(ProxyPassPath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+                File.SetUnixFileMode(ProxyPassPath, 
+                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
             }
             
             _logger.LogInformation("Saved proxy password to persistent storage");

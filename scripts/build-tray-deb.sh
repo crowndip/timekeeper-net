@@ -77,16 +77,13 @@ fi
 exit 0
 EOF
 
-# Create prerm script (stop running instances before removal)
+# Create prerm script (stop running instances before upgrade/removal)
 cat > "${PACKAGE_DIR}/DEBIAN/prerm" << 'EOF'
 #!/bin/bash
 set -e
 
-# Only kill on removal, not on upgrade
-if [ "$1" = "remove" ]; then
-    # Kill any running tray instances
-    pkill -f "ParentalControl.TrayIcon" || true
-fi
+# Kill any running tray instances (on both upgrade and removal)
+pkill -f "ParentalControl.TrayIcon" || true
 
 exit 0
 EOF
