@@ -3,6 +3,9 @@ using System.Drawing;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Windows.Forms;
 using ParentalControl.Shared.DTOs;
@@ -43,12 +46,39 @@ class Program
         {
             var serverUrlPath = @"C:\ProgramData\ParentalControl\server-url.txt";
             var computerIdPath = @"C:\ProgramData\ParentalControl\computer-id.txt";
+            var configPath = @"C:\ProgramData\ParentalControl\appsettings.json";
 
             if (File.Exists(serverUrlPath))
             {
                 var serverUrl = File.ReadAllText(serverUrlPath).Trim();
                 if (!string.IsNullOrEmpty(serverUrl))
+                {
                     _httpClient = new HttpClient { BaseAddress = new Uri(serverUrl), Timeout = TimeSpan.FromSeconds(5) };
+                    
+                    // Check for basic auth config
+                    if (File.Exists(configPath))
+                    {
+                        try
+                        {
+                            var json = File.ReadAllText(configPath);
+                            var config = JsonSerializer.Deserialize<JsonElement>(json);
+                            
+                            if (config.TryGetProperty("ParentalControl", out var pc) &&
+                                pc.TryGetProperty("ReverseProxy", out var proxy) &&
+                                proxy.TryGetProperty("Enabled", out var enabled) && enabled.GetBoolean())
+                            {
+                                if (proxy.TryGetProperty("Username", out var user) &&
+                                    proxy.TryGetProperty("Password", out var pass))
+                                {
+                                    var authBytes = Encoding.ASCII.GetBytes($"{user.GetString()}:{pass.GetString()}");
+                                    var authHeader = Convert.ToBase64String(authBytes);
+                                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
             }
 
             if (File.Exists(computerIdPath) && Guid.TryParse(File.ReadAllText(computerIdPath).Trim(), out var id))

@@ -5,6 +5,9 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using System.Threading;
 using ParentalControl.Shared.DTOs;
 
@@ -52,6 +55,7 @@ public class TrayApp : Application
         {
             var serverUrlPath = "/etc/parental-control/server-url";
             var computerIdPath = "/etc/parental-control/computer-id";
+            var configPath = "/opt/parental-control/appsettings.json";
             
             if (File.Exists(serverUrlPath))
                 _serverUrl = File.ReadAllText(serverUrlPath).Trim();
@@ -62,7 +66,33 @@ public class TrayApp : Application
             _username = Environment.UserName;
             
             if (!string.IsNullOrEmpty(_serverUrl))
+            {
                 _httpClient = new HttpClient { BaseAddress = new Uri(_serverUrl), Timeout = TimeSpan.FromSeconds(5) };
+                
+                // Check for basic auth config
+                if (File.Exists(configPath))
+                {
+                    try
+                    {
+                        var json = File.ReadAllText(configPath);
+                        var config = JsonSerializer.Deserialize<JsonElement>(json);
+                        
+                        if (config.TryGetProperty("ParentalControl", out var pc) &&
+                            pc.TryGetProperty("ReverseProxy", out var proxy) &&
+                            proxy.TryGetProperty("Enabled", out var enabled) && enabled.GetBoolean())
+                        {
+                            if (proxy.TryGetProperty("Username", out var user) &&
+                                proxy.TryGetProperty("Password", out var pass))
+                            {
+                                var authBytes = Encoding.ASCII.GetBytes($"{user.GetString()}:{pass.GetString()}");
+                                var authHeader = Convert.ToBase64String(authBytes);
+                                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
+                            }
+                        }
+                    }
+                    catch { }
+                }
+            }
         }
         catch { }
     }
