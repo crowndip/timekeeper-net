@@ -118,7 +118,16 @@ class Program
                 if (result != null && _trayIcon != null)
                 {
                     var minutes = result.TimeRemainingMinutes;
-                    _trayIcon.Text = $"{minutes}m remaining";
+                    
+                    // Check if parent account (unlimited time)
+                    if (minutes >= int.MaxValue - 1000)
+                    {
+                        _trayIcon.Text = "P - Parent (No limit)";
+                    }
+                    else
+                    {
+                        _trayIcon.Text = $"{minutes}m remaining";
+                    }
                 }
             }
         }
