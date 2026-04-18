@@ -127,7 +127,17 @@ jobs:
           
           #### Server Deployment
           
-          **Option 1: Automatic (Portainer)**
+          **Option 1: Automatic Script (Recommended)**
+          
+          Download and deploy the latest server image:
+          
+          ```bash
+          curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/deploy-server.sh | sudo bash
+          ```
+          
+          Then update your Portainer stack to use the new image.
+          
+          **Option 2: Portainer Stack**
           
           Use Portainer Stack with this docker-compose.yml:
           
@@ -165,7 +175,7 @@ jobs:
           - `LIMIT_ADMIN_PASSWORD` - Admin operations password
           - `DB_PASSWORD` - Database password
           
-          **Option 2: Manual (Docker Compose)**
+          **Option 3: Manual (Docker Compose)**
           
           ```bash
           # Set passwords
