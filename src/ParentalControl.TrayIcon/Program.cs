@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Threading;
 using System;
 using System.IO;
 using System.Net.Http;
@@ -160,8 +161,11 @@ public class TrayApp : Application
         if (_httpClient == null || !_computerId.HasValue || string.IsNullOrEmpty(_username))
         {
             Console.WriteLine($"[Tray] UpdateTime: Not configured (httpClient={_httpClient != null}, computerId={_computerId.HasValue}, username={!string.IsNullOrEmpty(_username)})");
-            if (_trayIcon != null)
-                _trayIcon.ToolTipText = "Not configured";
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_trayIcon != null)
+                    _trayIcon.ToolTipText = "Not configured";
+            });
             return;
         }
 
@@ -189,17 +193,24 @@ public class TrayApp : Application
                 {
                     var minutes = result.TimeRemainingMinutes;
                     
-                    // Check if parent account (unlimited time)
-                    if (minutes >= int.MaxValue - 1000)
+                    // Update UI on UI thread
+                    Dispatcher.UIThread.Post(() =>
                     {
-                        _trayIcon.ToolTipText = "Parent - No time limit";
-                        Console.WriteLine($"[Tray] Parent account detected");
-                    }
-                    else
-                    {
-                        _trayIcon.ToolTipText = $"{minutes}m remaining";
-                        Console.WriteLine($"[Tray] Time remaining: {minutes} minutes");
-                    }
+                        if (_trayIcon != null)
+                        {
+                            // Check if parent account (unlimited time)
+                            if (minutes >= int.MaxValue - 1000)
+                            {
+                                _trayIcon.ToolTipText = "Parent - No time limit";
+                                Console.WriteLine($"[Tray] Parent account detected");
+                            }
+                            else
+                            {
+                                _trayIcon.ToolTipText = $"{minutes}m remaining";
+                                Console.WriteLine($"[Tray] Time remaining: {minutes} minutes");
+                            }
+                        }
+                    });
                 }
             }
             else
@@ -211,8 +222,11 @@ public class TrayApp : Application
         catch (Exception ex)
         {
             Console.WriteLine($"[Tray] Error updating time: {ex.Message}");
-            if (_trayIcon != null)
-                _trayIcon.ToolTipText = "Server unavailable";
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (_trayIcon != null)
+                    _trayIcon.ToolTipText = "Server unavailable";
+            });
         }
     }
 
