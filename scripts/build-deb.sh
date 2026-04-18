@@ -66,6 +66,8 @@ Version: ${VERSION}
 Section: utils
 Priority: optional
 Architecture: ${ARCH}
+Replaces: ${PACKAGE_NAME} (<< ${VERSION})
+Conflicts: ${PACKAGE_NAME} (<< ${VERSION})
 Maintainer: Parental Control <support@example.com>
 Description: Parental Control Client
  Client agent for the Parental Control System.
@@ -84,15 +86,23 @@ systemctl daemon-reload
 # Enable service
 systemctl enable parental-control-client.service
 
-echo ""
-echo "Parental Control Client installed successfully!"
-echo ""
-echo "Next steps:"
-echo "1. Edit /opt/parental-control/appsettings.json"
-echo "2. Set ServerUrl to your server address"
-echo "3. Start service: sudo systemctl start parental-control-client"
-echo "4. Check status: sudo systemctl status parental-control-client"
-echo ""
+# Restart service if it was already running (upgrade scenario)
+if [ "$1" = "configure" ] && [ -n "$2" ]; then
+    # This is an upgrade
+    echo "Upgrading from version $2 to ${VERSION}..."
+    systemctl restart parental-control-client.service || true
+else
+    # This is a fresh install
+    echo ""
+    echo "Parental Control Client installed successfully!"
+    echo ""
+    echo "Next steps:"
+    echo "1. Edit /opt/parental-control/appsettings.json"
+    echo "2. Set ServerUrl to your server address"
+    echo "3. Start service: sudo systemctl start parental-control-client"
+    echo "4. Check status: sudo systemctl status parental-control-client"
+    echo ""
+fi
 
 exit 0
 EOF
@@ -102,13 +112,16 @@ cat > "${PACKAGE_DIR}/DEBIAN/prerm" << 'EOF'
 #!/bin/bash
 set -e
 
-# Stop service if running
-if systemctl is-active --quiet parental-control-client; then
-    systemctl stop parental-control-client
-fi
+# Only stop/disable on removal, not on upgrade
+if [ "$1" = "remove" ]; then
+    # Stop service if running
+    if systemctl is-active --quiet parental-control-client; then
+        systemctl stop parental-control-client
+    fi
 
-# Disable service
-systemctl disable parental-control-client.service || true
+    # Disable service
+    systemctl disable parental-control-client.service || true
+fi
 
 exit 0
 EOF

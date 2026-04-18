@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+# Only stop/disable on removal, not on upgrade
+if [ "$1" = "remove" ]; then
+    # Stop service if running
+    if systemctl is-active --quiet parental-control-client; then
+        systemctl stop parental-control-client
+    fi
+
+    # Disable service
+    systemctl disable parental-control-client.service || true
+fi
+
+exit 0

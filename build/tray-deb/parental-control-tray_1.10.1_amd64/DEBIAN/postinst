@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+if [ "$1" = "configure" ] && [ -n "$2" ]; then
+    # This is an upgrade
+    echo "Upgraded Parental Control Tray Icon from version $2"
+    echo "Restart tray: pkill -f ParentalControl.TrayIcon; /usr/local/bin/parental-control-tray/ParentalControl.TrayIcon &"
+else
+    # This is a fresh install
+    echo ""
+    echo "Parental Control Tray Icon installed successfully!"
+    echo ""
+    echo "The tray icon will start automatically on next login."
+    echo "To start now: /usr/local/bin/parental-control-tray/ParentalControl.TrayIcon &"
+    echo ""
+fi
+
+exit 0

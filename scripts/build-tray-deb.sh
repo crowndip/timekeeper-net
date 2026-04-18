@@ -33,6 +33,8 @@ Version: ${VERSION}
 Section: utils
 Priority: optional
 Architecture: ${ARCH}
+Replaces: ${PACKAGE_NAME} (<< ${VERSION})
+Conflicts: ${PACKAGE_NAME} (<< ${VERSION})
 Depends: libx11-6, libice6, libsm6
 Maintainer: Parental Control <support@example.com>
 Description: Parental Control Tray Icon
@@ -52,6 +54,47 @@ Terminal=false
 Hidden=false
 X-GNOME-Autostart-enabled=true
 EOF
+
+# Create postinst script
+cat > "${PACKAGE_DIR}/DEBIAN/postinst" << 'EOF'
+#!/bin/bash
+set -e
+
+if [ "$1" = "configure" ] && [ -n "$2" ]; then
+    # This is an upgrade
+    echo "Upgraded Parental Control Tray Icon from version $2"
+    echo "Restart tray: pkill -f ParentalControl.TrayIcon; /usr/local/bin/parental-control-tray/ParentalControl.TrayIcon &"
+else
+    # This is a fresh install
+    echo ""
+    echo "Parental Control Tray Icon installed successfully!"
+    echo ""
+    echo "The tray icon will start automatically on next login."
+    echo "To start now: /usr/local/bin/parental-control-tray/ParentalControl.TrayIcon &"
+    echo ""
+fi
+
+exit 0
+EOF
+
+# Create prerm script (stop running instances before removal)
+cat > "${PACKAGE_DIR}/DEBIAN/prerm" << 'EOF'
+#!/bin/bash
+set -e
+
+# Only kill on removal, not on upgrade
+if [ "$1" = "remove" ]; then
+    # Kill any running tray instances
+    pkill -f "ParentalControl.TrayIcon" || true
+fi
+
+exit 0
+EOF
+
+# Set permissions
+chmod 755 "${PACKAGE_DIR}/DEBIAN/postinst"
+chmod 755 "${PACKAGE_DIR}/DEBIAN/prerm"
+chmod 755 "${PACKAGE_DIR}/usr/local/bin/parental-control-tray/ParentalControl.TrayIcon"
 
 # Build package
 echo "Building .deb package..."
