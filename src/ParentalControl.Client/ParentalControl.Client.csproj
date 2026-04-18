@@ -4,6 +4,8 @@
     <Nullable>enable</Nullable>
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
   </PropertyGroup>
 
   <ItemGroup>
