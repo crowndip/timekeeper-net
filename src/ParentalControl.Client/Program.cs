@@ -18,18 +18,40 @@ try
     // Handle command-line settings
     if (args.Length > 0 && args[0] == "set")
     {
-        if (args.Length < 3 || args[1] != "server-url")
-        {
-            Console.WriteLine("Usage: ParentalControl.Client set server-url <url>");
-            return 1;
-        }
-        
-        var serverUrl = args[2];
         var configDir = "/etc/parental-control";
         Directory.CreateDirectory(configDir);
-        await File.WriteAllTextAsync(Path.Combine(configDir, "server-url"), serverUrl);
-        Console.WriteLine($"Server URL set to: {serverUrl}");
-        return 0;
+        
+        if (args.Length >= 3 && args[1] == "server-url")
+        {
+            var serverUrl = args[2];
+            await File.WriteAllTextAsync(Path.Combine(configDir, "server-url"), serverUrl);
+            Console.WriteLine($"Server URL set to: {serverUrl}");
+            return 0;
+        }
+        else if (args.Length >= 4 && args[1] == "proxy")
+        {
+            var username = args[2];
+            var password = args[3];
+            await File.WriteAllTextAsync(Path.Combine(configDir, "proxy-user"), username);
+            await File.WriteAllTextAsync(Path.Combine(configDir, "proxy-pass"), password);
+            
+            // Set restrictive permissions on password file
+            if (OperatingSystem.IsLinux())
+            {
+                File.SetUnixFileMode(Path.Combine(configDir, "proxy-pass"), 
+                    UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            }
+            
+            Console.WriteLine($"Proxy credentials set for user: {username}");
+            return 0;
+        }
+        else
+        {
+            Console.WriteLine("Usage:");
+            Console.WriteLine("  ParentalControl.Client set server-url <url>");
+            Console.WriteLine("  ParentalControl.Client set proxy <username> <password>");
+            return 1;
+        }
     }
 
     var host = Host.CreateDefaultBuilder(args)

@@ -1,38 +1,37 @@
-2026-04-17 23:56:34.902 +02:00 [INF] Starting Parental Control Client
-2026-04-17 23:56:35.116 +02:00 [INF] Application started. Hosting environment: Production; Content root path: /opt/parental-control
-2026-04-17 23:56:35.116 +02:00 [INF] Parental Control Client started, tick interval: 60s
-2026-04-17 23:56:40.188 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/register
-2026-04-17 23:56:40.192 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/register
-2026-04-17 23:56:40.252 +02:00 [INF] Received HTTP response headers after 57.7536ms - 200
-2026-04-17 23:56:40.255 +02:00 [INF] End processing HTTP request after 71.9193ms - 200
-2026-04-17 23:56:40.278 +02:00 [INF] Registered with server: "a111db2a-dc6c-4d61-bdcd-44eef7a53101"
-2026-04-17 23:56:40.279 +02:00 [INF] Saved ComputerId to persistent storage
-2026-04-17 23:56:40.298 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:56:40.298 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:56:40.317 +02:00 [INF] Received HTTP response headers after 18.6859ms - 200
-2026-04-17 23:56:40.318 +02:00 [INF] End processing HTTP request after 19.2079ms - 200
-2026-04-17 23:56:40.318 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:56:40.318 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:56:40.326 +02:00 [INF] Received HTTP response headers after 7.9105ms - 200
-2026-04-17 23:56:40.326 +02:00 [INF] End processing HTTP request after 8.3273ms - 200
-2026-04-17 23:56:40.327 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:56:40.327 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:56:40.334 +02:00 [INF] Received HTTP response headers after 7.5781ms - 200
-2026-04-17 23:56:40.335 +02:00 [INF] End processing HTTP request after 7.9649ms - 200
-2026-04-17 23:56:40.335 +02:00 [INF] Synced 3 users with server
-2026-04-17 23:56:40.361 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:56:40.361 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:56:40.372 +02:00 [INF] Received HTTP response headers after 10.4327ms - 200
-2026-04-17 23:56:40.372 +02:00 [INF] End processing HTTP request after 10.8038ms - 200
-2026-04-17 23:57:40.400 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:57:40.400 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:57:40.412 +02:00 [INF] Received HTTP response headers after 11.966ms - 200
-2026-04-17 23:57:40.412 +02:00 [INF] End processing HTTP request after 12.5096ms - 200
-2026-04-17 23:58:40.424 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:58:40.424 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:58:40.431 +02:00 [INF] Received HTTP response headers after 6.6616ms - 200
-2026-04-17 23:58:40.431 +02:00 [INF] End processing HTTP request after 7.1718ms - 200
-2026-04-17 23:59:40.443 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:59:40.443 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
-2026-04-17 23:59:40.455 +02:00 [INF] Received HTTP response headers after 11.7444ms - 200
-2026-04-17 23:59:40.455 +02:00 [INF] End processing HTTP request after 12.2796ms - 200
+filip@filip-ThinkPad-T540p:~$ sudo /opt/parental-control/ParentalControl.Client set server-url https://tracking.jerhot.eu
+Server URL set to: https://tracking.jerhot.eu
+filip@filip-ThinkPad-T540p:~$ sudo tee /opt/parental-control/appsettings.json > /dev/null <<EOF
+{
+  "ParentalControl": {
+    "ReverseProxy": {
+      "Enabled": true,
+      "Username": "xx",
+      "Password": "xxx"
+    }
+  }
+}
+EOF
+
+
+
+2026-04-18 22:56:05.891 +02:00 [INF] End processing HTTP request after 13.9102ms - 200
+2026-04-18 22:57:05.905 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 22:57:05.905 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 22:57:05.930 +02:00 [INF] Received HTTP response headers after 24.5199ms - 200
+2026-04-18 22:57:05.930 +02:00 [INF] End processing HTTP request after 25.2834ms - 200
+2026-04-18 22:58:05.943 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 22:58:05.943 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 22:58:05.958 +02:00 [INF] Received HTTP response headers after 14.2738ms - 200
+2026-04-18 22:58:05.958 +02:00 [INF] End processing HTTP request after 14.8297ms - 200
+2026-04-18 22:59:05.971 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 22:59:05.971 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 22:59:05.992 +02:00 [INF] Received HTTP response headers after 21.3678ms - 200
+2026-04-18 22:59:05.993 +02:00 [INF] End processing HTTP request after 21.6996ms - 200
+2026-04-18 23:00:06.006 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 23:00:06.006 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 23:00:06.059 +02:00 [INF] Received HTTP response headers after 52.3168ms - 200
+2026-04-18 23:00:06.059 +02:00 [INF] End processing HTTP request after 52.7542ms - 200
+2026-04-18 23:01:06.069 +02:00 [INF] Start processing HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 23:01:06.070 +02:00 [INF] Sending HTTP request POST http://10.0.0.55:8081/api/client/usage
+2026-04-18 23:01:06.089 +02:00 [INF] Received HTTP response headers after 19.7803ms - 200
+2026-04-18 23:01:06.089 +02:00 [INF] End processing HTTP request after 20.1359ms - 200

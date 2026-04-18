@@ -23,6 +23,8 @@ public class ServerSyncService : IServerSyncService
     private Guid? _computerId;
     private const string ComputerIdPath = "/etc/parental-control/computer-id";
     private const string ServerUrlPath = "/etc/parental-control/server-url";
+    private const string ProxyUserPath = "/etc/parental-control/proxy-user";
+    private const string ProxyPassPath = "/etc/parental-control/proxy-pass";
     
     public ServerSyncService(HttpClient httpClient, IConfiguration configuration, ILogger<ServerSyncService> logger, ILocalCache cache)
     {
@@ -45,18 +47,23 @@ public class ServerSyncService : IServerSyncService
         _httpClient.Timeout = TimeSpan.FromSeconds(10); // Short timeout for offline detection
         
         // Configure Basic Authentication for reverse proxy
-        var proxyEnabled = configuration.GetValue<bool>("ParentalControl:ReverseProxy:Enabled");
-        if (proxyEnabled)
+        // Try persistent storage first, then config
+        var username = LoadProxyUser() ?? configuration["ParentalControl:ReverseProxy:Username"];
+        var password = LoadProxyPass() ?? configuration["ParentalControl:ReverseProxy:Password"];
+        
+        if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
         {
-            var username = configuration["ParentalControl:ReverseProxy:Username"];
-            var password = configuration["ParentalControl:ReverseProxy:Password"];
-            if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+            // Save to persistent storage if from config
+            if (configuration["ParentalControl:ReverseProxy:Username"] != null)
             {
-                var authBytes = Encoding.ASCII.GetBytes($"{username}:{password}");
-                var authHeader = Convert.ToBase64String(authBytes);
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
-                _logger.LogInformation("Basic authentication configured for reverse proxy");
+                SaveProxyUser(username);
+                SaveProxyPass(password);
             }
+            
+            var authBytes = Encoding.ASCII.GetBytes($"{username}:{password}");
+            var authHeader = Convert.ToBase64String(authBytes);
+            _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
+            _logger.LogInformation("Basic authentication configured for reverse proxy");
         }
     }
     
@@ -288,6 +295,89 @@ public class ServerSyncService : IServerSyncService
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to save server URL to {Path}", ServerUrlPath);
+        }
+    }
+    
+    private string? LoadProxyUser()
+    {
+        try
+        {
+            if (File.Exists(ProxyUserPath))
+            {
+                var user = File.ReadAllText(ProxyUserPath).Trim();
+                if (!string.IsNullOrEmpty(user))
+                {
+                    _logger.LogInformation("Loaded proxy username from persistent storage");
+                    return user;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load proxy username");
+        }
+        return null;
+    }
+    
+    private void SaveProxyUser(string username)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(ProxyUserPath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir!);
+            
+            File.WriteAllText(ProxyUserPath, username);
+            _logger.LogInformation("Saved proxy username to persistent storage");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save proxy username");
+        }
+    }
+    
+    private string? LoadProxyPass()
+    {
+        try
+        {
+            if (File.Exists(ProxyPassPath))
+            {
+                var pass = File.ReadAllText(ProxyPassPath).Trim();
+                if (!string.IsNullOrEmpty(pass))
+                {
+                    _logger.LogInformation("Loaded proxy password from persistent storage");
+                    return pass;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to load proxy password");
+        }
+        return null;
+    }
+    
+    private void SaveProxyPass(string password)
+    {
+        try
+        {
+            var dir = Path.GetDirectoryName(ProxyPassPath);
+            if (!Directory.Exists(dir))
+                Directory.CreateDirectory(dir!);
+            
+            File.WriteAllText(ProxyPassPath, password);
+            
+            // Set restrictive permissions (owner read/write only)
+            if (OperatingSystem.IsLinux())
+            {
+                File.SetUnixFileMode(ProxyPassPath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+            }
+            
+            _logger.LogInformation("Saved proxy password to persistent storage");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to save proxy password");
         }
     }
     
