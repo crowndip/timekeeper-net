@@ -59,13 +59,30 @@ public class TrayApp : Application
             var proxyPassPath = "/etc/parental-control/proxy-pass";
             var configPath = "/opt/parental-control/appsettings.json";
             
+            Console.WriteLine($"[Tray] Loading configuration...");
+            
             if (File.Exists(serverUrlPath))
+            {
                 _serverUrl = File.ReadAllText(serverUrlPath).Trim();
+                Console.WriteLine($"[Tray] Server URL: {_serverUrl}");
+            }
+            else
+            {
+                Console.WriteLine($"[Tray] Server URL file not found: {serverUrlPath}");
+            }
             
             if (File.Exists(computerIdPath) && Guid.TryParse(File.ReadAllText(computerIdPath).Trim(), out var id))
+            {
                 _computerId = id;
+                Console.WriteLine($"[Tray] Computer ID: {id}");
+            }
+            else
+            {
+                Console.WriteLine($"[Tray] Computer ID file not found or invalid: {computerIdPath}");
+            }
             
             _username = Environment.UserName;
+            Console.WriteLine($"[Tray] Username: {_username}");
             
             if (!string.IsNullOrEmpty(_serverUrl))
             {
@@ -76,14 +93,21 @@ public class TrayApp : Application
                 string? proxyPass = null;
                 
                 if (File.Exists(proxyUserPath))
+                {
                     proxyUser = File.ReadAllText(proxyUserPath).Trim();
+                    Console.WriteLine($"[Tray] Proxy user loaded from: {proxyUserPath}");
+                }
                 
                 if (File.Exists(proxyPassPath))
+                {
                     proxyPass = File.ReadAllText(proxyPassPath).Trim();
+                    Console.WriteLine($"[Tray] Proxy password loaded from: {proxyPassPath}");
+                }
                 
                 // Fall back to appsettings.json if persistent files don't exist
                 if (string.IsNullOrEmpty(proxyUser) || string.IsNullOrEmpty(proxyPass))
                 {
+                    Console.WriteLine($"[Tray] Checking appsettings.json for proxy credentials...");
                     if (File.Exists(configPath))
                     {
                         try
@@ -99,9 +123,13 @@ public class TrayApp : Application
                                     proxyUser = user.GetString();
                                 if (proxy.TryGetProperty("Password", out var pass))
                                     proxyPass = pass.GetString();
+                                Console.WriteLine($"[Tray] Proxy credentials loaded from appsettings.json");
                             }
                         }
-                        catch { }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[Tray] Failed to read appsettings.json: {ex.Message}");
+                        }
                     }
                 }
                 
@@ -111,16 +139,27 @@ public class TrayApp : Application
                     var authBytes = Encoding.ASCII.GetBytes($"{proxyUser}:{proxyPass}");
                     var authHeader = Convert.ToBase64String(authBytes);
                     _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
+                    Console.WriteLine($"[Tray] Basic authentication configured");
+                }
+                else
+                {
+                    Console.WriteLine($"[Tray] No proxy credentials found");
                 }
             }
+            
+            Console.WriteLine($"[Tray] Configuration loaded successfully");
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Tray] Error loading config: {ex.Message}");
+        }
     }
 
     private async void UpdateTime()
     {
         if (_httpClient == null || !_computerId.HasValue || string.IsNullOrEmpty(_username))
         {
+            Console.WriteLine($"[Tray] UpdateTime: Not configured (httpClient={_httpClient != null}, computerId={_computerId.HasValue}, username={!string.IsNullOrEmpty(_username)})");
             if (_trayIcon != null)
                 _trayIcon.ToolTipText = "Not configured";
             return;
@@ -128,6 +167,7 @@ public class TrayApp : Application
 
         try
         {
+            Console.WriteLine($"[Tray] Sending usage report to server...");
             var request = new UsageReportRequest(
                 _computerId.Value,
                 Guid.Empty,
@@ -140,6 +180,8 @@ public class TrayApp : Application
             );
 
             var response = await _httpClient.PostAsJsonAsync("/api/client/usage", request);
+            Console.WriteLine($"[Tray] Server response: {response.StatusCode}");
+            
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<UsageReportResponse>();
@@ -151,16 +193,24 @@ public class TrayApp : Application
                     if (minutes >= int.MaxValue - 1000)
                     {
                         _trayIcon.ToolTipText = "Parent - No time limit";
+                        Console.WriteLine($"[Tray] Parent account detected");
                     }
                     else
                     {
                         _trayIcon.ToolTipText = $"{minutes}m remaining";
+                        Console.WriteLine($"[Tray] Time remaining: {minutes} minutes");
                     }
                 }
             }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"[Tray] Server error: {errorContent}");
+            }
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[Tray] Error updating time: {ex.Message}");
             if (_trayIcon != null)
                 _trayIcon.ToolTipText = "Server unavailable";
         }

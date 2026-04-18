@@ -1,8 +1,0 @@
-[Desktop Entry]
-Type=Application
-Name=Parental Control Tray
-Comment=Show remaining time in system tray
-Exec=/usr/local/bin/parental-control-tray/ParentalControl.TrayIcon
-Terminal=false
-Hidden=false
-X-GNOME-Autostart-enabled=true
