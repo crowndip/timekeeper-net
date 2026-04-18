@@ -2,10 +2,10 @@
 @using ParentalControl.WebService.Models
 @using ParentalControl.WebService.Data
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.JSInterop
+@using System.Net.Http.Json
 @inject AppDbContext DbContext
 @inject NavigationManager Navigation
-@inject IJSRuntime JSRuntime
+@inject HttpClient Http
 
 <PageTitle>Allowed Hours</PageTitle>
 
@@ -121,7 +121,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await CheckAdminAuth();
+        await CheckAuthStatus();
         users = await DbContext.Users
             .Where(u => u.AccountType == AccountType.Child && u.IsActive)
             .OrderBy(u => u.Username)
@@ -135,15 +135,31 @@
         loading = false;
     }
 
-    private async Task CheckAdminAuth()
+    private async Task CheckAuthStatus()
     {
-        var isAuth = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "adminAuthenticated");
-        isReadOnly = isAuth != "true";
+        try
+        {
+            var response = await Http.GetAsync("/api/auth/status");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<AuthStatusResponse>();
+                isReadOnly = !(result?.Authenticated ?? false);
+            }
+        }
+        catch
+        {
+            isReadOnly = true;
+        }
     }
 
     private void RequestAdminAuth()
     {
         Navigation.NavigateTo("/admin-auth");
+    }
+    
+    private class AuthStatusResponse
+    {
+        public bool Authenticated { get; set; }
     }
 
     private async Task LoadAllowedHours()

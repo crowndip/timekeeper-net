@@ -1,7 +1,7 @@
 @page "/admin-auth"
 @using Microsoft.JSInterop
 @inject NavigationManager Navigation
-@inject IConfiguration Config
+@inject HttpClient Http
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Administrator Authentication</PageTitle>
@@ -51,24 +51,23 @@
         isLoading = true;
         errorMessage = "";
         
-        var limitAdminPassword = Config["LimitAdministratorPassword"];
-        
-        if (string.IsNullOrEmpty(limitAdminPassword))
+        try
         {
-            errorMessage = "Administrator password not configured";
-            isLoading = false;
-            return;
+            var response = await Http.PostAsJsonAsync("/api/auth/login", new { Password = password });
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Navigation.NavigateTo("/", forceLoad: true);
+            }
+            else
+            {
+                errorMessage = "Invalid administrator password";
+                password = "";
+            }
         }
-        
-        if (password == limitAdminPassword)
+        catch (Exception ex)
         {
-            await JSRuntime.InvokeVoidAsync("sessionStorage.setItem", "adminAuthenticated", "true");
-            Navigation.NavigateTo("/", forceLoad: true);
-        }
-        else
-        {
-            errorMessage = "Invalid administrator password";
-            password = "";
+            errorMessage = $"Authentication failed: {ex.Message}";
         }
         
         isLoading = false;

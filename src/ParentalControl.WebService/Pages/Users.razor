@@ -5,6 +5,7 @@
 @using Microsoft.JSInterop
 @using System.Net.Http.Json
 @inject AppDbContext DbContext
+@inject HttpClient Http
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 
@@ -272,19 +273,35 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await CheckAdminAuth();
+        await CheckAuthStatus();
         await LoadUsers();
     }
 
-    private async Task CheckAdminAuth()
+    private async Task CheckAuthStatus()
     {
-        var isAuth = await JS.InvokeAsync<string>("sessionStorage.getItem", "adminAuthenticated");
-        isReadOnly = isAuth != "true";
+        try
+        {
+            var response = await Http.GetAsync("/api/auth/status");
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<AuthStatusResponse>();
+                isReadOnly = !(result?.Authenticated ?? false);
+            }
+        }
+        catch
+        {
+            isReadOnly = true;
+        }
     }
 
     private void RequestAdminAuth()
     {
         Navigation.NavigateTo("/admin-auth");
+    }
+    
+    private class AuthStatusResponse
+    {
+        public bool Authenticated { get; set; }
     }
     
     private async Task ShowTimeAdjustDialog(User user)
