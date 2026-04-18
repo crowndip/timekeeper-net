@@ -3,24 +3,25 @@
 @using ParentalControl.WebService.Data
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext DbContext
-@inject NavigationManager Navigation
 
 <PageTitle>Allowed Hours</PageTitle>
 
-<div style="padding: 20px; max-width: 1000px; margin: 0 auto;">
-    <h1 style="margin-bottom: 10px;">🕐 Allowed Hours</h1>
-    <p style="color: #6b7280; margin-bottom: 30px;">Set when children can use the computer. Leave blank to allow all times.</p>
+<div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
+    <div style="margin-bottom: 30px;">
+        <h1 style="margin: 0 0 8px 0; font-size: 28px;">🕐 Allowed Hours</h1>
+        <p style="color: #6b7280; margin: 0;">Define time windows when computer use is permitted. Multiple intervals per day supported.</p>
+    </div>
 
     @if (loading)
     {
-        <p>Loading...</p>
+        <div style="text-align: center; padding: 40px; color: #6b7280;">Loading...</div>
     }
     else
     {
-        <div style="margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600;">Select User:</label>
-            <select @bind="selectedUserId" @bind:after="LoadAllowedHours" style="padding: 10px; border: 1px solid #d1d5db; border-radius: 8px; width: 300px;">
-                <option value="">-- Select User --</option>
+        <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Select User</label>
+            <select @bind="selectedUserId" @bind:after="LoadAllowedHours" style="padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; width: 100%; max-width: 400px; font-size: 15px; cursor: pointer;">
+                <option value="">-- Choose a user --</option>
                 @foreach (var user in users)
                 {
                     <option value="@user.Id">@user.Username</option>
@@ -30,42 +31,55 @@
 
         @if (!string.IsNullOrEmpty(selectedUserId))
         {
-            <div style="background: white; border-radius: 12px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 @foreach (var day in daysOfWeek)
                 {
-                    var daySchedule = schedule[day.Key];
-                    <div style="border-bottom: 1px solid #e5e7eb; padding: 15px 0;">
-                        <div style="display: flex; align-items: center; gap: 20px;">
-                            <div style="width: 120px; font-weight: 600;">@day.Value</div>
-                            <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-                                <input type="checkbox" @bind="daySchedule.Enabled" style="width: 18px; height: 18px; cursor: pointer;" />
-                                <span>Set hours</span>
-                            </label>
-                            @if (daySchedule.Enabled)
-                            {
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <input type="time" value="@daySchedule.StartTime" @onchange="e => daySchedule.StartTime = e.Value?.ToString() ?? daySchedule.StartTime" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
-                                    <span>to</span>
-                                    <input type="time" value="@daySchedule.EndTime" @onchange="e => daySchedule.EndTime = e.Value?.ToString() ?? daySchedule.EndTime" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 6px;" />
-                                </div>
-                            }
+                    var intervals = schedule[day.Key];
+                    <div style="border-bottom: 1px solid #f3f4f6; padding: 20px 0;">
+                        <div style="display: flex; align-items: flex-start; gap: 20px;">
+                            <div style="width: 100px; font-weight: 600; color: #1f2937; padding-top: 8px;">@day.Value</div>
+                            <div style="flex: 1;">
+                                @if (!intervals.Any())
+                                {
+                                    <div style="color: #9ca3af; font-style: italic; padding: 8px 0;">No restrictions - allowed all day</div>
+                                }
+                                else
+                                {
+                                    @foreach (var interval in intervals)
+                                    {
+                                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+                                            <input type="time" value="@interval.StartTime" @onchange="e => interval.StartTime = e.Value?.ToString() ?? interval.StartTime" style="padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 130px;" />
+                                            <span style="color: #6b7280; font-weight: 500;">to</span>
+                                            <input type="time" value="@interval.EndTime" @onchange="e => interval.EndTime = e.Value?.ToString() ?? interval.EndTime" style="padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 130px;" />
+                                            <button @onclick="() => RemoveInterval(day.Key, interval)" style="padding: 8px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">✕ Remove</button>
+                                        </div>
+                                    }
+                                }
+                                <button @onclick="() => AddInterval(day.Key)" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-top: 4px;">+ Add Time Window</button>
+                            </div>
                         </div>
                     </div>
                 }
                 
-                <div style="margin-top: 20px; display: flex; gap: 10px;">
-                    <button @onclick="SaveSchedule" style="padding: 12px 24px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
+                    <button @onclick="SaveSchedule" style="padding: 14px 28px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">
                         💾 Save Schedule
                     </button>
-                    <button @onclick="CopyToAllDays" style="padding: 12px 24px; background: #6b7280; color: white; border: none; border-radius: 8px; cursor: pointer;">
-                        Copy Monday to All Days
+                    <button @onclick="CopyMondayToWeekdays" style="padding: 14px 28px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                        Copy Monday → Weekdays
+                    </button>
+                    <button @onclick="CopyMondayToAll" style="padding: 14px 28px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                        Copy Monday → All Days
+                    </button>
+                    <button @onclick="ClearAll" style="padding: 14px 28px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                        Clear All
                     </button>
                 </div>
             </div>
 
             @if (!string.IsNullOrEmpty(message))
             {
-                <div style="margin-top: 20px; padding: 15px; background: #d1fae5; border: 1px solid #10b981; border-radius: 8px; color: #065f46;">
+                <div style="margin-top: 20px; padding: 16px 20px; background: #d1fae5; border-left: 4px solid #10b981; border-radius: 8px; color: #065f46; font-weight: 500;">
                     @message
                 </div>
             }
@@ -78,16 +92,16 @@
     private string selectedUserId = "";
     private string message = "";
     private List<User> users = new();
-    private Dictionary<int, DaySchedule> schedule = new();
+    private Dictionary<int, List<TimeInterval>> schedule = new();
     private Dictionary<int, string> daysOfWeek = new()
     {
-        { 0, "Sunday" },
         { 1, "Monday" },
         { 2, "Tuesday" },
         { 3, "Wednesday" },
         { 4, "Thursday" },
         { 5, "Friday" },
-        { 6, "Saturday" }
+        { 6, "Saturday" },
+        { 0, "Sunday" }
     };
 
     protected override async Task OnInitializedAsync()
@@ -99,7 +113,7 @@
 
         foreach (var day in daysOfWeek.Keys)
         {
-            schedule[day] = new DaySchedule();
+            schedule[day] = new List<TimeInterval>();
         }
 
         loading = false;
@@ -116,23 +130,36 @@
 
         foreach (var day in daysOfWeek.Keys)
         {
-            schedule[day] = new DaySchedule();
+            schedule[day] = new List<TimeInterval>();
         }
 
         if (profile?.AllowedHours != null)
         {
-            foreach (var ah in profile.AllowedHours)
+            foreach (var ah in profile.AllowedHours.OrderBy(a => a.StartTime))
             {
-                schedule[ah.DayOfWeek] = new DaySchedule
+                schedule[ah.DayOfWeek].Add(new TimeInterval
                 {
-                    Enabled = true,
                     StartTime = ah.StartTime.ToString("HH:mm"),
                     EndTime = ah.EndTime.ToString("HH:mm")
-                };
+                });
             }
         }
 
         message = "";
+    }
+
+    private void AddInterval(int dayOfWeek)
+    {
+        schedule[dayOfWeek].Add(new TimeInterval
+        {
+            StartTime = "08:00",
+            EndTime = "22:00"
+        });
+    }
+
+    private void RemoveInterval(int dayOfWeek, TimeInterval interval)
+    {
+        schedule[dayOfWeek].Remove(interval);
     }
 
     private async Task SaveSchedule()
@@ -146,7 +173,7 @@
 
         if (profile == null)
         {
-            message = "No active profile found for this user.";
+            message = "❌ No active profile found for this user.";
             return;
         }
 
@@ -154,41 +181,65 @@
         DbContext.AllowedHours.RemoveRange(profile.AllowedHours);
 
         // Add new allowed hours
-        foreach (var day in schedule.Where(s => s.Value.Enabled))
+        foreach (var day in schedule)
         {
-            var allowedHour = new Models.AllowedHours
+            foreach (var interval in day.Value)
             {
-                Profile = profile,
-                DayOfWeek = day.Key,
-                StartTime = TimeOnly.Parse(day.Value.StartTime),
-                EndTime = TimeOnly.Parse(day.Value.EndTime)
-            };
-            DbContext.AllowedHours.Add(allowedHour);
+                var allowedHour = new Models.AllowedHours
+                {
+                    ProfileId = profile.Id,
+                    DayOfWeek = day.Key,
+                    StartTime = TimeOnly.Parse(interval.StartTime),
+                    EndTime = TimeOnly.Parse(interval.EndTime)
+                };
+                DbContext.AllowedHours.Add(allowedHour);
+            }
         }
 
         await DbContext.SaveChangesAsync();
         message = "✅ Schedule saved successfully!";
     }
 
-    private void CopyToAllDays()
+    private void CopyMondayToWeekdays()
     {
         var monday = schedule[1];
-        if (!monday.Enabled) return;
+        if (!monday.Any()) return;
 
-        foreach (var day in daysOfWeek.Keys)
+        for (int day = 2; day <= 5; day++) // Tuesday to Friday
         {
-            schedule[day] = new DaySchedule
+            schedule[day] = monday.Select(i => new TimeInterval
             {
-                Enabled = true,
-                StartTime = monday.StartTime,
-                EndTime = monday.EndTime
-            };
+                StartTime = i.StartTime,
+                EndTime = i.EndTime
+            }).ToList();
         }
     }
 
-    private class DaySchedule
+    private void CopyMondayToAll()
     {
-        public bool Enabled { get; set; }
+        var monday = schedule[1];
+        if (!monday.Any()) return;
+
+        foreach (var day in daysOfWeek.Keys.Where(d => d != 1))
+        {
+            schedule[day] = monday.Select(i => new TimeInterval
+            {
+                StartTime = i.StartTime,
+                EndTime = i.EndTime
+            }).ToList();
+        }
+    }
+
+    private void ClearAll()
+    {
+        foreach (var day in daysOfWeek.Keys)
+        {
+            schedule[day].Clear();
+        }
+    }
+
+    private class TimeInterval
+    {
         public string StartTime { get; set; } = "08:00";
         public string EndTime { get; set; } = "22:00";
     }
