@@ -19,12 +19,25 @@ class Program
     [STAThread]
     static void Main(string[] args)
     {
-        // Prevent multiple instances
-        using var mutex = new Mutex(true, "ParentalControlTrayIcon", out bool createdNew);
-        if (!createdNew)
+        // Kill any existing instances before starting
+        try
         {
-            Console.WriteLine("[Tray] Another instance is already running. Exiting.");
-            return;
+            var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+            var processes = System.Diagnostics.Process.GetProcessesByName(currentProcess.ProcessName);
+            
+            foreach (var process in processes)
+            {
+                if (process.Id != currentProcess.Id)
+                {
+                    Console.WriteLine($"[Tray] Killing existing instance (PID: {process.Id})");
+                    process.Kill();
+                    process.WaitForExit(1000);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[Tray] Error killing existing instances: {ex.Message}");
         }
         
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
