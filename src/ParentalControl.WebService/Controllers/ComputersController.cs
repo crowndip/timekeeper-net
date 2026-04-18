@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ParentalControl.WebService.Data;
+using ParentalControl.WebService.Filters;
 using System.Security.Cryptography;
 
 namespace ParentalControl.WebService.Controllers;
@@ -37,6 +38,7 @@ public class ComputersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [RequireAuth]
     public async Task<IActionResult> DeleteComputer(Guid id)
     {
         var computer = await _context.Computers.FindAsync(id);
@@ -50,6 +52,7 @@ public class ComputersController : ControllerBase
     }
 
     [HttpPatch("{id}/active")]
+    [RequireAuth]
     public async Task<IActionResult> ToggleActive(Guid id)
     {
         var computer = await _context.Computers.FindAsync(id);
@@ -64,6 +67,7 @@ public class ComputersController : ControllerBase
     }
 
     [HttpPost("{id}/regenerate-key")]
+    [RequireAuth]
     public async Task<IActionResult> RegenerateApiKey(Guid id)
     {
         var computer = await _context.Computers.FindAsync(id);

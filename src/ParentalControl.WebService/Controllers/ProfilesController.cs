@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ParentalControl.WebService.Data;
 using ParentalControl.WebService.Models;
+using ParentalControl.WebService.Filters;
 
 namespace ParentalControl.WebService.Controllers;
 
@@ -42,6 +43,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpPost]
+    [RequireAuth]
     public async Task<IActionResult> CreateProfile([FromBody] TimeProfile profile)
     {
         if (!ValidationHelper.ValidateProfileName(profile.Name))
@@ -78,6 +80,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [RequireAuth]
     public async Task<IActionResult> UpdateProfile(Guid id, [FromBody] TimeProfile profile)
     {
         if (!ValidationHelper.ValidateProfileName(profile.Name))
@@ -121,6 +124,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [RequireAuth]
     public async Task<IActionResult> DeleteProfile(Guid id)
     {
         var profile = await _context.TimeProfiles.FindAsync(id);
@@ -134,6 +138,7 @@ public class ProfilesController : ControllerBase
     }
 
     [HttpPatch("{id}/activate")]
+    [RequireAuth]
     public async Task<IActionResult> ActivateProfile(Guid id)
     {
         var profile = await _context.TimeProfiles.FindAsync(id);

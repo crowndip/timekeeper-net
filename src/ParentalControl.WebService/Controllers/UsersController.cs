@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using ParentalControl.WebService.Data;
 using ParentalControl.WebService.Models;
 using ParentalControl.WebService.Services;
+using ParentalControl.WebService.Filters;
 
 namespace ParentalControl.WebService.Controllers;
 
@@ -40,6 +41,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPost]
+    [RequireAuth]
     public async Task<IActionResult> CreateUser([FromBody] User user)
     {
         if (!ValidationHelper.ValidateUsername(user.Username))
@@ -62,6 +64,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPut("{id}")]
+    [RequireAuth]
     public async Task<IActionResult> UpdateUser(Guid id, [FromBody] User user)
     {
         if (!ValidationHelper.ValidateEmail(user.Email))
@@ -83,6 +86,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpDelete("{id}")]
+    [RequireAuth]
     public async Task<IActionResult> DeleteUser(Guid id)
     {
         var user = await _context.Users.FindAsync(id);
@@ -96,6 +100,7 @@ public class UsersController : ControllerBase
     }
     
     [HttpPost("{id}/adjust-time")]
+    [RequireAuth]
     public async Task<IActionResult> AdjustTime(Guid id, [FromBody] TimeAdjustmentRequest request)
     {
         var user = await _context.Users.FindAsync(id);
@@ -153,6 +158,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpPatch("{id}/active")]
+    [RequireAuth]
     public async Task<IActionResult> ToggleActive(Guid id)
     {
         var user = await _context.Users.FindAsync(id);
