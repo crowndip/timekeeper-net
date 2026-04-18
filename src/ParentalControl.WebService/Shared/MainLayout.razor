@@ -1,15 +1,153 @@
 @inherits LayoutComponentBase
 
+<style>
+    * {
+        box-sizing: border-box;
+    }
+    
+    body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+    }
+    
+    .page {
+        display: flex;
+        min-height: 100vh;
+    }
+    
+    .sidebar {
+        width: 250px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 24px;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        overflow-y: auto;
+    }
+    
+    .sidebar h3 {
+        margin: 0 0 24px 0;
+        font-size: 1.25rem;
+        color: #1f2937;
+        font-weight: 700;
+    }
+    
+    .sidebar nav {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .sidebar nav a {
+        padding: 12px 16px;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #4b5563;
+        font-weight: 500;
+        transition: all 0.2s;
+    }
+    
+    .sidebar nav a:hover {
+        background: #f3f4f6;
+        color: #1f2937;
+    }
+    
+    main {
+        flex: 1;
+        overflow-x: hidden;
+    }
+    
+    .content {
+        padding: 20px;
+    }
+    
+    /* Mobile menu toggle */
+    .menu-toggle {
+        display: none;
+        position: fixed;
+        top: 16px;
+        left: 16px;
+        z-index: 1001;
+        background: white;
+        border: none;
+        border-radius: 8px;
+        padding: 12px;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    
+    .menu-toggle span {
+        display: block;
+        width: 24px;
+        height: 3px;
+        background: #1f2937;
+        margin: 5px 0;
+        border-radius: 2px;
+        transition: 0.3s;
+    }
+    
+    /* Mobile styles */
+    @@media (max-width: 768px) {
+        .sidebar {
+            position: fixed;
+            left: -250px;
+            top: 0;
+            height: 100vh;
+            z-index: 1000;
+            transition: left 0.3s;
+        }
+        
+        .sidebar.open {
+            left: 0;
+        }
+        
+        .menu-toggle {
+            display: block;
+        }
+        
+        .content {
+            padding: 60px 12px 12px 12px;
+        }
+        
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        
+        .overlay.show {
+            display: block;
+        }
+    }
+</style>
+
+<button class="menu-toggle" @onclick="ToggleMenu">
+    <span></span>
+    <span></span>
+    <span></span>
+</button>
+
+<div class="overlay @(menuOpen ? "show" : "")" @onclick="ToggleMenu"></div>
+
 <div class="page">
-    <div class="sidebar">
+    <div class="sidebar @(menuOpen ? "open" : "")">
         <h3>Parental Control</h3>
         <nav>
-            <a href="/">Dashboard</a>
-            <a href="/users">Users</a>
-            <a href="/profiles">Profiles</a>
-            <a href="/allowed-hours">Allowed Hours</a>
-            <a href="/computers">Computers</a>
-            <a href="/reports">Reports</a>
+            <a href="/" @onclick="CloseMenu">Dashboard</a>
+            <a href="/users" @onclick="CloseMenu">Users</a>
+            <a href="/profiles" @onclick="CloseMenu">Profiles</a>
+            <a href="/allowed-hours" @onclick="CloseMenu">Allowed Hours</a>
+            <a href="/computers" @onclick="CloseMenu">Computers</a>
+            <a href="/reports" @onclick="CloseMenu">Reports</a>
         </nav>
     </div>
     
@@ -19,3 +157,17 @@
         </div>
     </main>
 </div>
+
+@code {
+    private bool menuOpen = false;
+    
+    private void ToggleMenu()
+    {
+        menuOpen = !menuOpen;
+    }
+    
+    private void CloseMenu()
+    {
+        menuOpen = false;
+    }
+}
