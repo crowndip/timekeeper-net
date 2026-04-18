@@ -15,4 +15,8 @@
   <ItemGroup>
     <ProjectReference Include="..\ParentalControl.Shared\ParentalControl.Shared.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="icon.png" />
+  </ItemGroup>
 </Project>

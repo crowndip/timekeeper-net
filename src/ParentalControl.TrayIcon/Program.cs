@@ -65,10 +65,24 @@ public class TrayApp : Application
         _trayIcon = new Avalonia.Controls.TrayIcon
         {
             IsVisible = true,
-            ToolTipText = "Loading..."
+            ToolTipText = "Loading...",
+            Icon = LoadIcon()
         };
 
         _timer = new Timer(_ => UpdateTime(), null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
+    }
+    
+    private Avalonia.Controls.WindowIcon LoadIcon()
+    {
+        var assembly = System.Reflection.Assembly.GetExecutingAssembly();
+        var stream = assembly.GetManifestResourceStream("ParentalControl.TrayIcon.icon.png");
+        if (stream != null)
+        {
+            return new Avalonia.Controls.WindowIcon(stream);
+        }
+        
+        // Fallback: create empty stream
+        return new Avalonia.Controls.WindowIcon(new System.IO.MemoryStream());
     }
 
     private void LoadConfig()
