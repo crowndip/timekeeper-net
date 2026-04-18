@@ -209,6 +209,59 @@ jobs:
           
           ---
           
+          ### Reverse Proxy with Basic Authentication
+          
+          If your server is behind a reverse proxy with basic authentication (e.g., Nginx, Traefik):
+          
+          **Linux Client:**
+          ```bash
+          # Set server URL (without credentials)
+          sudo /opt/parental-control/ParentalControl.Client set server-url https://tracking.yourdomain.com
+          
+          # Configure basic auth
+          sudo tee /opt/parental-control/appsettings.json > /dev/null <<EOF
+          {
+            "ParentalControl": {
+              "ReverseProxy": {
+                "Enabled": true,
+                "Username": "your_username",
+                "Password": "your_password"
+              }
+            }
+          }
+          EOF
+          
+          # Restart service
+          sudo systemctl restart parental-control-client
+          ```
+          
+          **Windows Client:**
+          ```powershell
+          # Set server URL (without credentials)
+          & "C:\Program Files\ParentalControl\ParentalControl.Client.Windows.exe" set server-url https://tracking.yourdomain.com
+          
+          # Configure basic auth
+          $config = @"
+          {
+            "ParentalControl": {
+              "ReverseProxy": {
+                "Enabled": true,
+                "Username": "your_username",
+                "Password": "your_password"
+              }
+            }
+          }
+          "@
+          $config | Out-File -FilePath "C:\ProgramData\ParentalControl\appsettings.json" -Encoding UTF8
+          
+          # Restart service
+          Restart-Service ParentalControlClient
+          ```
+          
+          **Note:** Both client and tray applications use the same configuration file.
+          
+          ---
+          
           ### Documentation
           
           - [Installation Guide](https://github.com/crowndip/timekeeper-net/blob/main/INSTALLATION.md)
