@@ -9,7 +9,10 @@
 <PageTitle>Devices</PageTitle>
 
 <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
-    <h1 style="margin-bottom: 20px;">💻 Registered Devices</h1>
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h1 style="margin: 0;">💻 Registered Devices</h1>
+        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">← Dashboard</a>
+    </div>
 
     @if (loading)
     {
@@ -67,10 +70,6 @@
             <p style="text-align: center; padding: 40px; color: #6b7280;">No devices registered yet. Devices will appear here when clients connect.</p>
         }
     }
-
-    <div style="margin-top: 20px;">
-        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; display: inline-block;">Back to Dashboard</a>
-    </div>
 </div>
 
 @if (showDetailsDialog && selectedComputer != null)

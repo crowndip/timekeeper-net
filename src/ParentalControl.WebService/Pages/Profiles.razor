@@ -12,9 +12,12 @@
 <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
         <h1 style="margin: 0;">⏱️ Time Profiles</h1>
-        <button @onclick="ShowAddDialog" style="padding: 10px 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-            + Add Profile
-        </button>
+        <div style="display: flex; gap: 10px;">
+            <button @onclick="ShowAddDialog" style="padding: 10px 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                + Add Profile
+            </button>
+            <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">← Dashboard</a>
+        </div>
     </div>
 
     @if (loading)
@@ -68,10 +71,6 @@
             <p style="text-align: center; padding: 40px; color: #6b7280;">No profiles found. Click "Add Profile" to create one.</p>
         }
     }
-
-    <div style="margin-top: 20px;">
-        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; display: inline-block;">Back to Dashboard</a>
-    </div>
 </div>
 
 @if (showDialog)
