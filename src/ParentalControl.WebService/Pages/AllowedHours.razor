@@ -2,17 +2,28 @@
 @using ParentalControl.WebService.Models
 @using ParentalControl.WebService.Data
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.JSInterop
 @inject AppDbContext DbContext
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
 
 <PageTitle>Allowed Hours</PageTitle>
 
 <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
     <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <h1 style="margin: 0 0 8px 0; font-size: 28px;">🕐 Allowed Hours</h1>
+            <h1 style="margin: 0 0 8px 0; font-size: 28px;">🕐 Allowed Hours @(isReadOnly ? "(Read-Only)" : "")</h1>
             <p style="color: #6b7280; margin: 0;">Define time windows when computer use is permitted. Multiple intervals per day supported.</p>
         </div>
-        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">← Dashboard</a>
+        <div style="display: flex; gap: 10px;">
+            @if (isReadOnly)
+            {
+                <button @onclick="RequestAdminAuth" style="padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
+                    🔒 Unlock Editing
+                </button>
+            }
+            <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">← Dashboard</a>
+        </div>
     </div>
 
     @if (loading)
@@ -51,30 +62,30 @@
                                     @foreach (var interval in intervals)
                                     {
                                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-                                            <input type="time" value="@interval.StartTime" @onchange="e => interval.StartTime = e.Value?.ToString() ?? interval.StartTime" style="padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 130px;" />
+                                            <input type="time" value="@interval.StartTime" @onchange="e => interval.StartTime = e.Value?.ToString() ?? interval.StartTime" disabled="@isReadOnly" style="padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 130px; cursor: @(isReadOnly ? "not-allowed" : "text"); opacity: @(isReadOnly ? "0.6" : "1");" />
                                             <span style="color: #6b7280; font-weight: 500;">to</span>
-                                            <input type="time" value="@interval.EndTime" @onchange="e => interval.EndTime = e.Value?.ToString() ?? interval.EndTime" style="padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 130px;" />
-                                            <button @onclick="() => RemoveInterval(day.Key, interval)" style="padding: 8px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px;">✕ Remove</button>
+                                            <input type="time" value="@interval.EndTime" @onchange="e => interval.EndTime = e.Value?.ToString() ?? interval.EndTime" disabled="@isReadOnly" style="padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 130px; cursor: @(isReadOnly ? "not-allowed" : "text"); opacity: @(isReadOnly ? "0.6" : "1");" />
+                                            <button @onclick="() => RemoveInterval(day.Key, interval)" disabled="@isReadOnly" style="padding: 8px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 13px; opacity: @(isReadOnly ? "0.5" : "1");">✕ Remove</button>
                                         </div>
                                     }
                                 }
-                                <button @onclick="() => AddInterval(day.Key)" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; margin-top: 4px;">+ Add Time Window</button>
+                                <button @onclick="() => AddInterval(day.Key)" disabled="@isReadOnly" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 13px; margin-top: 4px; opacity: @(isReadOnly ? "0.5" : "1");">+ Add Time Window</button>
                             </div>
                         </div>
                     </div>
                 }
                 
                 <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
-                    <button @onclick="SaveSchedule" style="padding: 14px 28px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">
+                    <button @onclick="SaveSchedule" disabled="@isReadOnly" style="padding: 14px 28px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(16,185,129,0.2); opacity: @(isReadOnly ? "0.5" : "1");">
                         💾 Save Schedule
                     </button>
-                    <button @onclick="CopyMondayToWeekdays" style="padding: 14px 28px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                    <button @onclick="CopyMondayToWeekdays" disabled="@isReadOnly" style="padding: 14px 28px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 14px; opacity: @(isReadOnly ? "0.5" : "1");">
                         Copy Monday → Weekdays
                     </button>
-                    <button @onclick="CopyMondayToAll" style="padding: 14px 28px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                    <button @onclick="CopyMondayToAll" disabled="@isReadOnly" style="padding: 14px 28px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 14px; opacity: @(isReadOnly ? "0.5" : "1");">
                         Copy Monday → All Days
                     </button>
-                    <button @onclick="ClearAll" style="padding: 14px 28px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+                    <button @onclick="ClearAll" disabled="@isReadOnly" style="padding: 14px 28px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 14px; opacity: @(isReadOnly ? "0.5" : "1");">
                         Clear All
                     </button>
                 </div>
@@ -96,6 +107,7 @@
     private string message = "";
     private List<User> users = new();
     private Dictionary<int, List<TimeInterval>> schedule = new();
+    private bool isReadOnly = true;
     private Dictionary<int, string> daysOfWeek = new()
     {
         { 1, "Monday" },
@@ -109,6 +121,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await CheckAdminAuth();
         users = await DbContext.Users
             .Where(u => u.AccountType == AccountType.Child && u.IsActive)
             .OrderBy(u => u.Username)
@@ -120,6 +133,17 @@
         }
 
         loading = false;
+    }
+
+    private async Task CheckAdminAuth()
+    {
+        var isAuth = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "adminAuthenticated");
+        isReadOnly = isAuth != "true";
+    }
+
+    private void RequestAdminAuth()
+    {
+        Navigation.NavigateTo("/admin-auth");
     }
 
     private async Task LoadAllowedHours()
