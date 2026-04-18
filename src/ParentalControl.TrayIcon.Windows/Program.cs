@@ -46,6 +46,8 @@ class Program
         {
             var serverUrlPath = @"C:\ProgramData\ParentalControl\server-url.txt";
             var computerIdPath = @"C:\ProgramData\ParentalControl\computer-id.txt";
+            var proxyUserPath = @"C:\ProgramData\ParentalControl\proxy-user.txt";
+            var proxyPassPath = @"C:\ProgramData\ParentalControl\proxy-pass.txt";
             var configPath = @"C:\ProgramData\ParentalControl\appsettings.json";
 
             if (File.Exists(serverUrlPath))
@@ -55,28 +57,46 @@ class Program
                 {
                     _httpClient = new HttpClient { BaseAddress = new Uri(serverUrl), Timeout = TimeSpan.FromSeconds(5) };
                     
-                    // Check for basic auth config
-                    if (File.Exists(configPath))
+                    // Try persistent files first
+                    string? proxyUser = null;
+                    string? proxyPass = null;
+                    
+                    if (File.Exists(proxyUserPath))
+                        proxyUser = File.ReadAllText(proxyUserPath).Trim();
+                    
+                    if (File.Exists(proxyPassPath))
+                        proxyPass = File.ReadAllText(proxyPassPath).Trim();
+                    
+                    // Fall back to appsettings.json if persistent files don't exist
+                    if (string.IsNullOrEmpty(proxyUser) || string.IsNullOrEmpty(proxyPass))
                     {
-                        try
+                        if (File.Exists(configPath))
                         {
-                            var json = File.ReadAllText(configPath);
-                            var config = JsonSerializer.Deserialize<JsonElement>(json);
-                            
-                            if (config.TryGetProperty("ParentalControl", out var pc) &&
-                                pc.TryGetProperty("ReverseProxy", out var proxy) &&
-                                proxy.TryGetProperty("Enabled", out var enabled) && enabled.GetBoolean())
+                            try
                             {
-                                if (proxy.TryGetProperty("Username", out var user) &&
-                                    proxy.TryGetProperty("Password", out var pass))
+                                var json = File.ReadAllText(configPath);
+                                var config = JsonSerializer.Deserialize<JsonElement>(json);
+                                
+                                if (config.TryGetProperty("ParentalControl", out var pc) &&
+                                    pc.TryGetProperty("ReverseProxy", out var proxy) &&
+                                    proxy.TryGetProperty("Enabled", out var enabled) && enabled.GetBoolean())
                                 {
-                                    var authBytes = Encoding.ASCII.GetBytes($"{user.GetString()}:{pass.GetString()}");
-                                    var authHeader = Convert.ToBase64String(authBytes);
-                                    _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
+                                    if (proxy.TryGetProperty("Username", out var user))
+                                        proxyUser = user.GetString();
+                                    if (proxy.TryGetProperty("Password", out var pass))
+                                        proxyPass = pass.GetString();
                                 }
                             }
+                            catch { }
                         }
-                        catch { }
+                    }
+                    
+                    // Configure basic auth if credentials are available
+                    if (!string.IsNullOrEmpty(proxyUser) && !string.IsNullOrEmpty(proxyPass))
+                    {
+                        var authBytes = Encoding.ASCII.GetBytes($"{proxyUser}:{proxyPass}");
+                        var authHeader = Convert.ToBase64String(authBytes);
+                        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", authHeader);
                     }
                 }
             }
