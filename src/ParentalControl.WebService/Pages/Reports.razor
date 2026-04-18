@@ -120,12 +120,20 @@
     {
         if (reports.Any() && !chartsRendered)
         {
-            await RenderAllUsersChart();
-            if (selectedUserId != Guid.Empty)
+            try
             {
-                await RenderUserChart();
+                await RenderAllUsersChart();
+                if (selectedUserId != Guid.Empty)
+                {
+                    await RenderUserChart();
+                }
+                chartsRendered = true;
             }
-            chartsRendered = true;
+            catch
+            {
+                // Chart rendering failed, allow retry on next render
+                chartsRendered = false;
+            }
         }
     }
 
@@ -137,6 +145,9 @@
         
         reports = await ReportService.GetUsageReportAsync(startDate, endDate);
         loading = false;
+        
+        // Force chart re-render after data loads
+        await Task.Delay(100);
         StateHasChanged();
     }
 
@@ -145,6 +156,9 @@
         selectedUserId = userId;
         selectedUsername = username;
         chartsRendered = false;
+        
+        // Force re-render
+        await Task.Delay(100);
         StateHasChanged();
     }
 
