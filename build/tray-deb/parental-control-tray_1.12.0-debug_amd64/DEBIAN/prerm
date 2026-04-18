@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+# Kill any running tray instances (on both upgrade and removal)
+pkill -f "ParentalControl.TrayIcon" || true
+
+exit 0

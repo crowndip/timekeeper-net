@@ -19,6 +19,14 @@ class Program
     [STAThread]
     static void Main(string[] args)
     {
+        // Prevent multiple instances
+        using var mutex = new Mutex(true, "ParentalControlTrayIcon", out bool createdNew);
+        if (!createdNew)
+        {
+            Console.WriteLine("[Tray] Another instance is already running. Exiting.");
+            return;
+        }
+        
         BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
@@ -172,6 +180,8 @@ public class TrayApp : Application
         try
         {
             Console.WriteLine($"[Tray] Sending usage report to server...");
+            Console.WriteLine($"[Tray] Auth header present: {_httpClient.DefaultRequestHeaders.Authorization != null}");
+            
             var request = new UsageReportRequest(
                 _computerId.Value,
                 Guid.Empty,
