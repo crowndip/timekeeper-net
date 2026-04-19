@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parental Control System - Data Flow Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h2 {
+            color: #555;
+            margin-top: 40px;
+            padding: 10px;
+            background: #fff;
+            border-left: 4px solid #4CAF50;
+        }
+        .diagram {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .description {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #2196F3;
+        }
+        .mermaid {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔒 Parental Control System - Data Flow Diagrams</h1>
+
+    <h2>1. Client Startup & Registration</h2>
+    <div class="description">
+        <strong>When:</strong> Client service starts (system boot or service restart)<br>
+        <strong>Purpose:</strong> Register computer with server and sync local users
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Client as Client Service
+    participant Server as Web Server
+    participant DB as PostgreSQL
+    
+    Client->>Server: POST /api/client/register<br/>{ComputerName, OS}
+    Server->>DB: INSERT/UPDATE Computer
+    DB-->>Server: Computer ID
+    Server-->>Client: {ComputerId, ApiKey}
+    Client->>Client: Save ComputerId to<br/>/etc/parental-control/computer-id
+    
+    Client->>Client: Get local users<br/>(loginctl/WMI)
+    Client->>Server: POST /api/client/sync-users<br/>{ComputerId, Usernames[]}
+    Server->>DB: INSERT Users (if not exist)
+    DB-->>Server: User records
+    Server-->>Client: {Success}
+        </div>
+    </div>
+
+    <h2>2. Time Tracking (Every 60 seconds)</h2>
+    <div class="description">
+        <strong>When:</strong> Every tick interval (default 60 seconds)<br>
+        <strong>Purpose:</strong> Track active sessions and record time usage
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Client as Client Service
+    participant Session as Session Monitor
+    participant Cache as Local Cache (SQLite)
+    participant Server as Web Server
+    participant DB as PostgreSQL
+    
+    Client->>Session: GetActiveSessions()
+    Session->>Session: loginctl list-sessions<br/>(Linux)
+    Session-->>Client: [UserSession]
+    
+    loop For each session
+        Client->>Session: IsSessionIdleAsync(sessionId)
+        Session->>Session: loginctl show-session<br/>-p LockedHint
+        Session-->>Client: isLocked (true/false)
+        
+        alt Screen Unlocked
+            Client->>Cache: IncrementUsage(user, 1 active, 0 idle)
+        else Screen Locked
+            Client->>Cache: IncrementUsage(user, 0 active, 1 idle)
+        end
+    end
+    
+    Client->>Cache: GetPendingRecords()
+    Cache-->>Client: [UsageRecords]
+    
+    Client->>Server: POST /api/client/usage<br/>{ComputerId, Username, Minutes}
+    Server->>DB: SELECT TimeProfile (active)
+    Server->>DB: SELECT TimeUsage (today)
+    Server->>DB: SELECT TimeAdjustments (today)
+    Server->>DB: INSERT/UPDATE TimeUsage
+    Server->>DB: UPDATE Computer.LastSeenAt
+    DB-->>Server: TimeRemaining, ShouldEnforce
+    Server-->>Client: {TimeRemainingMinutes, ShouldEnforce}
+    
+    Client->>Cache: MarkAsSynced(recordIds)
+        </div>
+    </div>
+
+    <h2>3. Time Calculation (Server-Side)</h2>
+    <div class="description">
+        <strong>When:</strong> On every usage report from client<br>
+        <strong>Purpose:</strong> Calculate remaining time based on limits and usage
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Server as Web Server
+    participant TimeCalc as TimeCalculationService
+    participant DB as PostgreSQL
+    
+    Server->>TimeCalc: CalculateTimeRemainingAsync(userId, date)
+    
+    TimeCalc->>DB: SELECT TimeProfile<br/>WHERE UserId AND IsActive
+    DB-->>TimeCalc: Profile (daily limits, weekly limit)
+    
+    TimeCalc->>DB: SELECT SUM(MinutesUsed)<br/>FROM TimeUsage<br/>WHERE UsageDate = today
+    DB-->>TimeCalc: usedToday
+    
+    TimeCalc->>DB: SELECT SUM(MinutesAdjustment)<br/>FROM TimeAdjustments<br/>WHERE AdjustmentDate = today
+    DB-->>TimeCalc: adjustments
+    
+    TimeCalc->>TimeCalc: dailyRemaining = <br/>dailyLimit - usedToday + adjustments
+    
+    alt Has Weekly Limit
+        TimeCalc->>DB: SELECT SUM(MinutesUsed)<br/>FROM TimeUsage<br/>WHERE UsageDate >= weekStart
+        DB-->>TimeCalc: usedThisWeek
+        TimeCalc->>TimeCalc: weeklyRemaining = <br/>weeklyLimit - usedThisWeek
+        TimeCalc->>TimeCalc: return MIN(dailyRemaining, weeklyRemaining)
+    else No Weekly Limit
+        TimeCalc->>TimeCalc: return dailyRemaining
+    end
+    
+    TimeCalc-->>Server: timeRemaining (minutes)
+        </div>
+    </div>
+
+    <h2>4. Enforcement (When Time Runs Out)</h2>
+    <div class="description">
+        <strong>When:</strong> Time remaining ≤ 0 or outside allowed hours<br>
+        <strong>Purpose:</strong> Terminate user session to enforce time limits
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Client as Client Service
+    participant Enforcement as EnforcementEngine
+    participant TimeCalc as TimeCalculationService
+    participant Session as Session Monitor
+    participant OS as Operating System
+    
+    Client->>Enforcement: CheckAndEnforceAsync(response)
+    Enforcement->>Enforcement: Check timeRemaining <= 0
+    
+    alt Time Expired
+        Enforcement->>TimeCalc: IsWithinAllowedHoursAsync(userId, now)
+        TimeCalc-->>Enforcement: isAllowed (true/false)
+        
+        alt Outside Allowed Hours OR No Time
+            Enforcement->>Session: GetActiveSessions()
+            Session-->>Enforcement: [UserSession]
+            
+            loop For each session
+                Enforcement->>OS: loginctl terminate-session<br/>(Linux)
+                Note over OS: User is logged out
+            end
+            
+            Enforcement->>Enforcement: Show notification<br/>"Time limit reached"
+        end
+    end
+        </div>
+    </div>
+
+    <h2>5. Admin Authentication & Edit Operations</h2>
+    <div class="description">
+        <strong>When:</strong> Admin wants to edit users, profiles, or time limits<br>
+        <strong>Purpose:</strong> Secure server-side authentication for mutations
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Browser as Web Browser
+    participant UI as Blazor UI
+    participant AuthAPI as Auth Controller
+    participant AuthSvc as AuthService
+    participant Session as Server Session
+    participant API as Protected API
+    participant DB as PostgreSQL
+    
+    Browser->>UI: Click "Unlock Editing"
+    UI->>Browser: Navigate to /admin-auth
+    Browser->>UI: Enter password
+    UI->>AuthAPI: POST /api/auth/login<br/>{Password}
+    AuthAPI->>AuthSvc: ValidatePassword(password)
+    AuthSvc->>AuthSvc: Compare with<br/>LimitAdministratorPassword
+    
+    alt Valid Password
+        AuthSvc->>Session: SetString("IsAuthenticated", "true")
+        Session-->>AuthSvc: Session cookie created
+        AuthAPI-->>UI: 200 OK {success: true}
+        UI->>Browser: Navigate back to page
+        Browser->>UI: Page shows edit controls
+        
+        UI->>API: POST /api/users<br/>{UserData}
+        API->>AuthSvc: IsAuthenticated()
+        AuthSvc->>Session: GetString("IsAuthenticated")
+        Session-->>AuthSvc: "true"
+        
+        alt Authenticated
+            API->>DB: INSERT User
+            DB-->>API: User created
+            API-->>UI: 200 OK {success: true}
+        else Not Authenticated
+            API-->>UI: 401 Unauthorized
+        end
+    else Invalid Password
+        AuthAPI-->>UI: 401 Unauthorized
+        UI->>Browser: Show error message
+    end
+        </div>
+    </div>
+
+    <h2>6. Time Adjustment (Emergency Time Grant)</h2>
+    <div class="description">
+        <strong>When:</strong> Admin grants extra time to a user<br>
+        <strong>Purpose:</strong> Allow temporary time extension for special circumstances
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Browser as Web Browser
+    participant UI as Users Page
+    participant API as Users Controller
+    participant Auth as AuthService
+    participant DB as PostgreSQL
+    participant Client as Client Service
+    
+    Browser->>UI: Click "Adjust Time" for user
+    UI->>Browser: Show dialog (enter minutes)
+    Browser->>UI: Enter +30 minutes
+    
+    UI->>API: POST /api/users/{id}/adjust-time<br/>{MinutesAdjustment: 30}
+    API->>Auth: Check [RequireAuth]
+    Auth-->>API: Authenticated ✓
+    
+    API->>DB: INSERT TimeAdjustment<br/>{UserId, Date: today, Minutes: 30}
+    DB-->>API: Adjustment saved
+    API-->>UI: 200 OK {success: true}
+    UI->>Browser: Show success message
+    
+    Note over Client: On next tick (within 60s)
+    Client->>API: POST /api/client/usage
+    API->>DB: SELECT TimeAdjustments<br/>WHERE UserId AND Date = today
+    DB-->>API: adjustments = +30
+    API->>API: timeRemaining = <br/>limit - used + 30
+    API-->>Client: {TimeRemainingMinutes: increased}
+        </div>
+    </div>
+
+    <h2>7. Tray Icon Status Updates</h2>
+    <div class="description">
+        <strong>When:</strong> Every 30 seconds (tray app timer)<br>
+        <strong>Purpose:</strong> Show remaining time in system tray
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Tray as Tray Icon App
+    participant Server as Web Server
+    participant DB as PostgreSQL
+    participant UI as System Tray
+    
+    loop Every 30 seconds
+        Tray->>Server: POST /api/client/usage<br/>{ComputerId, Username, IsQuery: true}
+        Note over Tray: IsQuery=true means<br/>no usage to report
+        
+        Server->>DB: SELECT User WHERE Username
+        Server->>DB: SELECT TimeProfile (active)
+        Server->>DB: SELECT TimeUsage (today)
+        Server->>DB: SELECT TimeAdjustments (today)
+        DB-->>Server: Calculate time remaining
+        
+        alt Parent Account
+            Server-->>Tray: {TimeRemainingMinutes: 2147483647}
+            Tray->>UI: Update tooltip:<br/>"Parent - No time limit"
+        else Child Account
+            Server-->>Tray: {TimeRemainingMinutes: 45}
+            Tray->>UI: Update tooltip:<br/>"45m remaining"
+        end
+    end
+        </div>
+    </div>
+
+    <h2>8. Offline Mode (Server Unavailable)</h2>
+    <div class="description">
+        <strong>When:</strong> Server is unreachable (network down, server offline)<br>
+        <strong>Purpose:</strong> Continue enforcement using cached data
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Client as Client Service
+    participant Cache as Local Cache (SQLite)
+    participant Server as Web Server
+    participant Enforcement as EnforcementEngine
+    
+    Client->>Cache: GetPendingRecords()
+    Cache-->>Client: [UsageRecords]
+    
+    Client->>Server: POST /api/client/usage
+    Note over Server: Server unreachable
+    Server--xClient: Connection timeout
+    
+    Client->>Client: Log warning:<br/>"Server unavailable, using offline mode"
+    
+    Client->>Enforcement: CheckAndEnforceOfflineAsync(usageData)
+    Enforcement->>Cache: Get last known time limit
+    Enforcement->>Enforcement: Calculate local time remaining<br/>(estimate based on cache)
+    
+    alt Time likely expired
+        Enforcement->>Enforcement: Enforce logout<br/>(conservative approach)
+    else Time likely remaining
+        Enforcement->>Enforcement: Allow continued use
+    end
+    
+    Note over Client: Usage records stay in cache<br/>Will sync when server returns
+        </div>
+    </div>
+
+    <h2>9. Profile & Allowed Hours Management</h2>
+    <div class="description">
+        <strong>When:</strong> Admin creates/edits time profiles or allowed hours<br>
+        <strong>Purpose:</strong> Configure time limits and usage windows
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Browser as Web Browser
+    participant UI as Profiles Page
+    participant API as Profiles Controller
+    participant Auth as AuthService
+    participant DB as PostgreSQL
+    
+    Browser->>UI: Create new profile
+    UI->>Browser: Show form (daily limits, weekly limit)
+    Browser->>UI: Enter limits:<br/>Mon-Fri: 120min, Sat-Sun: 180min
+    
+    UI->>API: POST /api/profiles<br/>{UserId, Name, MondayLimit: 120, ...}
+    API->>Auth: Check [RequireAuth]
+    Auth-->>API: Authenticated ✓
+    
+    API->>DB: BEGIN TRANSACTION
+    
+    alt IsActive = true
+        API->>DB: UPDATE TimeProfiles<br/>SET IsActive = false<br/>WHERE UserId (deactivate others)
+    end
+    
+    API->>DB: INSERT TimeProfile<br/>{UserId, Name, Limits, IsActive}
+    DB-->>API: Profile created
+    
+    API->>DB: COMMIT
+    API-->>UI: 200 OK {success: true, data: profile}
+    
+    Note over UI: Profile immediately active<br/>Client will use on next tick
+    
+    opt Add Allowed Hours
+        Browser->>UI: Add time window:<br/>Mon-Fri 15:00-20:00
+        UI->>API: POST /api/profiles/{id}/allowed-hours
+        API->>DB: INSERT AllowedHours<br/>{ProfileId, DayOfWeek, StartTime, EndTime}
+        DB-->>API: Hours saved
+        API-->>UI: 200 OK
+    end
+        </div>
+    </div>
+
+    <h2>10. Reports & Usage History</h2>
+    <div class="description">
+        <strong>When:</strong> Admin views usage reports<br>
+        <strong>Purpose:</strong> Analyze time usage patterns and trends
+    </div>
+    <div class="diagram">
+        <div class="mermaid">
+sequenceDiagram
+    participant Browser as Web Browser
+    participant UI as Reports Page
+    participant DB as PostgreSQL
+    
+    Browser->>UI: Navigate to /reports
+    UI->>UI: Select user and date range
+    
+    UI->>DB: SELECT TimeUsage<br/>WHERE UserId<br/>AND UsageDate BETWEEN start AND end<br/>GROUP BY UsageDate
+    DB-->>UI: Daily usage data
+    
+    UI->>DB: SELECT TimeProfile<br/>WHERE UserId AND IsActive
+    DB-->>UI: Current limits
+    
+    UI->>UI: Render chart:<br/>- Daily usage bars<br/>- Limit line<br/>- Trend analysis
+    
+    Browser->>Browser: Display interactive chart<br/>with hover tooltips
+    
+    opt Export Data
+        Browser->>UI: Click "Export"
+        UI->>UI: Generate CSV:<br/>Date, Minutes Used, Limit
+        UI->>Browser: Download usage-report.csv
+    end
+        </div>
+    </div>
+
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            sequence: {
+                diagramMarginX: 50,
+                diagramMarginY: 10,
+                actorMargin: 50,
+                width: 150,
+                height: 65,
+                boxMargin: 10,
+                boxTextMargin: 5,
+                noteMargin: 10,
+                messageMargin: 35
+            }
+        });
+    </script>
+</body>
+</html>
