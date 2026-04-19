@@ -12,6 +12,7 @@ public class ParentalControlWorker : BackgroundService
     private readonly ISessionMonitor _sessionMonitor;
     private readonly IEnforcementEngine _enforcement;
     private Guid _currentSessionId = Guid.NewGuid();
+    private bool _isLocked = false;
     private readonly HashSet<string> _ignoredAccounts = new(StringComparer.OrdinalIgnoreCase)
     {
         "SYSTEM", "LOCAL SERVICE", "NETWORK SERVICE", "Administrator"
@@ -31,6 +32,33 @@ public class ParentalControlWorker : BackgroundService
         _cache = cache;
         _sessionMonitor = sessionMonitor;
         _enforcement = enforcement;
+        
+        // Subscribe to session lock/unlock events
+        _sessionMonitor.SessionChanged += OnSessionChanged;
+    }
+    
+    private void OnSessionChanged(object? sender, SessionChangeEventArgs e)
+    {
+        switch (e.ChangeType)
+        {
+            case SessionChangeType.Lock:
+                _isLocked = true;
+                _logger.LogInformation("Session locked for user {User}", e.Username);
+                break;
+            case SessionChangeType.Unlock:
+                _isLocked = false;
+                _logger.LogInformation("Session unlocked for user {User}", e.Username);
+                break;
+            case SessionChangeType.Logoff:
+                _isLocked = false;
+                _currentSessionId = Guid.NewGuid(); // New session on next logon
+                _logger.LogInformation("User {User} logged off", e.Username);
+                break;
+            case SessionChangeType.Logon:
+                _isLocked = false;
+                _logger.LogInformation("User {User} logged on", e.Username);
+                break;
+        }
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -70,7 +98,17 @@ public class ParentalControlWorker : BackgroundService
 
         // Server will map username to userId automatically
         var userId = Guid.Empty; // Placeholder, server determines actual userId
-        await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 1, 0);
+        
+        // Only count time if session is not locked
+        // If locked (screen locked or lid closed), record as idle time
+        if (_isLocked)
+        {
+            await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 0, 1); // Idle minute
+        }
+        else
+        {
+            await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 1, 0); // Active minute
+        }
 
         var pendingRecords = await _cache.GetPendingRecordsAsync();
         

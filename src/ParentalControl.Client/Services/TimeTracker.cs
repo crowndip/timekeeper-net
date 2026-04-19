@@ -22,17 +22,20 @@ public class TimeTracker : ITimeTracker
     
     public async Task RecordMinuteAsync(UserSession session)
     {
-        var isIdle = await _sessionMonitor.IsSessionIdleAsync(session.SessionId);
+        // Check if session is locked or screen is locked
+        // If locked, don't count time (user away from computer)
+        var isLocked = await _sessionMonitor.IsSessionIdleAsync(session.SessionId);
         
         // Generate a consistent Guid from the session ID string
         var sessionGuid = GenerateGuidFromString(session.SessionId);
         
+        // Record time: active if unlocked, idle if locked
         await _cache.IncrementUsageAsync(
             session.UserId,
             session.Username,
             sessionGuid,
-            activeMinutes: isIdle ? 0 : 1,
-            idleMinutes: isIdle ? 1 : 0
+            activeMinutes: isLocked ? 0 : 1,
+            idleMinutes: isLocked ? 1 : 0
         );
     }
     

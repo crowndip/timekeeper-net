@@ -81,28 +81,36 @@ public class SystemdSessionMonitor : ISessionMonitor
     {
         try
         {
-            var process = new System.Diagnostics.Process
+            // Check if session is locked
+            var lockedProcess = new System.Diagnostics.Process
             {
                 StartInfo = new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "loginctl",
-                    Arguments = $"show-session {sessionId} -p IdleHint --value",
+                    Arguments = $"show-session {sessionId} -p LockedHint --value",
                     RedirectStandardOutput = true,
                     UseShellExecute = false,
                     CreateNoWindow = true
                 }
             };
             
-            process.Start();
-            var output = await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync();
+            lockedProcess.Start();
+            var lockedOutput = await lockedProcess.StandardOutput.ReadToEndAsync();
+            await lockedProcess.WaitForExitAsync();
             
-            return output.Trim() == "yes";
+            if (lockedOutput.Trim() == "yes")
+            {
+                _logger.LogDebug("Session {SessionId} is locked", sessionId);
+                return true; // Locked = idle (don't count time)
+            }
+            
+            // If not locked, session is active (count time even if no input)
+            return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error checking idle state for session {SessionId}", sessionId);
-            return false;
+            _logger.LogError(ex, "Error checking session state for {SessionId}", sessionId);
+            return false; // On error, assume active to be safe
         }
     }
     
