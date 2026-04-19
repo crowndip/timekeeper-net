@@ -1,0 +1,250 @@
+name: Release Validation Tests
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Get release info
+      id: release
+      run: |
+        RELEASE_TAG=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .tag_name)
+        echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+        echo "Testing release: $RELEASE_TAG"
+    
+    - name: Test 1 - Verify all build artifacts exist
+      run: |
+        echo "🔍 Checking if all required artifacts are present in release..."
+        
+        RELEASE_TAG="${{ steps.release.outputs.tag }}"
+        BASE_URL="https://github.com/${{ github.repository }}/releases/download/$RELEASE_TAG"
+        
+        ARTIFACTS=(
+          "client-linux-x64.tar.gz"
+          "client-linux-arm64.tar.gz"
+          "client-windows-x64.zip"
+          "tray-windows-x64.zip"
+          "server.tar.gz"
+          "webservice-image.tar.gz"
+          "deploy-server.sh"
+          "parental-control-client_${RELEASE_TAG#v}_amd64.deb"
+          "parental-control-tray_${RELEASE_TAG#v}_amd64.deb"
+        )
+        
+        MISSING=0
+        for artifact in "${ARTIFACTS[@]}"; do
+          echo -n "  Checking $artifact... "
+          if curl --output /dev/null --silent --head --fail "$BASE_URL/$artifact"; then
+            echo "✅ Found"
+          else
+            echo "❌ Missing"
+            MISSING=$((MISSING + 1))
+          fi
+        done
+        
+        if [ $MISSING -gt 0 ]; then
+          echo ""
+          echo "❌ $MISSING artifact(s) missing from release"
+          exit 1
+        fi
+        
+        echo ""
+        echo "✅ All artifacts present"
+    
+    - name: Test 2 - Verify release notes contain installation instructions
+      run: |
+        echo "🔍 Checking release notes for installation instructions..."
+        
+        RELEASE_NOTES=$(curl -s https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r .body)
+        
+        REQUIRED_SECTIONS=(
+          "Server Deployment"
+          "Linux Client"
+          "Windows Client"
+          "Tray Icon"
+          "deploy-server.sh"
+        )
+        
+        MISSING=0
+        for section in "${REQUIRED_SECTIONS[@]}"; do
+          echo -n "  Checking for '$section'... "
+          if echo "$RELEASE_NOTES" | grep -q "$section"; then
+            echo "✅ Found"
+          else
+            echo "❌ Missing"
+            MISSING=$((MISSING + 1))
+          fi
+        done
+        
+        if [ $MISSING -gt 0 ]; then
+          echo ""
+          echo "❌ $MISSING required section(s) missing from release notes"
+          exit 1
+        fi
+        
+        echo ""
+        echo "✅ All required sections present in release notes"
+    
+    - name: Test 3 - Verify deploy script is executable and valid
+      run: |
+        echo "🔍 Testing deploy-server.sh script..."
+        
+        RELEASE_TAG="${{ steps.release.outputs.tag }}"
+        
+        # Download script
+        curl -fsSL "https://github.com/${{ github.repository }}/releases/download/$RELEASE_TAG/deploy-server.sh" -o deploy-server.sh
+        
+        # Check if it's a valid bash script
+        if ! head -n 1 deploy-server.sh | grep -q "^#!/bin/bash"; then
+          echo "❌ Script doesn't have bash shebang"
+          exit 1
+        fi
+        echo "✅ Valid bash script"
+        
+        # Check for required functions
+        REQUIRED_CHECKS=(
+          "GITHUB_REPO="
+          "IMAGE_NAME="
+          "curl.*webservice-image.tar.gz"
+          "docker load"
+          "docker tag"
+        )
+        
+        MISSING=0
+        for check in "${REQUIRED_CHECKS[@]}"; do
+          echo -n "  Checking for '$check'... "
+          if grep -q "$check" deploy-server.sh; then
+            echo "✅ Found"
+          else
+            echo "❌ Missing"
+            MISSING=$((MISSING + 1))
+          fi
+        done
+        
+        if [ $MISSING -gt 0 ]; then
+          echo ""
+          echo "❌ Deploy script missing required functionality"
+          exit 1
+        fi
+        
+        echo ""
+        echo "✅ Deploy script is valid"
+    
+    - name: Test 4 - Verify Docker image can be loaded
+      run: |
+        echo "🔍 Testing Docker image..."
+        
+        RELEASE_TAG="${{ steps.release.outputs.tag }}"
+        
+        # Download image
+        echo "Downloading webservice-image.tar.gz..."
+        curl -fsSL "https://github.com/${{ github.repository }}/releases/download/$RELEASE_TAG/webservice-image.tar.gz" -o webservice-image.tar.gz
+        
+        # Extract
+        echo "Extracting..."
+        gunzip -f webservice-image.tar.gz
+        
+        # Load into Docker
+        echo "Loading into Docker..."
+        LOAD_OUTPUT=$(docker load -i webservice-image.tar)
+        echo "$LOAD_OUTPUT"
+        
+        # Verify image was loaded
+        if ! echo "$LOAD_OUTPUT" | grep -q "Loaded image: parental-control-webservice:"; then
+          echo "❌ Failed to load Docker image"
+          exit 1
+        fi
+        
+        # Extract tag
+        IMAGE_TAG=$(echo "$LOAD_OUTPUT" | grep -oP 'parental-control-webservice:\K\S+')
+        echo "Image tag: $IMAGE_TAG"
+        
+        # Verify image exists
+        if ! docker images | grep -q "parental-control-webservice.*$IMAGE_TAG"; then
+          echo "❌ Image not found in Docker"
+          exit 1
+        fi
+        
+        echo "✅ Docker image loads successfully"
+    
+    - name: Test 5 - Verify .deb packages are valid
+      run: |
+        echo "🔍 Testing .deb packages..."
+        
+        RELEASE_TAG="${{ steps.release.outputs.tag }}"
+        VERSION="${RELEASE_TAG#v}"
+        
+        # Test client .deb
+        echo "Testing client .deb..."
+        curl -fsSL "https://github.com/${{ github.repository }}/releases/download/$RELEASE_TAG/parental-control-client_${VERSION}_amd64.deb" -o client.deb
+        
+        if ! dpkg-deb --info client.deb | grep -q "Package: parental-control-client"; then
+          echo "❌ Client .deb is invalid"
+          exit 1
+        fi
+        echo "✅ Client .deb is valid"
+        
+        # Test tray .deb
+        echo "Testing tray .deb..."
+        curl -fsSL "https://github.com/${{ github.repository }}/releases/download/$RELEASE_TAG/parental-control-tray_${VERSION}_amd64.deb" -o tray.deb
+        
+        if ! dpkg-deb --info tray.deb | grep -q "Package: parental-control-tray"; then
+          echo "❌ Tray .deb is invalid"
+          exit 1
+        fi
+        echo "✅ Tray .deb is valid"
+        
+        echo ""
+        echo "✅ All .deb packages are valid"
+    
+    - name: Test 6 - Verify client archives contain executables
+      run: |
+        echo "🔍 Testing client archives..."
+        
+        RELEASE_TAG="${{ steps.release.outputs.tag }}"
+        
+        # Test Linux client
+        echo "Testing Linux client archive..."
+        curl -fsSL "https://github.com/${{ github.repository }}/releases/download/$RELEASE_TAG/client-linux-x64.tar.gz" -o client-linux.tar.gz
+        tar -tzf client-linux.tar.gz | grep -q "ParentalControl.Client$" || {
+          echo "❌ Linux client executable not found in archive"
+          exit 1
+        }
+        echo "✅ Linux client archive is valid"
+        
+        # Test Windows client
+        echo "Testing Windows client archive..."
+        curl -fsSL "https://github.com/${{ github.repository }}/releases/download/$RELEASE_TAG/client-windows-x64.zip" -o client-windows.zip
+        unzip -l client-windows.zip | grep -q "ParentalControl.Client.Windows.exe$" || {
+          echo "❌ Windows client executable not found in archive"
+          exit 1
+        }
+        echo "✅ Windows client archive is valid"
+        
+        echo ""
+        echo "✅ All client archives are valid"
+    
+    - name: Summary
+      if: success()
+      run: |
+        echo ""
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║          ✅ ALL RELEASE VALIDATION TESTS PASSED ✅           ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "Release ${{ steps.release.outputs.tag }} is valid and ready for deployment!"
+        echo ""
+        echo "Verified:"
+        echo "  ✅ All build artifacts present"
+        echo "  ✅ Release notes contain installation instructions"
+        echo "  ✅ Deploy script is valid and executable"
+        echo "  ✅ Docker image loads successfully"
+        echo "  ✅ .deb packages are valid"
+        echo "  ✅ Client archives contain executables"
