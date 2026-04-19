@@ -187,9 +187,10 @@ public class UserScenarioTests
         context.TimeProfiles.Add(profile);
         await context.SaveChangesAsync();
 
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var yesterday = today.AddDays(-1);
-        var twoDaysAgo = today.AddDays(-2);
+        // Use fixed dates to avoid week boundary issues
+        var today = new DateOnly(2026, 4, 16); // Wednesday
+        var yesterday = today.AddDays(-1); // Tuesday
+        var twoDaysAgo = today.AddDays(-2); // Monday
 
         // Previous days: 100 + 100 = 200 minutes
         context.TimeUsage.AddRange(

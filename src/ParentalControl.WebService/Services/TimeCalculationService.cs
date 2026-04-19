@@ -45,7 +45,7 @@ public class TimeCalculationService : ITimeCalculationService
                 .Where(u => u.UserId == userId && u.UsageDate >= weekStart && u.UsageDate < weekStart.AddDays(7))
                 .SumAsync(u => u.MinutesUsed);
             
-            var weeklyRemaining = profile.WeeklyLimit - usedThisWeek;
+            var weeklyRemaining = profile.WeeklyLimit - usedThisWeek + adjustments;
             return Math.Min(dailyRemaining, weeklyRemaining);
         }
         
