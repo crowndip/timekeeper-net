@@ -74,6 +74,13 @@ jobs:
         cd publish
         tar -czf server.tar.gz -C server .
     
+    - name: Build Docker Image
+      run: |
+        docker build -f docker/Dockerfile.webservice -t parental-control-webservice:${{ steps.version.outputs.VERSION }} .
+        docker save parental-control-webservice:${{ steps.version.outputs.VERSION }} -o webservice-image.tar
+        gzip webservice-image.tar
+        mv webservice-image.tar.gz publish/
+    
     - name: Build .deb package
       run: |
         cd scripts
@@ -86,6 +93,10 @@ jobs:
         chmod +x build-tray-deb.sh
         ./build-tray-deb.sh ${{ steps.version.outputs.VERSION }}
     
+    - name: Copy deployment script
+      run: |
+        cp scripts/deploy-server.sh publish/
+    
     - name: Create Release
       uses: softprops/action-gh-release@v2
       with:
@@ -95,6 +106,8 @@ jobs:
           publish/client-windows-x64.zip
           publish/tray-windows-x64.zip
           publish/server.tar.gz
+          publish/webservice-image.tar.gz
+          publish/deploy-server.sh
           build/client-deb/parental-control-client_*.deb
           build/tray-deb/parental-control-tray_*.deb
         draft: false
