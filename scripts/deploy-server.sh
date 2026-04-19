@@ -72,31 +72,20 @@ echo "🐳 Loading Docker image..."
 LOAD_OUTPUT=$(docker load -i webservice-image.tar)
 echo "$LOAD_OUTPUT"
 
-# Extract image hash from output
-IMAGE_HASH=$(echo "$LOAD_OUTPUT" | grep -oP 'parental-control-webservice:\K[a-f0-9]+')
+# Extract image tag from output (e.g., "Loaded image: parental-control-webservice:1.14.0")
+IMAGE_TAG=$(echo "$LOAD_OUTPUT" | grep -oP 'parental-control-webservice:\K[^\s]+')
 
-if [ -z "$IMAGE_HASH" ]; then
-    echo "❌ Failed to extract image hash from docker load output."
+if [ -z "$IMAGE_TAG" ]; then
+    echo "❌ Failed to extract image tag from docker load output."
     exit 1
 fi
 
-echo "✅ Image loaded with hash: $IMAGE_HASH"
+echo "✅ Image loaded with tag: $IMAGE_TAG"
 echo ""
 
-# Check if 'latest' tag already exists
-if docker images "$IMAGE_NAME:latest" --format "{{.Repository}}:{{.Tag}}" | grep -q "latest"; then
-    echo "⚠️  Image '$IMAGE_NAME:latest' already exists."
-    read -p "   Do you want to replace it? (y/N): " -n 1 -r
-    echo ""
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        echo "❌ Deployment cancelled."
-        exit 1
-    fi
-fi
-
-# Tag as latest
+# Tag as latest (always replace without prompting)
 echo "🏷️  Tagging image as 'latest'..."
-docker tag "$IMAGE_NAME:$IMAGE_HASH" "$IMAGE_NAME:latest"
+docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:latest"
 echo "✅ Tagged successfully"
 echo ""
 
