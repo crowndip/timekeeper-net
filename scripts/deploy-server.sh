@@ -38,7 +38,8 @@ fi
 echo "✅ Latest version: $LATEST_VERSION"
 echo ""
 
-# Create download directory
+# Create download directory (clean if exists)
+rm -rf "$DOWNLOAD_DIR"
 mkdir -p "$DOWNLOAD_DIR"
 cd "$DOWNLOAD_DIR"
 
@@ -57,7 +58,7 @@ echo ""
 
 # Extract
 echo "📦 Extracting archive..."
-gunzip webservice-image.tar.gz
+gunzip -f webservice-image.tar.gz
 
 if [ ! -f "webservice-image.tar" ]; then
     echo "❌ webservice-image.tar not found after extraction."
@@ -73,17 +74,18 @@ LOAD_OUTPUT=$(docker load -i webservice-image.tar)
 echo "$LOAD_OUTPUT"
 
 # Extract image tag from output (e.g., "Loaded image: parental-control-webservice:1.14.0")
-IMAGE_TAG=$(echo "$LOAD_OUTPUT" | grep -oP 'parental-control-webservice:\K[^\s]+')
+IMAGE_TAG=$(echo "$LOAD_OUTPUT" | grep -oP 'parental-control-webservice:\K\S+')
 
 if [ -z "$IMAGE_TAG" ]; then
     echo "❌ Failed to extract image tag from docker load output."
+    echo "Output was: $LOAD_OUTPUT"
     exit 1
 fi
 
 echo "✅ Image loaded with tag: $IMAGE_TAG"
 echo ""
 
-# Tag as latest (always replace without prompting)
+# Tag as latest
 echo "🏷️  Tagging image as 'latest'..."
 docker tag "$IMAGE_NAME:$IMAGE_TAG" "$IMAGE_NAME:latest"
 echo "✅ Tagged successfully"
