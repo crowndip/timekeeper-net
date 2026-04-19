@@ -57,10 +57,10 @@ echo ""
 
 # Extract
 echo "📦 Extracting archive..."
-tar -xzf webservice-image.tar.gz
+gunzip webservice-image.tar.gz
 
 if [ ! -f "webservice-image.tar" ]; then
-    echo "❌ webservice-image.tar not found in archive."
+    echo "❌ webservice-image.tar not found after extraction."
     exit 1
 fi
 
