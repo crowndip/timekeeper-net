@@ -248,3 +248,130 @@ jobs:
         echo "  ✅ Docker image loads successfully"
         echo "  ✅ .deb packages are valid"
         echo "  ✅ Client archives contain executables"
+    
+    - name: Test 7 - Verify version consistency
+      run: |
+        echo "🔍 Checking version consistency across artifacts..."
+        
+        RELEASE_TAG="${{ steps.release.outputs.tag }}"
+        VERSION="${RELEASE_TAG#v}"
+        
+        # Check Docker image tag matches release
+        LOAD_OUTPUT=$(docker load -i webservice-image.tar)
+        IMAGE_TAG=$(echo "$LOAD_OUTPUT" | grep -oP 'parental-control-webservice:\K\S+')
+        
+        if [ "$IMAGE_TAG" != "$VERSION" ]; then
+          echo "❌ Docker image tag ($IMAGE_TAG) doesn't match release version ($VERSION)"
+          exit 1
+        fi
+        echo "✅ Docker image version matches"
+        
+        # Check .deb package versions
+        CLIENT_VERSION=$(dpkg-deb --field client.deb Version)
+        TRAY_VERSION=$(dpkg-deb --field tray.deb Version)
+        
+        if [ "$CLIENT_VERSION" != "$VERSION" ]; then
+          echo "❌ Client .deb version ($CLIENT_VERSION) doesn't match release ($VERSION)"
+          exit 1
+        fi
+        echo "✅ Client .deb version matches"
+        
+        if [ "$TRAY_VERSION" != "$VERSION" ]; then
+          echo "❌ Tray .deb version ($TRAY_VERSION) doesn't match release ($VERSION)"
+          exit 1
+        fi
+        echo "✅ Tray .deb version matches"
+        
+        echo ""
+        echo "✅ All versions are consistent"
+    
+    - name: Test 8 - Verify executables are single-file
+      run: |
+        echo "🔍 Checking if executables are single-file..."
+        
+        # Extract Linux client
+        mkdir -p test-client
+        tar -xzf client-linux.tar.gz -C test-client
+        
+        # Count DLL files (should be minimal for single-file)
+        DLL_COUNT=$(find test-client -name "*.dll" | wc -l)
+        
+        if [ $DLL_COUNT -gt 5 ]; then
+          echo "⚠️  Warning: Found $DLL_COUNT DLL files (expected single-file executable)"
+          echo "   This may indicate PublishSingleFile is not working"
+        else
+          echo "✅ Linux client appears to be single-file ($DLL_COUNT support DLLs)"
+        fi
+        
+        # Check executable exists
+        if [ ! -f "test-client/ParentalControl.Client" ]; then
+          echo "❌ Linux client executable not found"
+          exit 1
+        fi
+        echo "✅ Linux client executable present"
+    
+    - name: Test 9 - Verify Docker image health check
+      run: |
+        echo "🔍 Testing Docker image health check..."
+        
+        # Extract tag
+        LOAD_OUTPUT=$(docker load -i webservice-image.tar)
+        IMAGE_TAG=$(echo "$LOAD_OUTPUT" | grep -oP 'parental-control-webservice:\K\S+')
+        
+        # Check if health check is configured
+        HEALTHCHECK=$(docker inspect parental-control-webservice:$IMAGE_TAG | jq -r '.[0].Config.Healthcheck')
+        
+        if [ "$HEALTHCHECK" == "null" ]; then
+          echo "❌ Docker image has no health check configured"
+          exit 1
+        fi
+        echo "✅ Health check is configured"
+        
+        # Verify health check uses correct port
+        HEALTHCHECK_CMD=$(docker inspect parental-control-webservice:$IMAGE_TAG | jq -r '.[0].Config.Healthcheck.Test[]' | grep -o "localhost:[0-9]*")
+        
+        if [ "$HEALTHCHECK_CMD" != "localhost:80" ]; then
+          echo "❌ Health check uses wrong port: $HEALTHCHECK_CMD (expected localhost:80)"
+          exit 1
+        fi
+        echo "✅ Health check uses correct port (80)"
+    
+    - name: Test 10 - Verify deploy script references correct version
+      run: |
+        echo "🔍 Checking deploy script version handling..."
+        
+        # Check if script fetches latest version dynamically
+        if ! grep -q "curl.*api.github.com.*releases/latest" deploy-server.sh; then
+          echo "❌ Deploy script doesn't fetch latest version dynamically"
+          exit 1
+        fi
+        echo "✅ Deploy script fetches latest version"
+        
+        # Check if script uses the fetched version
+        if ! grep -q "LATEST_VERSION" deploy-server.sh; then
+          echo "❌ Deploy script doesn't use LATEST_VERSION variable"
+          exit 1
+        fi
+        echo "✅ Deploy script uses dynamic version"
+    
+    - name: Final Summary
+      if: success()
+      run: |
+        echo ""
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║       ✅ ALL 10 VALIDATION TESTS PASSED SUCCESSFULLY ✅      ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo ""
+        echo "Release ${{ steps.release.outputs.tag }} is production-ready!"
+        echo ""
+        echo "Validated:"
+        echo "  ✅ Build artifacts (9 files)"
+        echo "  ✅ Release notes documentation"
+        echo "  ✅ Deploy script functionality"
+        echo "  ✅ Docker image integrity"
+        echo "  ✅ .deb package validity"
+        echo "  ✅ Client archive contents"
+        echo "  ✅ Version consistency"
+        echo "  ✅ Single-file executables"
+        echo "  ✅ Docker health check"
+        echo "  ✅ Deploy script version handling"

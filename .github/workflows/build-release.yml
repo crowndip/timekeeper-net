@@ -9,8 +9,31 @@ permissions:
   contents: write
 
 jobs:
+  # Run unit tests before building release
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x
+    
+    - name: Run Unit Tests
+      run: |
+        dotnet test tests/ParentalControl.WebService.Tests/ParentalControl.WebService.Tests.csproj --configuration Release --verbosity normal
+        dotnet test tests/ParentalControl.Client.Tests/ParentalControl.Client.Tests.csproj --configuration Release --verbosity normal
+        dotnet test tests/ParentalControl.Client.Windows.Tests/ParentalControl.Client.Windows.Tests.csproj --configuration Release --verbosity normal
+    
+    - name: Verify Build Success
+      run: |
+        echo "✅ All unit tests passed"
+  
   build-release:
     runs-on: ubuntu-latest
+    needs: test  # Only build if tests pass
     
     steps:
     - uses: actions/checkout@v4
