@@ -31,9 +31,10 @@ jobs:
           gzip webservice-image.tar
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: webservice-image.tar.gz
+          make_latest: true
           body: |
             ## Parental Control System v${{ steps.version.outputs.VERSION }}
             
