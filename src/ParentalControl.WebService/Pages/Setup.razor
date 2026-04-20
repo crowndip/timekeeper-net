@@ -2,8 +2,10 @@
 @using ParentalControl.WebService.Services
 @inject IDatabaseInitializationService DbInit
 @inject NavigationManager Navigation
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>Database Setup</PageTitle>
+<PageTitle>@T("Setup.PageTitle")</PageTitle>
 
 <div class="container mt-5">
     <div class="row justify-content-center">
@@ -137,6 +139,7 @@
 </div>
 
 @code {
+    private string currentLang = "en";
     private bool isChecking = true;
     private bool isInitializing = false;
     private bool initSuccess = false;
@@ -146,6 +149,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        currentLang = LangService.GetCurrentLanguage();
         await CheckConnection();
     }
 
@@ -211,4 +215,6 @@
             StateHasChanged();
         }
     }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
 }

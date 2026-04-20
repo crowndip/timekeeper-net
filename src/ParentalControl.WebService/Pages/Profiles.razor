@@ -10,29 +10,32 @@
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 @inject AuthService AuthService
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>Time Profiles</PageTitle>
+<PageTitle>@T("Profiles.PageTitle")</PageTitle>
 
 <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="margin: 0;">⏱️ Time Profiles @(isReadOnly ? "(Read-Only)" : "")</h1>
+        <h1 style="margin: 0;">@T("Profiles.PageTitle") @(isReadOnly ? T("Common.ReadOnly") : "")</h1>
         <div style="display: flex; gap: 10px;">
+            <LanguageSelector />
             @if (isReadOnly)
             {
                 <button @onclick="RequestAdminAuth" style="padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    🔒 Unlock Editing
+                    @T("Common.Unlock")
                 </button>
             }
             <button @onclick="ShowAddDialog" disabled="@isReadOnly" style="padding: 10px 20px; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-weight: 600; opacity: @(isReadOnly ? "0.5" : "1");">
-                + Add Profile
+                @T("Profiles.AddProfile")
             </button>
-            <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">← Dashboard</a>
+            <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">@T("Common.Back")</a>
         </div>
     </div>
 
     @if (loading)
     {
-        <p>Loading profiles...</p>
+        <p>@T("Common.Loading")</p>
     }
     else if (!string.IsNullOrEmpty(errorMessage))
     {
@@ -45,11 +48,11 @@
         <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
             <thead style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
                 <tr>
-                    <th style="padding: 12px; text-align: left;">Profile Name</th>
-                    <th style="padding: 12px; text-align: left;">User</th>
-                    <th style="padding: 12px; text-align: center;">Status</th>
-                    <th style="padding: 12px; text-align: center;">Daily Limits</th>
-                    <th style="padding: 12px; text-align: center;">Actions</th>
+                    <th style="padding: 12px; text-align: left;">@T("Profiles.ProfileName")</th>
+                    <th style="padding: 12px; text-align: left;">@T("Profiles.User")</th>
+                    <th style="padding: 12px; text-align: center;">@T("Users.Status")</th>
+                    <th style="padding: 12px; text-align: center;">@T("Profiles.DailyLimit")</th>
+                    <th style="padding: 12px; text-align: center;">@T("Users.Actions")</th>
                 </tr>
             </thead>
             <tbody>
@@ -60,7 +63,7 @@
                         <td style="padding: 12px;">@GetUsername(profile.UserId)</td>
                         <td style="padding: 12px; text-align: center;">
                             <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: @(profile.IsActive ? "#10b981" : "#6b7280"); color: white;">
-                                @(profile.IsActive ? "Active" : "Inactive")
+                                @(profile.IsActive ? T("Common.Active") : T("Common.Inactive"))
                             </span>
                         </td>
                         <td style="padding: 12px; text-align: center; font-size: 12px;">
@@ -68,8 +71,8 @@
                             Th:@profile.ThursdayLimit F:@profile.FridayLimit Sa:@profile.SaturdayLimit Su:@profile.SundayLimit
                         </td>
                         <td style="padding: 12px; text-align: center;">
-                            <button @onclick="() => ShowEditDialog(profile)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">Edit</button>
-                            <button @onclick="() => DeleteProfile(profile)" disabled="@isReadOnly" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">Delete</button>
+                            <button @onclick="() => ShowEditDialog(profile)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">@T("Common.Edit")</button>
+                            <button @onclick="() => DeleteProfile(profile)" disabled="@isReadOnly" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">@T("Common.Delete")</button>
                         </td>
                     </tr>
                 }
@@ -170,6 +173,7 @@
 }
 
 @code {
+    private string currentLang = "en";
     private List<TimeProfile> profiles = new();
     private List<User> users = new();
     private bool loading = true;
@@ -184,6 +188,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        currentLang = LangService.GetCurrentLanguage();
         await CheckAuthStatus();
         await LoadData();
     }
@@ -404,4 +409,6 @@
             errorMessage = $"Failed to delete profile: {ex.Message}";
         }
     }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
 }
