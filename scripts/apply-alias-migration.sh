@@ -1,0 +1,50 @@
+#!/bin/bash
+# Apply AddUserAliases migration directly to database
+
+set -e
+
+echo "Applying AddUserAliases migration..."
+
+# Find the database container
+CONTAINER=$(docker ps --filter "name=postgres" --filter "name=db" --format "{{.Names}}" | head -1)
+
+if [ -z "$CONTAINER" ]; then
+    echo "Error: Could not find PostgreSQL container"
+    exit 1
+fi
+
+echo "Using container: $CONTAINER"
+
+# Apply migration
+docker exec -i "$CONTAINER" psql -U parentalcontrol -d parentalcontrol <<'EOF'
+-- Check if column already exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'Users' AND column_name = 'PrimaryUserId'
+    ) THEN
+        -- Add column
+        ALTER TABLE "Users" ADD COLUMN "PrimaryUserId" uuid NULL;
+        
+        -- Create index
+        CREATE INDEX "IX_Users_PrimaryUserId" ON "Users" ("PrimaryUserId");
+        
+        -- Add foreign key
+        ALTER TABLE "Users" ADD CONSTRAINT "FK_Users_Users_PrimaryUserId" 
+            FOREIGN KEY ("PrimaryUserId") REFERENCES "Users" ("Id") 
+            ON DELETE RESTRICT;
+        
+        -- Record migration
+        INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+        VALUES ('20260420082000_AddUserAliases', '8.0.26')
+        ON CONFLICT DO NOTHING;
+        
+        RAISE NOTICE 'Migration applied successfully';
+    ELSE
+        RAISE NOTICE 'Migration already applied';
+    END IF;
+END $$;
+EOF
+
+echo "✅ Done!"
