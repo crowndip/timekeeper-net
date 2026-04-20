@@ -109,8 +109,20 @@ docker-compose up -d</pre>
         {
             <div class="alert alert-info">
                 <strong>🔒 Authentication Required</strong>
-                <p>Login to apply database migrations</p>
+                <p>Enter administrator password to apply migrations</p>
             </div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 12px;">
+                <input type="password" @bind="password" placeholder="Administrator Password" class="form-control" style="flex: 1;" @onkeypress="HandleKeyPress" />
+                <button @onclick="Authenticate" class="btn btn-primary">Login</button>
+            </div>
+            
+            @if (!string.IsNullOrEmpty(authError))
+            {
+                <div class="alert alert-error" style="margin-top: 12px;">
+                    @authError
+                </div>
+            }
         }
 
         @if (!string.IsNullOrEmpty(migrationLog))
@@ -261,6 +273,19 @@ docker-compose up -d</pre>
         white-space: pre-wrap;
         margin: 0;
     }
+
+    .form-control {
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
 </style>
 
 @code {
@@ -272,11 +297,39 @@ docker-compose up -d</pre>
     private bool isMigrating = false;
     private string migrationLog = "";
     private bool isAuthenticated = false;
+    private string password = "";
+    private string authError = "";
 
     protected override async Task OnInitializedAsync()
     {
         isAuthenticated = AuthService.IsAuthenticated();
         await LoadDatabaseInfo();
+    }
+
+    private void Authenticate()
+    {
+        authError = "";
+        
+        if (AuthService.ValidatePassword(password))
+        {
+            AuthService.SetAuthenticated();
+            isAuthenticated = true;
+            password = "";
+        }
+        else
+        {
+            authError = "Invalid password";
+        }
+        
+        StateHasChanged();
+    }
+
+    private void HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            Authenticate();
+        }
     }
 
     private async Task LoadDatabaseInfo()
