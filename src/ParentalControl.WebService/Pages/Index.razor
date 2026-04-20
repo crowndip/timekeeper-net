@@ -129,6 +129,23 @@ else
                         </div>
                     </div>
 
+                    <div>
+                        <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">Migrations in Code</div>
+                        <div style="font-size: 12px; color: #374151;">
+                            @if (allMigrationsInCode.Any())
+                            {
+                                @foreach (var migration in allMigrationsInCode)
+                                {
+                                    <div>📄 @migration</div>
+                                }
+                            }
+                            else
+                            {
+                                <div>None</div>
+                            }
+                        </div>
+                    </div>
+
                     @if (pendingMigrations.Any())
                     {
                         <div style="padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
@@ -153,6 +170,26 @@ else
                                 <span>🔄 Apply Migrations</span>
                             }
                         </button>
+                    }
+                    else if (allMigrationsInCode.Count < 2)
+                    {
+                        <div style="padding: 12px; background: #fee2e2; border-left: 4px solid #ef4444; border-radius: 4px;">
+                            <div style="font-weight: 600; color: #991b1b; margin-bottom: 8px;">
+                                🚨 Docker Image is Outdated!
+                            </div>
+                            <div style="font-size: 12px; color: #7f1d1d; margin-bottom: 8px;">
+                                The running application only has @allMigrationsInCode.Count migration(s) compiled in.
+                                Expected: 2 migrations (InitialCreate + AddUserAliases).
+                            </div>
+                            <div style="font-size: 12px; color: #7f1d1d; font-weight: 600;">
+                                Solution: Rebuild Docker image with latest code
+                            </div>
+                            <div style="font-size: 11px; color: #7f1d1d; margin-top: 8px; font-family: monospace; background: #fef2f2; padding: 8px; border-radius: 4px;">
+                                docker-compose down<br/>
+                                docker-compose build --no-cache webservice<br/>
+                                docker-compose up -d
+                            </div>
+                        </div>
                     }
                     else
                     {
@@ -515,6 +552,7 @@ else
     private string expectedSchemaVersion = "20260420";
     private List<string> pendingMigrations = new();
     private List<string> appliedMigrationsList = new();
+    private List<string> allMigrationsInCode = new();
     private bool isMigrating = false;
     private string migrationLog = "";
 
@@ -569,8 +607,9 @@ else
                 currentSchemaVersion = "None";
             }
 
-            // Get all migrations from code
+            // Get all migrations from code (compiled into this application)
             var allMigrations = DbContext.Database.GetMigrations().ToList();
+            allMigrationsInCode = allMigrations;
             
             // Set expected version from latest migration in code
             if (allMigrations.Any())
@@ -589,6 +628,7 @@ else
             dbVersion = "Unknown";
             currentSchemaVersion = "Unknown";
             appliedMigrationsList = new();
+            allMigrationsInCode = new();
         }
     }
 
