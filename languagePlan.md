@@ -567,7 +567,7 @@ docker exec container cat /app/wwwroot/localization/cs.json
 
 ### 🔄 Phase 3: Page Updates (IN PROGRESS)
 - [x] Update Index.razor (Dashboard)
-- [ ] Update Users.razor (complex - has dialogs) - NEXT
+- [x] Update Users.razor (complex - main table and dialogs done)
 - [ ] Update Profiles.razor (complex - has dialogs) - NEXT
 - [x] Update AllowedHours.razor
 - [x] Update Configuration.razor

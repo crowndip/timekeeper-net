@@ -10,8 +10,10 @@
 @inject IJSRuntime JS
 @inject NavigationManager Navigation
 @inject AuthService AuthService
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>Users Management</PageTitle>
+<PageTitle>@T("Users.PageTitle")</PageTitle>
 
 <style>
     .page-container {
@@ -77,24 +79,25 @@
 
 <div class="page-container">
     <div class="page-header">
-        <h1 class="page-title">👥 Users Management @(isReadOnly ? "(Read-Only)" : "")</h1>
+        <h1 class="page-title">@T("Users.PageTitle") @(isReadOnly ? T("Common.ReadOnly") : "")</h1>
         <div class="header-actions">
+            <LanguageSelector />
             @if (isReadOnly)
             {
                 <button @onclick="RequestAdminAuth" class="btn" style="background: #f59e0b; color: white;">
-                    🔒 Unlock
+                    @T("Common.Unlock")
                 </button>
             }
             <button @onclick="ShowAddDialog" disabled="@isReadOnly" class="btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; opacity: @(isReadOnly ? "0.5" : "1"); cursor: @(isReadOnly ? "not-allowed" : "pointer");">
-                + Add User
+                @T("Users.AddUser")
             </button>
-            <a href="/" class="btn" style="background: #6b7280; color: white;">← Dashboard</a>
+            <a href="/" class="btn" style="background: #6b7280; color: white;">@T("Common.Back")</a>
         </div>
     </div>
 
     @if (loading)
     {
-        <p>Loading users...</p>
+        <p>@T("Common.Loading")</p>
     }
     else if (!string.IsNullOrEmpty(errorMessage))
     {
@@ -107,12 +110,12 @@
         <table style="width: 100%; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
             <thead style="background: #f3f4f6;">
                 <tr>
-                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Username</th>
-                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Full Name</th>
-                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Email</th>
-                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">Account Type</th>
-                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;">Active</th>
-                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;">Actions</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">@T("Users.Username")</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">@T("Users.FullName")</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">@T("Users.Email")</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e5e7eb;">@T("Users.AccountType")</th>
+                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;">@T("Users.Status")</th>
+                    <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e5e7eb;">@T("Users.Actions")</th>
                 </tr>
             </thead>
             <tbody>
@@ -124,7 +127,7 @@
                             @if (userAliases.ContainsKey(user.Id) && userAliases[user.Id].Any())
                             {
                                 <span style="color: #6b7280; font-size: 12px; margin-left: 8px;">
-                                    (@userAliases[user.Id].Count aliases)
+                                    @T("Users.Aliases.AliasCount", userAliases[user.Id].Count)
                                 </span>
                             }
                         </td>
@@ -137,14 +140,14 @@
                         </td>
                         <td style="padding: 12px; text-align: center;">
                             <button @onclick="() => ToggleActive(user)" style="padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer; background: @(user.IsActive ? "#10b981" : "#6b7280"); color: white;">
-                                @(user.IsActive ? "Active" : "Inactive")
+                                @(user.IsActive ? T("Common.Active") : T("Common.Inactive"))
                             </button>
                         </td>
                         <td style="padding: 12px; text-align: center;">
-                            <button @onclick="() => ShowEditDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">Edit</button>
-                            <button @onclick="() => ShowTimeAdjustDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">⏱️ Time</button>
-                            <button @onclick="() => ShowAliasDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">👥 Aliases</button>
-                            <button @onclick="() => DeleteUser(user)" disabled="@isReadOnly" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">Delete</button>
+                            <button @onclick="() => ShowEditDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">@T("Common.Edit")</button>
+                            <button @onclick="() => ShowTimeAdjustDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">@T("Users.TimeButton")</button>
+                            <button @onclick="() => ShowAliasDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">@T("Users.AliasesButton")</button>
+                            <button @onclick="() => DeleteUser(user)" disabled="@isReadOnly" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">@T("Common.Delete")</button>
                         </td>
                     </tr>
                     @if (userAliases.ContainsKey(user.Id))
@@ -182,37 +185,37 @@
 {
     <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @onclick="CloseDialog">
         <div style="background: white; padding: 30px; border-radius: 12px; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto;" @onclick:stopPropagation="true">
-            <h2 style="margin-top: 0;">@(editingUser == null ? "Add User" : "Edit User")</h2>
+            <h2 style="margin-top: 0;">@(editingUser == null ? T("Users.Dialog.AddTitle") : T("Users.Dialog.EditTitle"))</h2>
             
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Username *</label>
-                <input @bind="formUser.Username" disabled="@(editingUser != null)" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("Users.Dialog.UsernameRequired")</label>
+                <input @bind="formUser.Username" disabled="@(editingUser != null)" placeholder="@T("Users.Dialog.UsernamePlaceholder")" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
             </div>
 
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Full Name</label>
-                <input @bind="formUser.FullName" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("Users.FullName")</label>
+                <input @bind="formUser.FullName" placeholder="@T("Users.Dialog.FullNamePlaceholder")" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
             </div>
 
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Email</label>
-                <input @bind="formUser.Email" type="email" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("Users.Email")</label>
+                <input @bind="formUser.Email" type="email" placeholder="@T("Users.Dialog.EmailPlaceholder")" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
             </div>
 
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Account Type *</label>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("Users.AccountType") *</label>
                 <select @bind="formUser.AccountType" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
-                    <option value="@AccountType.Unassigned">Unassigned (Needs configuration)</option>
-                    <option value="@AccountType.Child">Child (Supervised)</option>
-                    <option value="@AccountType.Parent">Parent (No limits)</option>
-                    <option value="@AccountType.Technical">Technical (System)</option>
+                    <option value="@AccountType.Unassigned">@T("Users.AccountTypes.Unassigned")</option>
+                    <option value="@AccountType.Child">@T("Users.AccountTypes.Child")</option>
+                    <option value="@AccountType.Parent">@T("Users.AccountTypes.Parent")</option>
+                    <option value="@AccountType.Technical">@T("Users.AccountTypes.Technical")</option>
                 </select>
             </div>
 
             <div style="margin-bottom: 20px;">
                 <label style="display: flex; align-items: center; cursor: pointer;">
                     <input type="checkbox" @bind="formUser.IsActive" style="margin-right: 8px;" />
-                    <span>Active</span>
+                    <span>@T("Users.Dialog.IsActive")</span>
                 </label>
             </div>
 
@@ -224,9 +227,9 @@
             }
 
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button @onclick="CloseDialog" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancel</button>
+                <button @onclick="CloseDialog" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">@T("Common.Cancel")</button>
                 <button @onclick="SaveUser" disabled="@saving" style="padding: 10px 20px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                    @(saving ? "Saving..." : "Save")
+                    @(saving ? T("Common.Loading") : T("Common.Save"))
                 </button>
             </div>
         </div>
@@ -343,6 +346,7 @@
 }
 
 @code {
+    private string currentLang = "en";
     private List<User> users = new();
     private Dictionary<Guid, List<User>> userAliases = new();
     private bool loading = true;
@@ -370,6 +374,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        currentLang = LangService.GetCurrentLanguage();
         await CheckAuthStatus();
         await LoadUsers();
     }
@@ -759,4 +764,7 @@
         public string? Message { get; set; }
         public string? Error { get; set; }
     }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
+    private string T(string key, params object[] args) => Localizer.Format(currentLang, key, args);
 }
