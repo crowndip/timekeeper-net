@@ -112,6 +112,23 @@ else
                         </div>
                     </div>
 
+                    <div>
+                        <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">Applied Migrations</div>
+                        <div style="font-size: 12px; color: #374151;">
+                            @if (appliedMigrationsList.Any())
+                            {
+                                @foreach (var migration in appliedMigrationsList)
+                                {
+                                    <div>✅ @migration</div>
+                                }
+                            }
+                            else
+                            {
+                                <div>None</div>
+                            }
+                        </div>
+                    </div>
+
                     @if (pendingMigrations.Any())
                     {
                         <div style="padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
@@ -497,6 +514,7 @@ else
     private string currentSchemaVersion = "Unknown";
     private string expectedSchemaVersion = "20260420";
     private List<string> pendingMigrations = new();
+    private List<string> appliedMigrationsList = new();
     private bool isMigrating = false;
     private string migrationLog = "";
 
@@ -538,15 +556,28 @@ else
                 .SqlQueryRaw<string>("SELECT \"MigrationId\" FROM \"__EFMigrationsHistory\" ORDER BY \"MigrationId\"")
                 .ToListAsync();
             
+            appliedMigrationsList = appliedMigrations;
+            
             if (appliedMigrations.Any())
             {
                 var latest = appliedMigrations.Last();
                 dbVersion = latest.Length >= 8 ? latest.Substring(0, 8) : latest;
                 currentSchemaVersion = dbVersion;
             }
+            else
+            {
+                currentSchemaVersion = "None";
+            }
 
             // Get all migrations from code
             var allMigrations = DbContext.Database.GetMigrations().ToList();
+            
+            // Set expected version from latest migration in code
+            if (allMigrations.Any())
+            {
+                var latestCodeMigration = allMigrations.Last();
+                expectedSchemaVersion = latestCodeMigration.Length >= 8 ? latestCodeMigration.Substring(0, 8) : latestCodeMigration;
+            }
             
             // Find pending migrations
             pendingMigrations = allMigrations
@@ -555,8 +586,9 @@ else
         }
         catch
         {
-            dbVersion = "1.0.0";
+            dbVersion = "Unknown";
             currentSchemaVersion = "Unknown";
+            appliedMigrationsList = new();
         }
     }
 
