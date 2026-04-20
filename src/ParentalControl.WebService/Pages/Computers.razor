@@ -5,18 +5,23 @@
 @using Microsoft.JSInterop
 @inject AppDbContext DbContext
 @inject IJSRuntime JSRuntime
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>Devices</PageTitle>
+<PageTitle>@T("Computers.PageTitle")</PageTitle>
 
 <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h1 style="margin: 0;">💻 Registered Devices</h1>
-        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">← Dashboard</a>
+        <h1 style="margin: 0;">@T("Computers.PageTitle")</h1>
+        <div style="display: flex; gap: 12px;">
+            <LanguageSelector />
+            <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">@T("Common.Back")</a>
+        </div>
     </div>
 
     @if (loading)
     {
-        <p>Loading devices...</p>
+        <p>@T("Common.Loading")</p>
     }
     else if (!string.IsNullOrEmpty(errorMessage))
     {
@@ -32,9 +37,9 @@
                     <th style="padding: 12px; text-align: left;">Hostname</th>
                     <th style="padding: 12px; text-align: left;">Machine ID</th>
                     <th style="padding: 12px; text-align: left;">OS Info</th>
-                    <th style="padding: 12px; text-align: center;">Status</th>
-                    <th style="padding: 12px; text-align: center;">Last Seen</th>
-                    <th style="padding: 12px; text-align: center;">Actions</th>
+                    <th style="padding: 12px; text-align: center;">@T("Computers.Status")</th>
+                    <th style="padding: 12px; text-align: center;">@T("Computers.LastSeen")</th>
+                    <th style="padding: 12px; text-align: center;">@T("Users.Actions")</th>
                 </tr>
             </thead>
             <tbody>
@@ -47,7 +52,7 @@
                         <td style="padding: 12px;">@(computer.OsInfo ?? "Unknown")</td>
                         <td style="padding: 12px; text-align: center;">
                             <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; background: @(computer.IsActive ? (isOnline ? "#10b981" : "#f59e0b") : "#6b7280"); color: white;">
-                                @(computer.IsActive ? (isOnline ? "Online" : "Offline") : "Inactive")
+                                @(computer.IsActive ? (isOnline ? T("Computers.Online") : T("Computers.Offline")) : T("Common.Inactive"))
                             </span>
                         </td>
                         <td style="padding: 12px; text-align: center; font-size: 12px;">
@@ -119,6 +124,7 @@
 }
 
 @code {
+    private string currentLang = "en";
     private List<Computer> computers = new();
     private bool loading = true;
     private string errorMessage = string.Empty;
@@ -128,6 +134,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        currentLang = LangService.GetCurrentLanguage();
         await LoadComputers();
     }
 
@@ -239,4 +246,6 @@
         rng.GetBytes(bytes);
         return Convert.ToBase64String(bytes).Replace("+", "").Replace("/", "").Replace("=", "")[..32];
     }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
 }

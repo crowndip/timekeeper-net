@@ -2,12 +2,14 @@
 @using Microsoft.JSInterop
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>Administrator Authentication</PageTitle>
+<PageTitle>@T("Auth.PageTitle")</PageTitle>
 
 <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
     <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); width: 100%; max-width: 400px;">
-        <h2 style="text-align: center; margin-bottom: 1.5rem; color: #333;">Administrator Access</h2>
+        <h2 style="text-align: center; margin-bottom: 1.5rem; color: #333;">@T("Auth.Title")</h2>
         
         @if (!string.IsNullOrEmpty(errorMessage))
         {
@@ -18,32 +20,38 @@
         
         <form @onsubmit="HandleAuth">
             <div style="margin-bottom: 1rem;">
-                <label style="display: block; margin-bottom: 0.5rem; color: #555;">Administrator Password</label>
+                <label style="display: block; margin-bottom: 0.5rem; color: #555;">@T("Auth.PasswordLabel")</label>
                 <input type="password" @bind="password" class="form-control" required autofocus />
             </div>
             
             <button type="submit" class="btn btn-primary" style="width: 100%;" disabled="@isLoading">
                 @if (isLoading)
                 {
-                    <span>Authenticating...</span>
+                    <span>@T("Auth.Authenticating")</span>
                 }
                 else
                 {
-                    <span>Authenticate</span>
+                    <span>@T("Auth.AuthenticateButton")</span>
                 }
             </button>
         </form>
         
         <div style="margin-top: 1rem; text-align: center;">
-            <a href="/" style="color: #666; text-decoration: none;">← Back to Dashboard</a>
+            <a href="/" style="color: #666; text-decoration: none;">@T("Auth.BackToDashboard")</a>
         </div>
     </div>
 </div>
 
 @code {
+    private string currentLang = "en";
     private string password = "";
     private string errorMessage = "";
     private bool isLoading = false;
+
+    protected override void OnInitialized()
+    {
+        currentLang = LangService.GetCurrentLanguage();
+    }
 
     private async Task HandleAuth()
     {
@@ -60,7 +68,7 @@
             }
             else
             {
-                errorMessage = "Invalid administrator password";
+                errorMessage = T("Auth.InvalidPassword");
                 password = "";
             }
         }
@@ -76,4 +84,6 @@
     {
         public bool Success { get; set; }
     }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
 }

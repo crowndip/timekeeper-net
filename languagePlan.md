@@ -566,16 +566,16 @@ docker exec container cat /app/wwwroot/localization/cs.json
 - [x] Style language selector
 
 ### 🔄 Phase 3: Page Updates (IN PROGRESS)
-- [x] Update Index.razor (Dashboard) - add translations
-- [ ] Update Users.razor
-- [ ] Update Profiles.razor
+- [x] Update Index.razor (Dashboard)
+- [ ] Update Users.razor (complex - has dialogs)
+- [ ] Update Profiles.razor (complex - has dialogs)
 - [ ] Update AllowedHours.razor
 - [x] Update Configuration.razor
 - [x] Update About.razor
-- [ ] Update AdminAuth.razor
-- [ ] Update Setup.razor
-- [ ] Update Computers.razor
+- [x] Update AdminAuth.razor
+- [x] Update Computers.razor
 - [ ] Update Reports.razor
+- [ ] Update Setup.razor
 - [ ] Update remaining pages (Login, DbInfo, AuthBase)
 
 ### ⏳ Phase 4: Testing (PENDING)
