@@ -96,6 +96,67 @@ else
             </div>
         }
 
+        <!-- Configuration -->
+        <div class="status-card" style="margin-bottom: 30px;">
+            <div class="status-header">
+                <span class="status-icon">⚙️</span>
+                <span class="status-title">Configuration</span>
+            </div>
+            <div style="padding: 16px;">
+                <div style="display: grid; gap: 16px;">
+                    <div>
+                        <div style="font-size: 14px; color: #6b7280; margin-bottom: 8px;">Database Schema Version</div>
+                        <div style="font-size: 18px; font-weight: 600;">@currentSchemaVersion</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                            Expected: @expectedSchemaVersion
+                        </div>
+                    </div>
+
+                    @if (pendingMigrations.Any())
+                    {
+                        <div style="padding: 12px; background: #fef3c7; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                            <div style="font-weight: 600; color: #92400e; margin-bottom: 8px;">
+                                ⚠️ @pendingMigrations.Count Pending Migration(s)
+                            </div>
+                            <div style="font-size: 12px; color: #78350f;">
+                                @foreach (var migration in pendingMigrations)
+                                {
+                                    <div>• @migration</div>
+                                }
+                            </div>
+                        </div>
+
+                        <button @onclick="ApplyMigrations" disabled="@isMigrating" class="btn btn-primary" style="width: 100%;">
+                            @if (isMigrating)
+                            {
+                                <span>⏳ Applying Migrations...</span>
+                            }
+                            else
+                            {
+                                <span>🔄 Apply Migrations</span>
+                            }
+                        </button>
+                    }
+                    else
+                    {
+                        <div style="padding: 12px; background: #d1fae5; border-left: 4px solid #10b981; border-radius: 4px;">
+                            <div style="font-weight: 600; color: #065f46;">
+                                ✅ Database is up to date
+                            </div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(migrationLog))
+                    {
+                        <div>
+                            <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">Migration Log</div>
+                            <div style="background: #1f2937; color: #f3f4f6; padding: 12px; border-radius: 4px; font-family: monospace; font-size: 12px; max-height: 300px; overflow-y: auto; white-space: pre-wrap;">@migrationLog</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
         <!-- Quick Actions -->
         <div class="cards-grid">
             <div class="card card-users">
@@ -432,6 +493,12 @@ else
     private int userCount = 0;
     private int computerCount = 0;
     private List<RecentActivityItem> recentActivity = new();
+    
+    private string currentSchemaVersion = "Unknown";
+    private string expectedSchemaVersion = "20260420";
+    private List<string> pendingMigrations = new();
+    private bool isMigrating = false;
+    private string migrationLog = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -446,39 +513,9 @@ else
             }
             else
             {
-                // Get database version from migrations table
-                try
-                {
-                    var latestMigration = await DbContext.Database
-                        .SqlQueryRaw<string>("SELECT \"MigrationId\" FROM \"__EFMigrationsHistory\" ORDER BY \"MigrationId\" DESC LIMIT 1")
-                        .ToListAsync();
-                    
-                    if (latestMigration.Any())
-                    {
-                        // Extract version from migration ID (e.g., "20240101000000_InitialCreate" -> "20240101")
-                        var migrationId = latestMigration.First();
-                        dbVersion = migrationId.Length >= 8 ? migrationId.Substring(0, 8) : migrationId;
-                    }
-                }
-                catch
-                {
-                    dbVersion = "1.0.0";
-                }
-
-                // Get counts - wrap in try-catch to handle case where tables don't exist yet
-                try
-                {
-                    userCount = await DbContext.Users.CountAsync();
-                    computerCount = await DbContext.Computers.CountAsync();
-                    await LoadRecentActivity();
-                }
-                catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P01") // Table does not exist
-                {
-                    // Tables don't exist yet, redirect to setup
-                    needsSetup = true;
-                    Navigation.NavigateTo("/setup", true);
-                    return;
-                }
+                await LoadDatabaseInfo();
+                await LoadCounts();
+                await LoadRecentActivity();
             }
         }
         catch (Exception)
@@ -489,6 +526,87 @@ else
         finally
         {
             isChecking = false;
+        }
+    }
+
+    private async Task LoadDatabaseInfo()
+    {
+        try
+        {
+            // Get applied migrations
+            var appliedMigrations = await DbContext.Database
+                .SqlQueryRaw<string>("SELECT \"MigrationId\" FROM \"__EFMigrationsHistory\" ORDER BY \"MigrationId\"")
+                .ToListAsync();
+            
+            if (appliedMigrations.Any())
+            {
+                var latest = appliedMigrations.Last();
+                dbVersion = latest.Length >= 8 ? latest.Substring(0, 8) : latest;
+                currentSchemaVersion = dbVersion;
+            }
+
+            // Get all migrations from code
+            var allMigrations = DbContext.Database.GetMigrations().ToList();
+            
+            // Find pending migrations
+            pendingMigrations = allMigrations
+                .Where(m => !appliedMigrations.Contains(m))
+                .ToList();
+        }
+        catch
+        {
+            dbVersion = "1.0.0";
+            currentSchemaVersion = "Unknown";
+        }
+    }
+
+    private async Task LoadCounts()
+    {
+        try
+        {
+            userCount = await DbContext.Users.CountAsync();
+            computerCount = await DbContext.Computers.CountAsync();
+        }
+        catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P01")
+        {
+            needsSetup = true;
+            Navigation.NavigateTo("/setup", true);
+        }
+    }
+
+    private async Task ApplyMigrations()
+    {
+        isMigrating = true;
+        migrationLog = "";
+        StateHasChanged();
+
+        try
+        {
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] Starting migration...\n";
+            
+            foreach (var migration in pendingMigrations)
+            {
+                migrationLog += $"[{DateTime.Now:HH:mm:ss}] Applying: {migration}\n";
+            }
+
+            await DbContext.Database.MigrateAsync();
+            
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] ✅ Migrations applied successfully!\n";
+            
+            // Reload database info
+            await LoadDatabaseInfo();
+            
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] Current schema version: {currentSchemaVersion}\n";
+        }
+        catch (Exception ex)
+        {
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] ❌ Error: {ex.Message}\n";
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] {ex.StackTrace}\n";
+        }
+        finally
+        {
+            isMigrating = false;
+            StateHasChanged();
         }
     }
 
@@ -538,7 +656,6 @@ else
         }
         catch
         {
-            // If loading fails, just show empty list
             recentActivity = new();
         }
     }
