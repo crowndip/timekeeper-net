@@ -546,6 +546,42 @@ docker exec container cat /app/wwwroot/localization/cs.json
 - Simple logic in `LocalizationService.Get()` method
 - Already shown in implementation above
 
+## Implementation Progress
+
+### ✅ Phase 0: Translation Files (COMPLETE)
+- [x] Create en.json with all translations
+- [x] Create cs.json with all translations
+- [x] Commit to repository
+
+### ✅ Phase 1: Core Services (COMPLETE)
+- [x] Create LocalizationService.cs
+- [x] Create LanguageService.cs
+- [x] Add JavaScript helper (localization.js)
+- [x] Register services in Program.cs
+- [x] Add script to _Host.cshtml
+
+### ✅ Phase 2: UI Components (COMPLETE)
+- [x] Create LanguageSelector.razor component
+- [x] Add to Index.razor (Dashboard)
+- [x] Style language selector
+
+### 🔄 Phase 3: Page Updates (IN PROGRESS)
+- [ ] Update Index.razor (Dashboard) - add translations
+- [ ] Update Users.razor
+- [ ] Update Profiles.razor
+- [ ] Update AllowedHours.razor
+- [ ] Update Configuration.razor
+- [ ] Update About.razor
+- [ ] Update remaining pages
+
+### ⏳ Phase 4: Testing (PENDING)
+- [ ] Test browser language detection
+- [ ] Test manual language switching
+- [ ] Test cookie persistence
+- [ ] Verify all pages in both languages
+
+---
+
 ## Implementation Phases (Updated)
 
 ### Phase 1: Infrastructure (2-3 hours)

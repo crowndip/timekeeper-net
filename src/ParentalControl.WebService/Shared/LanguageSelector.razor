@@ -1,0 +1,50 @@
+@inject LanguageService LangService
+@inject NavigationManager Navigation
+
+<div class="language-selector">
+    <select @bind="selectedLanguage" @bind:after="OnLanguageChanged" class="language-select">
+        <option value="en">🇬🇧 English</option>
+        <option value="cs">🇨🇿 Čeština</option>
+    </select>
+</div>
+
+<style>
+    .language-selector {
+        display: inline-block;
+    }
+
+    .language-select {
+        padding: 6px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        background: white;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.2s;
+    }
+
+    .language-select:hover {
+        border-color: #9ca3af;
+    }
+
+    .language-select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+</style>
+
+@code {
+    private string selectedLanguage = "en";
+
+    protected override void OnInitialized()
+    {
+        selectedLanguage = LangService.GetCurrentLanguage();
+    }
+
+    private void OnLanguageChanged()
+    {
+        LangService.SetLanguage(selectedLanguage);
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+}

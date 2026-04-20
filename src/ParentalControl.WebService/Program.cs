@@ -33,6 +33,8 @@ try
     builder.Services.AddScoped<IUsageReportService, UsageReportService>();
     builder.Services.AddScoped<AuthService>();
     builder.Services.AddScoped<ManualMigrationService>();
+    builder.Services.AddSingleton<LocalizationService>();
+    builder.Services.AddScoped<LanguageService>();
     builder.Services.AddHttpContextAccessor();
 
     builder.Services.AddHttpClient();
