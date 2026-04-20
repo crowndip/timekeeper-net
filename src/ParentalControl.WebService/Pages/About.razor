@@ -1,61 +1,75 @@
 @page "/about"
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>About - Parental Control</PageTitle>
+<PageTitle>@T("About.PageTitle")</PageTitle>
 
 <div class="page-container">
     <div class="page-header">
-        <h1 class="page-title">ℹ️ About</h1>
+        <h1 class="page-title">@T("About.PageTitle")</h1>
         <div class="header-actions">
-            <a href="/" class="btn" style="background: #6b7280; color: white;">← Dashboard</a>
+            <LanguageSelector />
+            <a href="/" class="btn" style="background: #6b7280; color: white;">@T("Common.Back")</a>
         </div>
     </div>
 
     <div class="about-content">
         <div class="about-section">
-            <h2>Parental Control System</h2>
-            <p><strong>Version:</strong> 1.30.0</p>
-            <p>A centralized parental control system for Linux and Windows with time tracking, enforcement, and web-based administration.</p>
+            <h2>@T("About.AppName")</h2>
+            <p><strong>@T("About.Version"):</strong> 1.33.0</p>
+            <p>@T("About.Description")</p>
         </div>
 
         <div class="about-section">
-            <h3>Features</h3>
+            <h3>@T("About.Features")</h3>
             <ul>
-                <li>✅ Centralized time management across multiple computers</li>
-                <li>✅ Cross-platform support (Linux and Windows)</li>
-                <li>✅ Time limits shared across all devices</li>
-                <li>✅ Per-day and weekly time limits</li>
-                <li>✅ Automatic enforcement (logout/lock)</li>
-                <li>✅ Real-time usage tracking</li>
-                <li>✅ User aliases for multiple accounts</li>
-                <li>✅ Native UI for each platform</li>
+                <li>@T("About.FeatureList.0")</li>
+                <li>@T("About.FeatureList.1")</li>
+                <li>@T("About.FeatureList.2")</li>
+                <li>@T("About.FeatureList.3")</li>
+                <li>@T("About.FeatureList.4")</li>
+                <li>@T("About.FeatureList.5")</li>
+                <li>@T("About.FeatureList.6")</li>
+                <li>@T("About.FeatureList.7")</li>
             </ul>
         </div>
 
         <div class="about-section">
-            <h3>Technology Stack</h3>
+            <h3>@T("About.TechStack")</h3>
             <ul>
-                <li><strong>Backend:</strong> ASP.NET Core 8 with Blazor Server</li>
-                <li><strong>Database:</strong> PostgreSQL 16+</li>
-                <li><strong>Client:</strong> .NET 8 Worker Service</li>
-                <li><strong>UI:</strong> Avalonia (Linux) and WPF (Windows)</li>
+                <li><strong>@T("About.Backend"):</strong> ASP.NET Core 8 with Blazor Server</li>
+                <li><strong>@T("About.Database"):</strong> PostgreSQL 16+</li>
+                <li><strong>@T("About.Client"):</strong> .NET 8 Worker Service</li>
+                <li><strong>@T("About.UI"):</strong> Avalonia (Linux) and WPF (Windows)</li>
             </ul>
         </div>
 
         <div class="about-section">
-            <h3>License</h3>
-            <p>This project is open source. See the repository for license details.</p>
+            <h3>@T("About.License")</h3>
+            <p>@T("About.LicenseText")</p>
         </div>
 
         <div class="about-section">
-            <h3>Source Code</h3>
+            <h3>@T("About.SourceCode")</h3>
             <p>
                 <a href="https://github.com/crowndip/timekeeper-net" target="_blank" class="btn" style="background: #333; color: white; text-decoration: none; display: inline-block;">
-                    📦 View on GitHub
+                    @T("About.ViewOnGitHub")
                 </a>
             </p>
         </div>
     </div>
 </div>
+
+@code {
+    private string currentLang = "en";
+
+    protected override void OnInitialized()
+    {
+        currentLang = LangService.GetCurrentLanguage();
+    }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
+}
 
 <style>
     .page-container {

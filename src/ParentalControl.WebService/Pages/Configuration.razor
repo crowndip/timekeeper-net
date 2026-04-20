@@ -5,27 +5,30 @@
 @inject AppDbContext DbContext
 @inject AuthService AuthService
 @inject ManualMigrationService ManualMigrationService
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>Configuration - Parental Control</PageTitle>
+<PageTitle>@T("Configuration.PageTitle")</PageTitle>
 
 <div class="page-container">
     <div class="page-header">
-        <h1>⚙️ Configuration</h1>
-        <p>Database schema and system information</p>
+        <h1>@T("Configuration.PageTitle")</h1>
+        <p>@T("Configuration.Description")</p>
+        <LanguageSelector />
     </div>
 
     <div class="config-section">
-        <h3>Database Schema</h3>
+        <h3>@T("Configuration.DatabaseSchema")</h3>
         
         <div class="info-grid">
             <div class="info-item">
-                <label>Current Schema Version</label>
+                <label>@T("Configuration.CurrentVersion")</label>
                 <div class="info-value">@currentSchemaVersion</div>
             </div>
         </div>
 
         <div class="section-group">
-            <h4>Applied Migrations</h4>
+            <h4>@T("Configuration.AppliedMigrations")</h4>
             <div class="migration-list">
                 @if (appliedMigrationsList.Any())
                 {
@@ -56,7 +59,7 @@
         else
         {
             <div class="alert alert-success">
-                <strong>✅ Database is up to date</strong>
+                <strong>@T("Configuration.DatabaseUpToDate")</strong>
             </div>
         }
 
@@ -65,24 +68,24 @@
             <button @onclick="ApplyMigrations" disabled="@isMigrating" class="btn btn-primary btn-large">
                 @if (isMigrating)
                 {
-                    <span>⏳ Applying Migrations...</span>
+                    <span>@T("Configuration.Updating")</span>
                 }
                 else
                 {
-                    <span>🔄 Update Database Schema</span>
+                    <span>@T("Configuration.UpdateButton")</span>
                 }
             </button>
         }
         else
         {
             <div class="alert alert-info">
-                <strong>🔒 Authentication Required</strong>
-                <p>Enter administrator password to apply migrations</p>
+                <strong>@T("Configuration.AuthRequired")</strong>
+                <p>@T("Configuration.AuthDescription")</p>
             </div>
             
             <div style="display: flex; gap: 12px; margin-top: 12px;">
-                <input type="password" @bind="password" placeholder="Administrator Password" class="form-control" style="flex: 1;" @onkeypress="HandleKeyPress" />
-                <button @onclick="Authenticate" class="btn btn-primary">Login</button>
+                <input type="password" @bind="password" placeholder="@T("Configuration.PasswordPlaceholder")" class="form-control" style="flex: 1;" @onkeypress="HandleKeyPress" />
+                <button @onclick="Authenticate" class="btn btn-primary">@T("Configuration.Login")</button>
             </div>
             
             @if (!string.IsNullOrEmpty(authError))
@@ -257,6 +260,7 @@
 </style>
 
 @code {
+    private string currentLang = "en";
     private string currentSchemaVersion = "Unknown";
     private string expectedSchemaVersion = "20260420";
     private List<string> pendingMigrations = new();
@@ -270,6 +274,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        currentLang = LangService.GetCurrentLanguage();
         isAuthenticated = AuthService.IsAuthenticated();
         await LoadDatabaseInfo();
     }
@@ -398,4 +403,6 @@
             StateHasChanged();
         }
     }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
 }

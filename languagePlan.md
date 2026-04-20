@@ -570,8 +570,8 @@ docker exec container cat /app/wwwroot/localization/cs.json
 - [ ] Update Users.razor
 - [ ] Update Profiles.razor
 - [ ] Update AllowedHours.razor
-- [ ] Update Configuration.razor
-- [ ] Update About.razor
+- [x] Update Configuration.razor
+- [x] Update About.razor
 - [ ] Update remaining pages
 
 ### ⏳ Phase 4: Testing (PENDING)
