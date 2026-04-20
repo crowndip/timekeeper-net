@@ -114,10 +114,18 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var user in users)
+                @foreach (var user in users.Where(u => u.PrimaryUserId == null))
                 {
                     <tr style="border-bottom: 1px solid #e5e7eb;">
-                        <td style="padding: 12px;">@user.Username</td>
+                        <td style="padding: 12px;">
+                            <strong>@user.Username</strong>
+                            @if (userAliases.ContainsKey(user.Id) && userAliases[user.Id].Any())
+                            {
+                                <span style="color: #6b7280; font-size: 12px; margin-left: 8px;">
+                                    (@userAliases[user.Id].Count aliases)
+                                </span>
+                            }
+                        </td>
                         <td style="padding: 12px;">@(user.FullName ?? "-")</td>
                         <td style="padding: 12px;">@(user.Email ?? "-")</td>
                         <td style="padding: 12px;">
@@ -133,9 +141,30 @@
                         <td style="padding: 12px; text-align: center;">
                             <button @onclick="() => ShowEditDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">Edit</button>
                             <button @onclick="() => ShowTimeAdjustDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">⏱️ Time</button>
+                            <button @onclick="() => ShowAliasDialog(user)" disabled="@isReadOnly" style="padding: 6px 12px; margin-right: 5px; background: #8b5cf6; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">👥 Aliases</button>
                             <button @onclick="() => DeleteUser(user)" disabled="@isReadOnly" style="padding: 6px 12px; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">Delete</button>
                         </td>
                     </tr>
+                    @if (userAliases.ContainsKey(user.Id))
+                    {
+                        @foreach (var alias in userAliases[user.Id])
+                        {
+                            <tr style="border-bottom: 1px solid #e5e7eb; background: #f9fafb;">
+                                <td style="padding: 12px; padding-left: 40px;">
+                                    <span style="color: #6b7280;">↳</span> @alias.Username <span style="color: #8b5cf6; font-size: 11px; font-weight: 600;">(ALIAS)</span>
+                                </td>
+                                <td style="padding: 12px; color: #6b7280;">@(alias.FullName ?? "-")</td>
+                                <td style="padding: 12px; color: #6b7280;">@(alias.Email ?? "-")</td>
+                                <td style="padding: 12px; color: #6b7280;">-</td>
+                                <td style="padding: 12px; text-align: center; color: #6b7280;">
+                                    @(alias.UpdatedAt.ToString("MMM dd, HH:mm"))
+                                </td>
+                                <td style="padding: 12px; text-align: center;">
+                                    <button @onclick="() => UnlinkAlias(alias)" disabled="@isReadOnly" style="padding: 6px 12px; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); opacity: @(isReadOnly ? "0.5" : "1");">Unlink</button>
+                                </td>
+                            </tr>
+                        }
+                    }
                 }
             </tbody>
         </table>
@@ -254,8 +283,66 @@
     </div>
 }
 
+@if (showAliasDialog)
+{
+    <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @onclick="CloseAliasDialog">
+        <div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%; max-height: 80vh; overflow-y: auto;" @onclick:stopPropagation="true">
+            <h2 style="margin-top: 0;">👥 Manage Aliases for @aliasManageUser?.Username</h2>
+            
+            <p style="color: #666; margin-bottom: 20px;">
+                Aliases allow multiple OS usernames to share the same time limits. All aliases will count toward the same daily/weekly limits.
+            </p>
+
+            @if (userAliases.ContainsKey(aliasManageUser?.Id ?? Guid.Empty) && userAliases[aliasManageUser.Id].Any())
+            {
+                <div style="margin-bottom: 20px;">
+                    <h3 style="font-size: 16px; margin-bottom: 10px;">Current Aliases:</h3>
+                    @foreach (var alias in userAliases[aliasManageUser.Id])
+                    {
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #f3f4f6; border-radius: 6px; margin-bottom: 8px;">
+                            <div>
+                                <strong>@alias.Username</strong>
+                                <div style="font-size: 12px; color: #6b7280;">Last seen: @alias.UpdatedAt.ToString("MMM dd, HH:mm")</div>
+                            </div>
+                            <button @onclick="() => UnlinkAlias(alias)" style="padding: 6px 12px; background: #f59e0b; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                Unlink
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
+            <div style="margin-bottom: 20px;">
+                <h3 style="font-size: 16px; margin-bottom: 10px;">Add New Alias:</h3>
+                <select @bind="selectedAliasUserId" style="width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; margin-bottom: 10px;">
+                    <option value="">-- Select a user to make an alias --</option>
+                    @foreach (var user in availableForAlias)
+                    {
+                        <option value="@user.Id">@user.Username (@user.AccountType)</option>
+                    }
+                </select>
+                <button @onclick="AddAlias" disabled="@(string.IsNullOrEmpty(selectedAliasUserId) || aliasOperationInProgress)" style="width: 100%; padding: 12px; background: #8b5cf6; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    @(aliasOperationInProgress ? "Adding..." : "Add Alias")
+                </button>
+            </div>
+
+            @if (!string.IsNullOrEmpty(aliasDialogMessage))
+            {
+                <div style="padding: 10px; background: @(aliasDialogError ? "#fee" : "#d1fae5"); border: 1px solid @(aliasDialogError ? "#f00" : "#10b981"); border-radius: 4px; color: @(aliasDialogError ? "#c00" : "#065f46"); margin-bottom: 15px;">
+                    @aliasDialogMessage
+                </div>
+            }
+
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button @onclick="CloseAliasDialog" style="padding: 10px 20px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">Close</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private List<User> users = new();
+    private Dictionary<Guid, List<User>> userAliases = new();
     private bool loading = true;
     private string errorMessage = string.Empty;
     private bool showDialog = false;
@@ -270,6 +357,14 @@
     private TimeStatusResponse? timeStatus = null;
     private bool adjusting = false;
     private string timeDialogMessage = string.Empty;
+
+    private bool showAliasDialog = false;
+    private User? aliasManageUser = null;
+    private string selectedAliasUserId = string.Empty;
+    private List<User> availableForAlias = new();
+    private bool aliasOperationInProgress = false;
+    private string aliasDialogMessage = string.Empty;
+    private bool aliasDialogError = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -376,7 +471,22 @@
         errorMessage = string.Empty;
         try
         {
-            users = await DbContext.Users.OrderBy(u => u.Username).ToListAsync();
+            users = await DbContext.Users
+                .Include(u => u.PrimaryUser)
+                .OrderBy(u => u.Username)
+                .ToListAsync();
+            
+            // Load aliases for each primary user
+            userAliases.Clear();
+            var primaryUsers = users.Where(u => u.PrimaryUserId == null).ToList();
+            foreach (var primaryUser in primaryUsers)
+            {
+                var aliases = users.Where(u => u.PrimaryUserId == primaryUser.Id).ToList();
+                if (aliases.Any())
+                {
+                    userAliases[primaryUser.Id] = aliases;
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -533,4 +643,123 @@
         AccountType.Technical => "#6b7280",
         _ => "#6b7280"
     };
+
+    private async Task ShowAliasDialog(User user)
+    {
+        if (isReadOnly) return;
+        aliasManageUser = user;
+        selectedAliasUserId = string.Empty;
+        aliasDialogMessage = string.Empty;
+        aliasDialogError = false;
+        
+        // Load available users for aliasing (exclude primary users with aliases, users with active profiles, and existing aliases)
+        availableForAlias = await DbContext.Users
+            .Include(u => u.Aliases)
+            .Include(u => u.TimeProfiles)
+            .Where(u => u.Id != user.Id && u.PrimaryUserId == null)
+            .ToListAsync();
+        
+        // Filter out users that can't become aliases
+        availableForAlias = availableForAlias
+            .Where(u => !u.Aliases.Any() && !u.TimeProfiles.Any(p => p.IsActive))
+            .ToList();
+        
+        showAliasDialog = true;
+    }
+
+    private void CloseAliasDialog()
+    {
+        showAliasDialog = false;
+        aliasManageUser = null;
+        selectedAliasUserId = string.Empty;
+        aliasDialogMessage = string.Empty;
+        aliasDialogError = false;
+    }
+
+    private async Task AddAlias()
+    {
+        if (string.IsNullOrEmpty(selectedAliasUserId) || aliasManageUser == null) return;
+        
+        aliasOperationInProgress = true;
+        aliasDialogMessage = string.Empty;
+        aliasDialogError = false;
+        
+        try
+        {
+            var response = await Http.PostAsync($"/api/users/{aliasManageUser.Id}/aliases/{selectedAliasUserId}", null);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse>();
+            
+            if (response.IsSuccessStatusCode && result?.Success == true)
+            {
+                aliasDialogMessage = result.Message ?? "Alias added successfully";
+                aliasDialogError = false;
+                selectedAliasUserId = string.Empty;
+                await LoadUsers();
+                await ShowAliasDialog(aliasManageUser); // Refresh dialog
+            }
+            else
+            {
+                aliasDialogMessage = result?.Error ?? "Failed to add alias";
+                aliasDialogError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            aliasDialogMessage = $"Error: {ex.Message}";
+            aliasDialogError = true;
+        }
+        finally
+        {
+            aliasOperationInProgress = false;
+        }
+    }
+
+    private async Task UnlinkAlias(User alias)
+    {
+        if (isReadOnly) return;
+        if (!await JS.InvokeAsync<bool>("confirm", $"Unlink '{alias.Username}' from its primary user? It will become an independent user again."))
+            return;
+        
+        aliasOperationInProgress = true;
+        aliasDialogMessage = string.Empty;
+        aliasDialogError = false;
+        
+        try
+        {
+            var response = await Http.DeleteAsync($"/api/users/{alias.Id}/unlink");
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse>();
+            
+            if (response.IsSuccessStatusCode && result?.Success == true)
+            {
+                aliasDialogMessage = result.Message ?? "Alias unlinked successfully";
+                aliasDialogError = false;
+                await LoadUsers();
+                if (showAliasDialog && aliasManageUser != null)
+                {
+                    await ShowAliasDialog(aliasManageUser); // Refresh dialog
+                }
+            }
+            else
+            {
+                aliasDialogMessage = result?.Error ?? "Failed to unlink alias";
+                aliasDialogError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            aliasDialogMessage = $"Error: {ex.Message}";
+            aliasDialogError = true;
+        }
+        finally
+        {
+            aliasOperationInProgress = false;
+        }
+    }
+
+    private class ApiResponse
+    {
+        public bool Success { get; set; }
+        public string? Message { get; set; }
+        public string? Error { get; set; }
+    }
 }
