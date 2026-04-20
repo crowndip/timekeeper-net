@@ -5,23 +5,25 @@
 @inject IDatabaseInitializationService DbInit
 @inject AppDbContext DbContext
 @inject NavigationManager Navigation
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>Parental Control System</PageTitle>
+<PageTitle>@T("Dashboard.PageTitle")</PageTitle>
 
 @if (isChecking)
 {
     <div class="loading-container">
         <div class="spinner"></div>
-        <p>Checking system status...</p>
+        <p>@T("Common.Loading")</p>
     </div>
 }
 else if (needsSetup)
 {
     <div class="container">
         <div class="alert alert-warning">
-            <h4>⚠️ Database Setup Required</h4>
-            <p>The database has not been initialized yet.</p>
-            <a href="/setup" class="btn btn-primary">Go to Setup Page</a>
+            <h4>@T("Setup.Title")</h4>
+            <p>@T("Setup.Description")</p>
+            <a href="/setup" class="btn btn-primary">@T("Setup.InitializeButton")</a>
         </div>
     </div>
 }
@@ -32,8 +34,8 @@ else
         <div class="dashboard-header">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
                 <div>
-                    <h1>🛡️ Parental Control System</h1>
-                    <p class="subtitle">Centralized time management and monitoring</p>
+                    <h1>🛡️ @T("Dashboard.PageTitle")</h1>
+                    <p class="subtitle">@T("Dashboard.Subtitle")</p>
                 </div>
                 <div style="display: flex; align-items: center; gap: 16px;">
                     <LanguageSelector />
@@ -50,7 +52,7 @@ else
         <div class="status-card">
             <div class="status-header">
                 <span class="status-icon">✅</span>
-                <span class="status-title">System Status</span>
+                <span class="status-title">@T("Dashboard.SystemStatus")</span>
             </div>
             <div class="status-grid">
                 <div class="status-item">
@@ -112,51 +114,51 @@ else
         <div class="cards-grid">
             <div class="card card-users">
                 <div class="card-icon">👥</div>
-                <h3>Users</h3>
-                <p>Manage user accounts and permissions</p>
-                <a href="/users" class="card-btn">Manage Users</a>
+                <h3>@T("Dashboard.Users")</h3>
+                <p>@T("Dashboard.UsersDesc")</p>
+                <a href="/users" class="card-btn">@T("Dashboard.ManageUsers")</a>
             </div>
 
             <div class="card card-profiles">
                 <div class="card-icon">⏱️</div>
-                <h3>Time Profiles</h3>
-                <p>Configure time limits and schedules</p>
-                <a href="/profiles" class="card-btn">Manage Profiles</a>
+                <h3>@T("Dashboard.TimeProfiles")</h3>
+                <p>@T("Dashboard.TimeProfilesDesc")</p>
+                <a href="/profiles" class="card-btn">@T("Dashboard.ManageProfiles")</a>
             </div>
 
             <div class="card card-allowed-hours">
                 <div class="card-icon">🕐</div>
-                <h3>Allowed Hours</h3>
-                <p>Set when children can use computers</p>
-                <a href="/allowed-hours" class="card-btn">Configure Hours</a>
+                <h3>@T("Dashboard.AllowedHours")</h3>
+                <p>@T("Dashboard.AllowedHoursDesc")</p>
+                <a href="/allowed-hours" class="card-btn">@T("Dashboard.ConfigureHours")</a>
             </div>
 
             <div class="card card-computers">
                 <div class="card-icon">💻</div>
-                <h3>Devices</h3>
-                <p>View and manage registered devices</p>
-                <a href="/computers" class="card-btn">View Devices</a>
+                <h3>@T("Dashboard.Devices")</h3>
+                <p>@T("Dashboard.DevicesDesc")</p>
+                <a href="/computers" class="card-btn">@T("Dashboard.ViewDevices")</a>
             </div>
 
             <div class="card card-reports">
                 <div class="card-icon">📊</div>
-                <h3>Reports</h3>
-                <p>View usage statistics and reports</p>
-                <a href="/reports" class="card-btn">View Reports</a>
+                <h3>@T("Dashboard.Reports")</h3>
+                <p>@T("Dashboard.ReportsDesc")</p>
+                <a href="/reports" class="card-btn">@T("Dashboard.ViewReports")</a>
             </div>
 
             <div class="card card-configuration">
                 <div class="card-icon">⚙️</div>
-                <h3>Configuration</h3>
-                <p>Database schema and system settings</p>
-                <a href="/configuration" class="card-btn">View Configuration</a>
+                <h3>@T("Dashboard.Configuration")</h3>
+                <p>@T("Dashboard.ConfigurationDesc")</p>
+                <a href="/configuration" class="card-btn">@T("Dashboard.ViewConfiguration")</a>
             </div>
 
             <div class="card card-about">
                 <div class="card-icon">ℹ️</div>
-                <h3>About</h3>
-                <p>Project information and license</p>
-                <a href="/about" class="card-btn">View About</a>
+                <h3>@T("Dashboard.About")</h3>
+                <p>@T("Dashboard.AboutDesc")</p>
+                <a href="/about" class="card-btn">@T("Dashboard.ViewAbout")</a>
             </div>
         </div>
 
@@ -462,6 +464,7 @@ else
 </style>
 
 @code {
+    private string currentLang = "en";
     private bool isChecking = true;
     private bool needsSetup = false;
     private string dbVersion = "Unknown";
@@ -474,6 +477,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        currentLang = LangService.GetCurrentLanguage();
+        
         var assembly = System.Reflection.Assembly.GetExecutingAssembly();
         var version = assembly.GetName().Version;
         appVersion = version != null ? $"v{version.Major}.{version.Minor}.{version.Build}" : "Unknown";
@@ -602,4 +607,6 @@ else
         public DateTime LastSeen { get; set; }
         public int MinutesRemaining { get; set; }
     }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
 }
