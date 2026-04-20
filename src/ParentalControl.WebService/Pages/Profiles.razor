@@ -1,6 +1,7 @@
 @page "/profiles"
 @using ParentalControl.WebService.Models
 @using ParentalControl.WebService.Data
+@using ParentalControl.WebService.Services
 @using Microsoft.EntityFrameworkCore
 @using Microsoft.JSInterop
 @using System.Net.Http.Json
@@ -8,6 +9,7 @@
 @inject NavigationManager Navigation
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
+@inject AuthService AuthService
 
 <PageTitle>Time Profiles</PageTitle>
 
@@ -190,12 +192,7 @@
     {
         try
         {
-            var response = await Http.GetAsync("/api/auth/status");
-            if (response.IsSuccessStatusCode)
-            {
-                var result = await response.Content.ReadFromJsonAsync<AuthStatusResponse>();
-                isReadOnly = !(result?.Authenticated ?? false);
-            }
+            isReadOnly = !AuthService.IsAuthenticated();
         }
         catch
         {
