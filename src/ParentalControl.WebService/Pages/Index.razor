@@ -167,17 +167,6 @@ else
                                 }
                             </div>
                         </div>
-
-                        <button @onclick="ApplyMigrations" disabled="@isMigrating" class="btn btn-primary" style="width: 100%;">
-                            @if (isMigrating)
-                            {
-                                <span>⏳ Applying Migrations...</span>
-                            }
-                            else
-                            {
-                                <span>🔄 Apply Migrations</span>
-                            }
-                        </button>
                     }
                     else if (allMigrationsInCode.Count < 2)
                     {
@@ -207,6 +196,17 @@ else
                             </div>
                         </div>
                     }
+
+                    <button @onclick="ApplyMigrations" disabled="@isMigrating" class="btn btn-primary" style="width: 100%;">
+                        @if (isMigrating)
+                        {
+                            <span>⏳ Applying Migrations...</span>
+                        }
+                        else
+                        {
+                            <span>🔄 Update Database Schema</span>
+                        }
+                    </button>
 
                     @if (!string.IsNullOrEmpty(migrationLog))
                     {
