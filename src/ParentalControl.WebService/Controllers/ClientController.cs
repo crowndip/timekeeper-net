@@ -13,11 +13,13 @@ public class ClientController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly ITimeCalculationService _timeCalc;
+    private readonly IUserResolutionService _userResolution;
     
-    public ClientController(AppDbContext context, ITimeCalculationService timeCalc)
+    public ClientController(AppDbContext context, ITimeCalculationService timeCalc, IUserResolutionService userResolution)
     {
         _context = context;
         _timeCalc = timeCalc;
+        _userResolution = userResolution;
     }
     
     [HttpPost("register")]
@@ -50,12 +52,23 @@ public class ClientController : ControllerBase
     [HttpPost("session/start")]
     public async Task<ActionResult<SessionStartResponse>> StartSession(SessionStartRequest request)
     {
-        // Get or create user by username
-        var userId = await EnsureUserExistsAsync(request.Username);
+        // Get or create user by username (reported user)
+        var reportedUserId = await EnsureUserExistsAsync(request.Username);
+        
+        // Resolve to primary user for time calculations
+        var primaryUser = await _userResolution.ResolveToPrimaryAsync(reportedUserId);
+        if (primaryUser == null) return NotFound("User not found");
+        
+        // Update last seen on reported user (shows which login was used)
+        var reportedUser = await _context.Users.FindAsync(reportedUserId);
+        if (reportedUser != null)
+        {
+            reportedUser.UpdatedAt = DateTime.UtcNow;
+        }
         
         var session = new Session
         {
-            UserId = userId,
+            UserId = reportedUserId, // Keep original user for audit trail
             ComputerId = request.ComputerId,
             SessionStart = request.SessionStart
         };
@@ -63,7 +76,8 @@ public class ClientController : ControllerBase
         _context.Sessions.Add(session);
         await _context.SaveChangesAsync();
         
-        var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(userId, DateOnly.FromDateTime(request.SessionStart));
+        // Calculate time using primary user (enforces shared limits)
+        var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(primaryUser.Id, DateOnly.FromDateTime(request.SessionStart));
         return new SessionStartResponse(session.Id, timeRemaining);
     }
     
@@ -76,8 +90,12 @@ public class ClientController : ControllerBase
         if (request.MinutesIdle < 0 || request.MinutesIdle > 1440)
             return BadRequest("Invalid MinutesIdle value");
         
-        // Get or create user by username
-        var userId = await EnsureUserExistsAsync(request.Username);
+        // Get or create user by username (reported user)
+        var reportedUserId = await EnsureUserExistsAsync(request.Username);
+        
+        // Resolve to primary user for time calculations
+        var primaryUser = await _userResolution.ResolveToPrimaryAsync(reportedUserId);
+        if (primaryUser == null) return NotFound("User not found");
         
         // Update computer last seen
         var computer = await _context.Computers.FindAsync(request.ComputerId);
@@ -88,14 +106,15 @@ public class ClientController : ControllerBase
         
         var date = DateOnly.FromDateTime(request.Timestamp);
         
+        // Record usage with reported user ID (audit trail)
         var usage = await _context.TimeUsage
-            .FirstOrDefaultAsync(u => u.UserId == userId && u.ComputerId == request.ComputerId && u.UsageDate == date);
+            .FirstOrDefaultAsync(u => u.UserId == reportedUserId && u.ComputerId == request.ComputerId && u.UsageDate == date);
         
         if (usage == null)
         {
             usage = new TimeUsage
             {
-                UserId = userId,
+                UserId = reportedUserId, // Keep original user for audit trail
                 ComputerId = request.ComputerId,
                 UsageDate = date,
                 SessionId = request.SessionId
@@ -120,16 +139,17 @@ public class ClientController : ControllerBase
         
         await _context.SaveChangesAsync();
         
-        var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(userId, date);
-        var isWithinAllowedHours = await _timeCalc.IsWithinAllowedHoursAsync(userId, request.Timestamp);
-        var minutesUntilAllowedHoursEnd = await _timeCalc.GetMinutesUntilAllowedHoursEndAsync(userId, request.Timestamp);
+        // Calculate time using primary user (enforces shared limits)
+        var timeRemaining = await _timeCalc.CalculateTimeRemainingAsync(primaryUser.Id, date);
+        var isWithinAllowedHours = await _timeCalc.IsWithinAllowedHoursAsync(primaryUser.Id, request.Timestamp);
+        var minutesUntilAllowedHoursEnd = await _timeCalc.GetMinutesUntilAllowedHoursEndAsync(primaryUser.Id, request.Timestamp);
         
         // Effective time remaining is the minimum of time limit and allowed hours
         var effectiveTimeRemaining = Math.Min(timeRemaining, minutesUntilAllowedHoursEnd);
         
-        var shouldEnforce = !isWithinAllowedHours || await _timeCalc.ShouldEnforceAsync(userId, timeRemaining);
+        var shouldEnforce = !isWithinAllowedHours || await _timeCalc.ShouldEnforceAsync(primaryUser.Id, timeRemaining);
         
-        var profile = await _context.TimeProfiles.FirstOrDefaultAsync(p => p.UserId == userId && p.IsActive);
+        var profile = await _context.TimeProfiles.FirstOrDefaultAsync(p => p.UserId == primaryUser.Id && p.IsActive);
         
         return new UsageReportResponse(
             effectiveTimeRemaining,

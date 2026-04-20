@@ -18,7 +18,8 @@ public class UsersControllerTests : IDisposable
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _context = new AppDbContext(options);
-        _controller = new UsersController(_context);
+        var userResolution = new ParentalControl.WebService.Services.UserResolutionService(_context);
+        _controller = new UsersController(_context, userResolution);
     }
 
     [Fact]

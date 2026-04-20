@@ -28,6 +28,7 @@ try
             .EnableDetailedErrors(builder.Environment.IsDevelopment()));
 
     builder.Services.AddScoped<ITimeCalculationService, TimeCalculationService>();
+    builder.Services.AddScoped<IUserResolutionService, UserResolutionService>();
     builder.Services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
     builder.Services.AddScoped<IUsageReportService, UsageReportService>();
     builder.Services.AddScoped<AuthService>();

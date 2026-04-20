@@ -36,6 +36,11 @@ public class User
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     
+    // Alias support
+    public Guid? PrimaryUserId { get; set; }
+    public User? PrimaryUser { get; set; }
+    public ICollection<User> Aliases { get; set; } = new List<User>();
+    
     public ICollection<TimeProfile> TimeProfiles { get; set; } = new List<TimeProfile>();
     public ICollection<Session> Sessions { get; set; } = new List<Session>();
 }

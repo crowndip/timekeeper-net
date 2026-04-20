@@ -16,6 +16,12 @@ public class UserScenarioTests
         return new AppDbContext(options);
     }
 
+    private TimeCalculationService CreateService(AppDbContext context)
+    {
+        var userResolution = new UserResolutionService(context);
+        return new TimeCalculationService(context, userResolution);
+    }
+
     [Fact]
     public async Task Scenario_ChildUsesAllTime_EnforcementTriggered()
     {
@@ -41,7 +47,7 @@ public class UserScenarioTests
         context.TimeProfiles.Add(profile);
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
 
         // Use 60 minutes
         context.TimeUsage.Add(new TimeUsage
@@ -92,7 +98,7 @@ public class UserScenarioTests
         });
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         Assert.Equal(0, await service.CalculateTimeRemainingAsync(user.Id, today));
 
         // Parent grants +30 minutes
@@ -147,7 +153,7 @@ public class UserScenarioTests
         });
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         Assert.Equal(80, await service.CalculateTimeRemainingAsync(user.Id, today));
 
         // Windows: 50 minutes
@@ -199,7 +205,7 @@ public class UserScenarioTests
         );
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var remaining = await service.CalculateTimeRemainingAsync(user.Id, today);
 
         // Daily: 120, Weekly: 300 - 200 = 100
@@ -229,7 +235,7 @@ public class UserScenarioTests
         context.TimeProfiles.AddRange(weekdayProfile, weekendProfile);
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var remaining = await service.CalculateTimeRemainingAsync(user.Id, today);
 
@@ -253,7 +259,7 @@ public class UserScenarioTests
         context.TimeProfiles.Add(profile);
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var remaining = await service.CalculateTimeRemainingAsync(user.Id, today);
 
@@ -268,7 +274,7 @@ public class UserScenarioTests
         context.Users.Add(parent);
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var remaining = await service.CalculateTimeRemainingAsync(parent.Id, today);
 
@@ -310,7 +316,7 @@ public class UserScenarioTests
         });
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         
         var todayRemaining = await service.CalculateTimeRemainingAsync(user.Id, today);
         Assert.Equal(90, todayRemaining); // 60 + 30
@@ -340,7 +346,7 @@ public class UserScenarioTests
         context.TimeProfiles.Add(profile);
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         context.TimeUsage.Add(new TimeUsage
@@ -388,7 +394,7 @@ public class UserScenarioTests
         );
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var remaining = await service.CalculateTimeRemainingAsync(user.Id, today);
 
         Assert.Equal(90, remaining); // 60 + 15 + 10 + 5

@@ -16,11 +16,17 @@ public class TimeCalculationServiceTests
         return new AppDbContext(options);
     }
 
+    private TimeCalculationService CreateService(AppDbContext context)
+    {
+        var userResolution = new UserResolutionService(context);
+        return new TimeCalculationService(context, userResolution);
+    }
+
     [Fact]
     public async Task CalculateTimeRemaining_NoProfile_ReturnsUnlimited()
     {
         using var context = CreateInMemoryContext();
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var userId = Guid.NewGuid();
         var date = DateOnly.FromDateTime(DateTime.UtcNow);
 
@@ -64,7 +70,7 @@ public class TimeCalculationServiceTests
         context.TimeUsage.Add(usage);
         await context.SaveChangesAsync();
 
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var result = await service.CalculateTimeRemainingAsync(userId, date);
 
         Assert.Equal(60, result);
@@ -74,7 +80,7 @@ public class TimeCalculationServiceTests
     public async Task ShouldEnforce_WhenTimeRemaining_ReturnsFalse()
     {
         using var context = CreateInMemoryContext();
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var userId = Guid.NewGuid();
 
         var result = await service.ShouldEnforceAsync(userId, 30);
@@ -86,7 +92,7 @@ public class TimeCalculationServiceTests
     public async Task ShouldEnforce_WhenNoTimeRemaining_ReturnsTrue()
     {
         using var context = CreateInMemoryContext();
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var userId = Guid.NewGuid();
 
         var result = await service.ShouldEnforceAsync(userId, 0);

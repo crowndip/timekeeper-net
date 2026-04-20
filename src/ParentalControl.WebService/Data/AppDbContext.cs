@@ -23,6 +23,14 @@ public class AppDbContext : DbContext
             entity.HasIndex(e => e.Username).IsUnique();
             entity.Property(e => e.Username).IsRequired().HasMaxLength(64);
             entity.Property(e => e.AccountType).HasConversion<string>();
+            
+            // Self-referencing relationship for aliases
+            entity.HasOne(e => e.PrimaryUser)
+                .WithMany(u => u.Aliases)
+                .HasForeignKey(e => e.PrimaryUserId)
+                .OnDelete(DeleteBehavior.Restrict);
+            
+            entity.HasIndex(e => e.PrimaryUserId);
         });
         
         modelBuilder.Entity<Computer>(entity =>

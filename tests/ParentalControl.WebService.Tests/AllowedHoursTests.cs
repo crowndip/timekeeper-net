@@ -16,16 +16,23 @@ public class AllowedHoursTests
         return new AppDbContext(options);
     }
 
+    private TimeCalculationService CreateService(AppDbContext context)
+    {
+        var userResolution = new UserResolutionService(context);
+        return new TimeCalculationService(context, userResolution);
+    }
+
     [Fact]
     public async Task IsWithinAllowedHours_NoRestrictions_ReturnsTrue()
     {
         // Arrange
         using var context = CreateContext();
-        var service = new TimeCalculationService(context);
-        var userId = Guid.NewGuid();
+        var service = CreateService(context);
+        var user = new User { Username = "test", AccountType = AccountType.Child };
+        context.Users.Add(user);
         
         // Act
-        var result = await service.IsWithinAllowedHoursAsync(userId, DateTime.Now);
+        var result = await service.IsWithinAllowedHoursAsync(user.Id, DateTime.Now);
         
         // Assert
         Assert.True(result);
@@ -36,8 +43,9 @@ public class AllowedHoursTests
     {
         // Arrange
         using var context = CreateContext();
-        var userId = Guid.NewGuid();
-        var profile = new TimeProfile { UserId = userId, Name = "Test", IsActive = true };
+        var user = new User { Username = "test", AccountType = AccountType.Child };
+        context.Users.Add(user);
+        var profile = new TimeProfile { UserId = user.Id, Name = "Test", IsActive = true };
         context.TimeProfiles.Add(profile);
         
         context.AllowedHours.Add(new AllowedHours
@@ -49,11 +57,11 @@ public class AllowedHoursTests
         });
         await context.SaveChangesAsync();
         
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var testTime = new DateTime(2024, 1, 1, 15, 0, 0); // Monday 3 PM
         
         // Act
-        var result = await service.IsWithinAllowedHoursAsync(userId, testTime);
+        var result = await service.IsWithinAllowedHoursAsync(user.Id, testTime);
         
         // Assert
         Assert.True(result);
@@ -64,8 +72,9 @@ public class AllowedHoursTests
     {
         // Arrange
         using var context = CreateContext();
-        var userId = Guid.NewGuid();
-        var profile = new TimeProfile { UserId = userId, Name = "Test", IsActive = true };
+        var user = new User { Username = "test", AccountType = AccountType.Child };
+        context.Users.Add(user);
+        var profile = new TimeProfile { UserId = user.Id, Name = "Test", IsActive = true };
         context.TimeProfiles.Add(profile);
         
         context.AllowedHours.Add(new AllowedHours
@@ -77,11 +86,11 @@ public class AllowedHoursTests
         });
         await context.SaveChangesAsync();
         
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var testTime = new DateTime(2024, 1, 1, 23, 0, 0); // Monday 11 PM (outside)
         
         // Act
-        var result = await service.IsWithinAllowedHoursAsync(userId, testTime);
+        var result = await service.IsWithinAllowedHoursAsync(user.Id, testTime);
         
         // Assert
         Assert.False(result);
@@ -92,8 +101,9 @@ public class AllowedHoursTests
     {
         // Arrange
         using var context = CreateContext();
-        var userId = Guid.NewGuid();
-        var profile = new TimeProfile { UserId = userId, Name = "Test", IsActive = true };
+        var user = new User { Username = "test", AccountType = AccountType.Child };
+        context.Users.Add(user);
+        var profile = new TimeProfile { UserId = user.Id, Name = "Test", IsActive = true };
         context.TimeProfiles.Add(profile);
         
         context.AllowedHours.Add(new AllowedHours
@@ -105,11 +115,11 @@ public class AllowedHoursTests
         });
         await context.SaveChangesAsync();
         
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var testTime = new DateTime(2024, 1, 1, 21, 45, 0); // Monday 9:45 PM
         
         // Act
-        var result = await service.GetMinutesUntilAllowedHoursEndAsync(userId, testTime);
+        var result = await service.GetMinutesUntilAllowedHoursEndAsync(user.Id, testTime);
         
         // Assert
         Assert.Equal(15, result); // 15 minutes until 10 PM
@@ -120,8 +130,9 @@ public class AllowedHoursTests
     {
         // Arrange
         using var context = CreateContext();
-        var userId = Guid.NewGuid();
-        var profile = new TimeProfile { UserId = userId, Name = "Test", IsActive = true };
+        var user = new User { Username = "test", AccountType = AccountType.Child };
+        context.Users.Add(user);
+        var profile = new TimeProfile { UserId = user.Id, Name = "Test", IsActive = true };
         context.TimeProfiles.Add(profile);
         
         context.AllowedHours.Add(new AllowedHours
@@ -133,11 +144,11 @@ public class AllowedHoursTests
         });
         await context.SaveChangesAsync();
         
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var testTime = new DateTime(2024, 1, 1, 23, 0, 0); // Monday 11 PM (outside)
         
         // Act
-        var result = await service.GetMinutesUntilAllowedHoursEndAsync(userId, testTime);
+        var result = await service.GetMinutesUntilAllowedHoursEndAsync(user.Id, testTime);
         
         // Assert
         Assert.Equal(0, result);
@@ -148,10 +159,11 @@ public class AllowedHoursTests
     {
         // Arrange
         using var context = CreateContext();
-        var userId = Guid.NewGuid();
+        var user = new User { Username = "test", AccountType = AccountType.Child };
+        context.Users.Add(user);
         var profile = new TimeProfile 
         { 
-            UserId = userId, 
+            UserId = user.Id, 
             Name = "Test", 
             IsActive = true,
             MondayLimit = 60 // 60 minutes daily limit
@@ -167,12 +179,12 @@ public class AllowedHoursTests
         });
         await context.SaveChangesAsync();
         
-        var service = new TimeCalculationService(context);
+        var service = CreateService(context);
         var testTime = new DateTime(2024, 1, 1, 21, 45, 0); // Monday 9:45 PM
         
         // Act
-        var timeRemaining = await service.CalculateTimeRemainingAsync(userId, DateOnly.FromDateTime(testTime));
-        var minutesUntilEnd = await service.GetMinutesUntilAllowedHoursEndAsync(userId, testTime);
+        var timeRemaining = await service.CalculateTimeRemainingAsync(user.Id, DateOnly.FromDateTime(testTime));
+        var minutesUntilEnd = await service.GetMinutesUntilAllowedHoursEndAsync(user.Id, testTime);
         var effectiveTime = Math.Min(timeRemaining, minutesUntilEnd);
         
         // Assert

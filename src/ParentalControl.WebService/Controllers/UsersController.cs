@@ -12,10 +12,12 @@ namespace ParentalControl.WebService.Controllers;
 public class UsersController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly IUserResolutionService _userResolution;
 
-    public UsersController(AppDbContext context)
+    public UsersController(AppDbContext context, IUserResolutionService userResolution)
     {
         _context = context;
+        _userResolution = userResolution;
     }
 
     [HttpGet]
@@ -170,5 +172,108 @@ public class UsersController : ControllerBase
         await _context.SaveChangesAsync();
         
         return Ok(new { success = true, data = user, message = $"User {(user.IsActive ? "activated" : "deactivated")} successfully" });
+    }
+
+    [HttpPost("{primaryUserId}/aliases/{aliasUserId}")]
+    [RequireAuth]
+    public async Task<IActionResult> AddAlias(Guid primaryUserId, Guid aliasUserId)
+    {
+        var primaryUser = await _context.Users.Include(u => u.Aliases).FirstOrDefaultAsync(u => u.Id == primaryUserId);
+        if (primaryUser == null)
+            return NotFound(new { success = false, error = "Primary user not found" });
+
+        if (primaryUser.PrimaryUserId.HasValue)
+            return BadRequest(new { success = false, error = "Cannot make an alias the primary user" });
+
+        var aliasUser = await _context.Users.Include(u => u.Aliases).Include(u => u.TimeProfiles).FirstOrDefaultAsync(u => u.Id == aliasUserId);
+        if (aliasUser == null)
+            return NotFound(new { success = false, error = "Alias user not found" });
+
+        if (!await _userResolution.CanBecomeAliasAsync(aliasUserId))
+            return BadRequest(new { success = false, error = "User cannot become an alias (has aliases or active profile)" });
+
+        if (aliasUser.PrimaryUserId.HasValue)
+            return BadRequest(new { success = false, error = "User is already an alias" });
+
+        aliasUser.PrimaryUserId = primaryUserId;
+        aliasUser.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, message = $"{aliasUser.Username} is now an alias of {primaryUser.Username}" });
+    }
+
+    [HttpDelete("{aliasUserId}/unlink")]
+    [RequireAuth]
+    public async Task<IActionResult> RemoveAlias(Guid aliasUserId)
+    {
+        var aliasUser = await _context.Users.FindAsync(aliasUserId);
+        if (aliasUser == null)
+            return NotFound(new { success = false, error = "User not found" });
+
+        if (!aliasUser.PrimaryUserId.HasValue)
+            return BadRequest(new { success = false, error = "User is not an alias" });
+
+        aliasUser.PrimaryUserId = null;
+        aliasUser.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { success = true, message = $"{aliasUser.Username} is no longer an alias" });
+    }
+
+    [HttpGet("{primaryUserId}/aliases")]
+    public async Task<IActionResult> GetAliases(Guid primaryUserId)
+    {
+        var aliases = await _context.Users
+            .Where(u => u.PrimaryUserId == primaryUserId)
+            .OrderBy(u => u.Username)
+            .ToListAsync();
+
+        return Ok(new { success = true, data = aliases });
+    }
+
+    [HttpGet("{userId}/usage-breakdown")]
+    public async Task<IActionResult> GetUsageBreakdown(Guid userId, [FromQuery] DateOnly? startDate, [FromQuery] DateOnly? endDate)
+    {
+        var start = startDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
+        var end = endDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var primaryUser = await _userResolution.ResolveToPrimaryAsync(userId);
+        if (primaryUser == null)
+            return NotFound(new { success = false, error = "User not found" });
+
+        var allUserIds = await _userResolution.GetAllUserIdsInGroupAsync(primaryUser.Id);
+
+        var usage = await _context.TimeUsage
+            .Where(u => allUserIds.Contains(u.UserId) && u.UsageDate >= start && u.UsageDate <= end)
+            .Include(u => u.User)
+            .GroupBy(u => new { u.UserId, u.User.Username, u.UsageDate })
+            .Select(g => new { g.Key.UserId, g.Key.Username, g.Key.UsageDate, MinutesUsed = g.Sum(u => u.MinutesUsed) })
+            .OrderBy(u => u.UsageDate)
+            .ToListAsync();
+
+        var totalMinutes = usage.Sum(u => u.MinutesUsed);
+        var byUser = usage.GroupBy(u => new { u.UserId, u.Username })
+            .Select(g => new { g.Key.UserId, g.Key.Username, TotalMinutes = g.Sum(u => u.MinutesUsed) })
+            .ToList();
+
+        var dailyBreakdown = usage.GroupBy(u => u.UsageDate)
+            .Select(g => new
+            {
+                Date = g.Key,
+                TotalMinutes = g.Sum(u => u.MinutesUsed),
+                ByUser = g.ToDictionary(u => u.Username, u => u.MinutesUsed)
+            })
+            .ToList();
+
+        return Ok(new
+        {
+            success = true,
+            data = new
+            {
+                primaryUser = new { primaryUser.Id, primaryUser.Username, TotalMinutes = totalMinutes },
+                byUser,
+                dailyBreakdown
+            }
+        });
     }
 }

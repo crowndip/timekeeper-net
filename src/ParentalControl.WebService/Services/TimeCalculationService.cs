@@ -15,25 +15,40 @@ public interface ITimeCalculationService
 public class TimeCalculationService : ITimeCalculationService
 {
     private readonly AppDbContext _context;
+    private readonly IUserResolutionService _userResolution;
     
-    public TimeCalculationService(AppDbContext context) => _context = context;
+    public TimeCalculationService(AppDbContext context, IUserResolutionService userResolution)
+    {
+        _context = context;
+        _userResolution = userResolution;
+    }
     
     public async Task<int> CalculateTimeRemainingAsync(Guid userId, DateOnly date)
     {
+        // Resolve to primary user for alias support
+        var primaryUser = await _userResolution.ResolveToPrimaryAsync(userId);
+        if (primaryUser == null) return int.MaxValue;
+        
+        // Inactive users have unlimited time
+        if (!primaryUser.IsActive) return int.MaxValue;
+        
         var profile = await _context.TimeProfiles
-            .FirstOrDefaultAsync(p => p.UserId == userId && p.IsActive);
+            .FirstOrDefaultAsync(p => p.UserId == primaryUser.Id && p.IsActive);
         
         if (profile == null) return int.MaxValue;
         
         var dayLimit = GetDailyLimit(profile, date.DayOfWeek);
         if (dayLimit == 0) return int.MaxValue;
         
+        // Aggregate usage across all users in alias group
+        var allUserIds = await _userResolution.GetAllUserIdsInGroupAsync(primaryUser.Id);
+        
         var usedToday = await _context.TimeUsage
-            .Where(u => u.UserId == userId && u.UsageDate == date)
+            .Where(u => allUserIds.Contains(u.UserId) && u.UsageDate == date)
             .SumAsync(u => u.MinutesUsed);
         
         var adjustments = await _context.TimeAdjustments
-            .Where(a => a.UserId == userId && a.AdjustmentDate == date)
+            .Where(a => allUserIds.Contains(a.UserId) && a.AdjustmentDate == date)
             .SumAsync(a => a.MinutesAdjustment);
         
         var dailyRemaining = dayLimit - usedToday + adjustments;
@@ -42,7 +57,7 @@ public class TimeCalculationService : ITimeCalculationService
         {
             var weekStart = date.AddDays(-(int)date.DayOfWeek);
             var usedThisWeek = await _context.TimeUsage
-                .Where(u => u.UserId == userId && u.UsageDate >= weekStart && u.UsageDate < weekStart.AddDays(7))
+                .Where(u => allUserIds.Contains(u.UserId) && u.UsageDate >= weekStart && u.UsageDate < weekStart.AddDays(7))
                 .SumAsync(u => u.MinutesUsed);
             
             var weeklyRemaining = profile.WeeklyLimit - usedThisWeek + adjustments;
@@ -56,9 +71,13 @@ public class TimeCalculationService : ITimeCalculationService
     
     public async Task<bool> IsWithinAllowedHoursAsync(Guid userId, DateTime currentTime)
     {
+        // Resolve to primary user for alias support
+        var primaryUser = await _userResolution.ResolveToPrimaryAsync(userId);
+        if (primaryUser == null) return true;
+        
         var profile = await _context.TimeProfiles
             .Include(p => p.AllowedHours)
-            .FirstOrDefaultAsync(p => p.UserId == userId && p.IsActive);
+            .FirstOrDefaultAsync(p => p.UserId == primaryUser.Id && p.IsActive);
         
         if (profile == null || !profile.AllowedHours.Any())
             return true; // No restrictions = always allowed
@@ -75,9 +94,13 @@ public class TimeCalculationService : ITimeCalculationService
     
     public async Task<int> GetMinutesUntilAllowedHoursEndAsync(Guid userId, DateTime currentTime)
     {
+        // Resolve to primary user for alias support
+        var primaryUser = await _userResolution.ResolveToPrimaryAsync(userId);
+        if (primaryUser == null) return int.MaxValue;
+        
         var profile = await _context.TimeProfiles
             .Include(p => p.AllowedHours)
-            .FirstOrDefaultAsync(p => p.UserId == userId && p.IsActive);
+            .FirstOrDefaultAsync(p => p.UserId == primaryUser.Id && p.IsActive);
         
         if (profile == null || !profile.AllowedHours.Any())
             return int.MaxValue; // No restrictions
