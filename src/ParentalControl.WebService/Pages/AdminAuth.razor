@@ -1,7 +1,6 @@
 @page "/admin-auth"
 @using Microsoft.JSInterop
 @inject NavigationManager Navigation
-@inject HttpClient Http
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Administrator Authentication</PageTitle>
@@ -53,9 +52,9 @@
         
         try
         {
-            var response = await Http.PostAsJsonAsync("/api/auth/login", new { Password = password });
+            var result = await JSRuntime.InvokeAsync<AuthResult>("authenticateAdmin", password);
             
-            if (response.IsSuccessStatusCode)
+            if (result.Success)
             {
                 Navigation.NavigateTo("/", forceLoad: true);
             }
@@ -71,5 +70,10 @@
         }
         
         isLoading = false;
+    }
+
+    private class AuthResult
+    {
+        public bool Success { get; set; }
     }
 }
