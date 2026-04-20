@@ -22,10 +22,6 @@
                 <label>Current Schema Version</label>
                 <div class="info-value">@currentSchemaVersion</div>
             </div>
-            <div class="info-item">
-                <label>Expected Schema Version</label>
-                <div class="info-value">@expectedSchemaVersion</div>
-            </div>
         </div>
 
         <div class="section-group">
@@ -45,23 +41,6 @@
             </div>
         </div>
 
-        <div class="section-group">
-            <h4>Migrations in Code</h4>
-            <div class="migration-list">
-                @if (allMigrationsInCode.Any())
-                {
-                    @foreach (var migration in allMigrationsInCode)
-                    {
-                        <div class="migration-item">📄 @migration</div>
-                    }
-                }
-                else
-                {
-                    <div class="migration-item">None</div>
-                }
-            </div>
-        </div>
-
         @if (pendingMigrations.Any())
         {
             <div class="alert alert-warning">
@@ -72,18 +51,6 @@
                         <div>• @migration</div>
                     }
                 </div>
-            </div>
-        }
-        else if (allMigrationsInCode.Count < 2)
-        {
-            <div class="alert alert-error">
-                <strong>🚨 Docker Image is Outdated!</strong>
-                <p>The running application only has @allMigrationsInCode.Count migration(s) compiled in.</p>
-                <p>Expected: 2 migrations (InitialCreate + AddUserAliases).</p>
-                <p><strong>Solution:</strong> Rebuild Docker image with latest code</p>
-                <pre>docker-compose down
-docker-compose build --no-cache webservice
-docker-compose up -d</pre>
             </div>
         }
         else
