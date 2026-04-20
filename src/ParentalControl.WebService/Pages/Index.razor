@@ -60,6 +60,42 @@ else
             </div>
         </div>
 
+        <!-- Recent Activity -->
+        @if (recentActivity.Any())
+        {
+            <div class="status-card" style="margin-bottom: 30px;">
+                <div class="status-header">
+                    <span class="status-icon">🕐</span>
+                    <span class="status-title">Recent Activity</span>
+                </div>
+                <div style="display: grid; gap: 12px;">
+                    @foreach (var activity in recentActivity.Take(5))
+                    {
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                            <div>
+                                <strong>@activity.PrimaryUsername</strong>
+                                @if (activity.IsAlias)
+                                {
+                                    <span style="color: #6b7280; font-size: 14px;"> (as @activity.ActualUsername)</span>
+                                }
+                                <div style="font-size: 12px; color: #6b7280; margin-top: 4px;">
+                                    @activity.ComputerName
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <div style="font-size: 14px; font-weight: 600; color: @(activity.MinutesRemaining <= 0 ? "#ef4444" : activity.MinutesRemaining < 30 ? "#f59e0b" : "#10b981");">
+                                    @(activity.MinutesRemaining == int.MaxValue ? "Unlimited" : $"{activity.MinutesRemaining} min left")
+                                </div>
+                                <div style="font-size: 12px; color: #6b7280;">
+                                    @activity.LastSeen.ToString("HH:mm")
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
         <!-- Quick Actions -->
         <div class="cards-grid">
             <div class="card card-users">
@@ -395,6 +431,7 @@ else
     private string dbVersion = "Unknown";
     private int userCount = 0;
     private int computerCount = 0;
+    private List<RecentActivityItem> recentActivity = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -433,6 +470,7 @@ else
                 {
                     userCount = await DbContext.Users.CountAsync();
                     computerCount = await DbContext.Computers.CountAsync();
+                    await LoadRecentActivity();
                 }
                 catch (Npgsql.PostgresException ex) when (ex.SqlState == "42P01") // Table does not exist
                 {
@@ -452,5 +490,66 @@ else
         {
             isChecking = false;
         }
+    }
+
+    private async Task LoadRecentActivity()
+    {
+        try
+        {
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var sessions = await DbContext.Sessions
+                .Include(s => s.User)
+                    .ThenInclude(u => u.PrimaryUser)
+                .Include(s => s.Computer)
+                .Where(s => s.SessionStart >= DateTime.UtcNow.AddHours(-24))
+                .OrderByDescending(s => s.UpdatedAt)
+                .Take(10)
+                .ToListAsync();
+
+            var timeCalc = new ParentalControl.WebService.Services.TimeCalculationService(
+                DbContext,
+                new ParentalControl.WebService.Services.UserResolutionService(DbContext)
+            );
+
+            var activities = new List<RecentActivityItem>();
+            foreach (var session in sessions)
+            {
+                var primaryUser = session.User.PrimaryUserId.HasValue ? session.User.PrimaryUser : session.User;
+                if (primaryUser == null) continue;
+
+                var timeRemaining = await timeCalc.CalculateTimeRemainingAsync(primaryUser.Id, today);
+                
+                activities.Add(new RecentActivityItem
+                {
+                    PrimaryUsername = primaryUser.Username,
+                    ActualUsername = session.User.Username,
+                    IsAlias = session.User.PrimaryUserId.HasValue,
+                    ComputerName = session.Computer?.Hostname ?? "Unknown",
+                    LastSeen = session.UpdatedAt,
+                    MinutesRemaining = timeRemaining
+                });
+            }
+
+            recentActivity = activities
+                .GroupBy(a => a.PrimaryUsername)
+                .Select(g => g.OrderByDescending(a => a.LastSeen).First())
+                .OrderByDescending(a => a.LastSeen)
+                .ToList();
+        }
+        catch
+        {
+            // If loading fails, just show empty list
+            recentActivity = new();
+        }
+    }
+
+    private class RecentActivityItem
+    {
+        public string PrimaryUsername { get; set; } = string.Empty;
+        public string ActualUsername { get; set; } = string.Empty;
+        public bool IsAlias { get; set; }
+        public string ComputerName { get; set; } = string.Empty;
+        public DateTime LastSeen { get; set; }
+        public int MinutesRemaining { get; set; }
     }
 }

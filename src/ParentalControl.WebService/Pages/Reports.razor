@@ -57,8 +57,26 @@
                 <tbody>
                     @foreach (var report in reports)
                     {
+                        var hasAliases = userBreakdowns.ContainsKey(report.UserId) && userBreakdowns[report.UserId].ByUser.Count > 1;
+                        var isExpanded = expandedUsers.Contains(report.UserId);
+                        
                         <tr style="border-bottom: 1px solid #e5e7eb;">
-                            <td style="padding: 12px;">@report.Username</td>
+                            <td style="padding: 12px;">
+                                @if (hasAliases)
+                                {
+                                    <button @onclick="() => ToggleExpand(report.UserId)" 
+                                            style="background: none; border: none; cursor: pointer; padding: 0; margin-right: 8px; font-size: 14px;">
+                                        @(isExpanded ? "▼" : "▶")
+                                    </button>
+                                }
+                                <strong>@report.Username</strong>
+                                @if (hasAliases)
+                                {
+                                    <span style="color: #6b7280; font-size: 12px; margin-left: 8px;">
+                                        (@userBreakdowns[report.UserId].ByUser.Count users)
+                                    </span>
+                                }
+                            </td>
                             <td style="padding: 12px; text-align: right;">@report.TotalMinutes</td>
                             <td style="padding: 12px; text-align: right;">@((report.TotalMinutes / 60.0).ToString("F1"))</td>
                             <td style="padding: 12px; text-align: right;">@report.DailyAverage.ToString("F1") min/day</td>
@@ -69,6 +87,24 @@
                                 </button>
                             </td>
                         </tr>
+                        
+                        @if (isExpanded && hasAliases)
+                        {
+                            @foreach (var userUsage in userBreakdowns[report.UserId].ByUser)
+                            {
+                                <tr style="border-bottom: 1px solid #e5e7eb; background: #f9fafb;">
+                                    <td style="padding: 12px; padding-left: 50px;">
+                                        <span style="color: #6b7280;">↳</span> @userUsage.Username
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; color: #6b7280;">@userUsage.TotalMinutes</td>
+                                    <td style="padding: 12px; text-align: right; color: #6b7280;">@((userUsage.TotalMinutes / 60.0).ToString("F1"))</td>
+                                    <td style="padding: 12px; text-align: right; color: #6b7280;">
+                                        @(((double)userUsage.TotalMinutes / ((endDate.DayNumber - startDate.DayNumber) + 1)).ToString("F1")) min/day
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">-</td>
+                                </tr>
+                            }
+                        }
                     }
                 </tbody>
             </table>
@@ -106,6 +142,8 @@
     private DateOnly startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7));
     private DateOnly endDate = DateOnly.FromDateTime(DateTime.Today);
     private List<UserUsageReport> reports = new();
+    private Dictionary<Guid, UsageBreakdown> userBreakdowns = new();
+    private HashSet<Guid> expandedUsers = new();
     private bool loading = false;
     private Guid selectedUserId = Guid.Empty;
     private string selectedUsername = string.Empty;
@@ -141,9 +179,24 @@
     {
         loading = true;
         chartsRendered = false;
+        userBreakdowns.Clear();
+        expandedUsers.Clear();
         StateHasChanged();
         
         reports = await ReportService.GetUsageReportAsync(startDate, endDate);
+        
+        // Pre-load breakdowns for users that might have aliases
+        var userIds = reports.Select(r => r.UserId).ToList();
+        var usersWithAliases = await DbContext.Users
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new { u.Id, HasAliases = DbContext.Users.Any(a => a.PrimaryUserId == u.Id) })
+            .ToListAsync();
+        
+        foreach (var user in usersWithAliases.Where(u => u.HasAliases))
+        {
+            await LoadUserBreakdown(user.Id);
+        }
+        
         loading = false;
         
         // Force chart re-render after data loads
@@ -255,5 +308,79 @@
         };
 
         await JS.InvokeVoidAsync("renderUsageChart", "userChart", labels, datasets);
+    }
+
+    private async Task ToggleExpand(Guid userId)
+    {
+        if (expandedUsers.Contains(userId))
+        {
+            expandedUsers.Remove(userId);
+        }
+        else
+        {
+            expandedUsers.Add(userId);
+            // Load breakdown if not already loaded
+            if (!userBreakdowns.ContainsKey(userId))
+            {
+                await LoadUserBreakdown(userId);
+            }
+        }
+    }
+
+    private async Task LoadUserBreakdown(Guid userId)
+    {
+        try
+        {
+            var response = await DbContext.Database.SqlQueryRaw<UsageBreakdownResult>(@"
+                SELECT 
+                    u.""Id"" as ""UserId"",
+                    u.""Username"",
+                    COALESCE(SUM(tu.""MinutesUsed""), 0) as ""TotalMinutes""
+                FROM ""Users"" u
+                LEFT JOIN ""TimeUsage"" tu ON tu.""UserId"" = u.""Id"" 
+                    AND tu.""UsageDate"" >= {0} 
+                    AND tu.""UsageDate"" <= {1}
+                WHERE u.""Id"" = {2} OR u.""PrimaryUserId"" = {2}
+                GROUP BY u.""Id"", u.""Username""
+                ORDER BY ""TotalMinutes"" DESC",
+                startDate, endDate, userId).ToListAsync();
+
+            var breakdown = new UsageBreakdown
+            {
+                PrimaryUserId = userId,
+                ByUser = response.Select(r => new UserUsageInfo
+                {
+                    UserId = r.UserId,
+                    Username = r.Username,
+                    TotalMinutes = r.TotalMinutes
+                }).ToList()
+            };
+
+            userBreakdowns[userId] = breakdown;
+        }
+        catch
+        {
+            // If breakdown fails, just don't show it
+        }
+    }
+
+    private class UsageBreakdown
+    {
+        public Guid PrimaryUserId { get; set; }
+        public List<UserUsageInfo> ByUser { get; set; } = new();
+    }
+
+    private class UserUsageInfo
+    {
+        public Guid UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public int TotalMinutes { get; set; }
+    }
+
+    private class UsageBreakdownResult
+    {
+        public Guid UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public int TotalMinutes { get; set; }
     }
 }

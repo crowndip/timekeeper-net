@@ -94,13 +94,19 @@
 
             <div style="margin-bottom: 15px;">
                 <label style="display: block; margin-bottom: 5px; font-weight: 600;">User *</label>
-                <select @bind="formProfile.UserId" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
+                <select @bind="formProfile.UserId" @bind:after="OnUserSelected" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
                     <option value="@Guid.Empty">Select User</option>
                     @foreach (var user in users.Where(u => u.AccountType == AccountType.Child))
                     {
-                        <option value="@user.Id">@user.Username</option>
+                        <option value="@user.Id">@user.Username @(user.PrimaryUserId.HasValue ? "(ALIAS)" : "")</option>
                     }
                 </select>
+                @if (!string.IsNullOrEmpty(userSelectionWarning))
+                {
+                    <div style="margin-top: 8px; padding: 10px; background: #fef3c7; border: 1px solid #f59e0b; border-radius: 4px; color: #92400e; font-size: 14px;">
+                        ⚠️ @userSelectionWarning
+                    </div>
+                }
             </div>
 
             <div style="margin-bottom: 15px;">
@@ -170,6 +176,7 @@
     private TimeProfile? editingProfile = null;
     private TimeProfile formProfile = new();
     private string dialogError = string.Empty;
+    private string userSelectionWarning = string.Empty;
     private bool saving = false;
     private bool isReadOnly = true;
 
@@ -213,7 +220,11 @@
         try
         {
             profiles = await DbContext.TimeProfiles.OrderBy(p => p.Name).ToListAsync();
-            users = await DbContext.Users.Where(u => u.IsActive).OrderBy(u => u.Username).ToListAsync();
+            users = await DbContext.Users
+                .Include(u => u.PrimaryUser)
+                .Where(u => u.IsActive)
+                .OrderBy(u => u.Username)
+                .ToListAsync();
         }
         catch (Exception ex)
         {
@@ -222,6 +233,25 @@
         finally
         {
             loading = false;
+        }
+    }
+
+    private void OnUserSelected()
+    {
+        userSelectionWarning = string.Empty;
+        
+        if (formProfile.UserId == Guid.Empty) return;
+        
+        var selectedUser = users.FirstOrDefault(u => u.Id == formProfile.UserId);
+        if (selectedUser?.PrimaryUserId.HasValue == true)
+        {
+            var primaryUser = selectedUser.PrimaryUser ?? users.FirstOrDefault(u => u.Id == selectedUser.PrimaryUserId);
+            if (primaryUser != null)
+            {
+                userSelectionWarning = $"'{selectedUser.Username}' is an alias of '{primaryUser.Username}'. The profile will be assigned to '{primaryUser.Username}' instead.";
+                // Automatically switch to primary user
+                formProfile.UserId = primaryUser.Id;
+            }
         }
     }
 
