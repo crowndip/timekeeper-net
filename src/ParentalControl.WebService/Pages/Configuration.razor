@@ -4,6 +4,7 @@
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext DbContext
 @inject AuthService AuthService
+@inject ManualMigrationService ManualMigrationService
 
 <PageTitle>Configuration - Parental Control</PageTitle>
 
@@ -389,6 +390,23 @@ docker-compose up -d</pre>
         {
             migrationLog += $"[{DateTime.Now:HH:mm:ss}] Starting migration...\n";
             
+            // First try manual migration for AddUserAliases
+            var needsManualMigration = await ManualMigrationService.CheckIfMigrationNeededAsync();
+            if (needsManualMigration)
+            {
+                migrationLog += $"[{DateTime.Now:HH:mm:ss}] Applying manual migration: AddUserAliases\n";
+                var success = await ManualMigrationService.ApplyAddUserAliasesMigrationAsync();
+                if (success)
+                {
+                    migrationLog += $"[{DateTime.Now:HH:mm:ss}] ✅ Manual migration applied\n";
+                }
+                else
+                {
+                    migrationLog += $"[{DateTime.Now:HH:mm:ss}] ⚠️ Manual migration skipped (already applied)\n";
+                }
+            }
+            
+            // Then apply any other pending migrations
             foreach (var migration in pendingMigrations)
             {
                 migrationLog += $"[{DateTime.Now:HH:mm:ss}] Applying: {migration}\n";

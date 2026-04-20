@@ -32,6 +32,7 @@ try
     builder.Services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
     builder.Services.AddScoped<IUsageReportService, UsageReportService>();
     builder.Services.AddScoped<AuthService>();
+    builder.Services.AddScoped<ManualMigrationService>();
     builder.Services.AddHttpContextAccessor();
 
     builder.Services.AddHttpClient();
