@@ -1,0 +1,56 @@
+name: Build and Release Docker Image
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Build Docker image
+        run: |
+          docker build -f docker/Dockerfile.webservice -t parental-control-webservice:${{ steps.version.outputs.VERSION }} .
+          docker tag parental-control-webservice:${{ steps.version.outputs.VERSION }} parental-control-webservice:latest
+
+      - name: Save Docker image
+        run: |
+          docker save parental-control-webservice:${{ steps.version.outputs.VERSION }} | gzip > webservice-image.tar.gz
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: webservice-image.tar.gz
+          body: |
+            ## Parental Control System v${{ steps.version.outputs.VERSION }}
+            
+            Docker image for webservice component.
+            
+            ### Deployment
+            
+            **Portainer:**
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/deploy-server.sh | sudo bash
+            ```
+            
+            **Docker Compose:**
+            ```bash
+            wget https://github.com/crowndip/timekeeper-net/releases/download/v${{ steps.version.outputs.VERSION }}/webservice-image.tar.gz
+            gunzip webservice-image.tar.gz
+            docker load -i webservice-image.tar
+            docker tag parental-control-webservice:${{ steps.version.outputs.VERSION }} parental-control-webservice:latest
+            ```
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
