@@ -1,0 +1,363 @@
+@page "/configuration"
+@using ParentalControl.WebService.Data
+@using ParentalControl.WebService.Services
+@using Microsoft.EntityFrameworkCore
+@inject AppDbContext DbContext
+@inject AuthService AuthService
+
+<PageTitle>Configuration - Parental Control</PageTitle>
+
+<div class="page-container">
+    <div class="page-header">
+        <h1>⚙️ Configuration</h1>
+        <p>Database schema and system information</p>
+    </div>
+
+    <div class="config-section">
+        <h3>Database Schema</h3>
+        
+        <div class="info-grid">
+            <div class="info-item">
+                <label>Current Schema Version</label>
+                <div class="info-value">@currentSchemaVersion</div>
+            </div>
+            <div class="info-item">
+                <label>Expected Schema Version</label>
+                <div class="info-value">@expectedSchemaVersion</div>
+            </div>
+        </div>
+
+        <div class="section-group">
+            <h4>Applied Migrations</h4>
+            <div class="migration-list">
+                @if (appliedMigrationsList.Any())
+                {
+                    @foreach (var migration in appliedMigrationsList)
+                    {
+                        <div class="migration-item">✅ @migration</div>
+                    }
+                }
+                else
+                {
+                    <div class="migration-item">None</div>
+                }
+            </div>
+        </div>
+
+        <div class="section-group">
+            <h4>Migrations in Code</h4>
+            <div class="migration-list">
+                @if (allMigrationsInCode.Any())
+                {
+                    @foreach (var migration in allMigrationsInCode)
+                    {
+                        <div class="migration-item">📄 @migration</div>
+                    }
+                }
+                else
+                {
+                    <div class="migration-item">None</div>
+                }
+            </div>
+        </div>
+
+        @if (pendingMigrations.Any())
+        {
+            <div class="alert alert-warning">
+                <strong>⚠️ @pendingMigrations.Count Pending Migration(s)</strong>
+                <div class="pending-list">
+                    @foreach (var migration in pendingMigrations)
+                    {
+                        <div>• @migration</div>
+                    }
+                </div>
+            </div>
+        }
+        else if (allMigrationsInCode.Count < 2)
+        {
+            <div class="alert alert-error">
+                <strong>🚨 Docker Image is Outdated!</strong>
+                <p>The running application only has @allMigrationsInCode.Count migration(s) compiled in.</p>
+                <p>Expected: 2 migrations (InitialCreate + AddUserAliases).</p>
+                <p><strong>Solution:</strong> Rebuild Docker image with latest code</p>
+                <pre>docker-compose down
+docker-compose build --no-cache webservice
+docker-compose up -d</pre>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-success">
+                <strong>✅ Database is up to date</strong>
+            </div>
+        }
+
+        @if (isAuthenticated)
+        {
+            <button @onclick="ApplyMigrations" disabled="@isMigrating" class="btn btn-primary btn-large">
+                @if (isMigrating)
+                {
+                    <span>⏳ Applying Migrations...</span>
+                }
+                else
+                {
+                    <span>🔄 Update Database Schema</span>
+                }
+            </button>
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <strong>🔒 Authentication Required</strong>
+                <p>Login to apply database migrations</p>
+            </div>
+        }
+
+        @if (!string.IsNullOrEmpty(migrationLog))
+        {
+            <div class="section-group">
+                <h4>Migration Log</h4>
+                <pre class="log-output">@migrationLog</pre>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .page-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .page-header {
+        margin-bottom: 30px;
+    }
+
+    .page-header h1 {
+        font-size: 2rem;
+        margin-bottom: 8px;
+    }
+
+    .page-header p {
+        color: #6b7280;
+        font-size: 1rem;
+    }
+
+    .config-section {
+        background: white;
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .config-section h3 {
+        margin-top: 0;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+
+    .info-item label {
+        display: block;
+        font-size: 14px;
+        color: #6b7280;
+        margin-bottom: 8px;
+    }
+
+    .info-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: #111827;
+    }
+
+    .section-group {
+        margin-bottom: 24px;
+    }
+
+    .section-group h4 {
+        font-size: 14px;
+        font-weight: 600;
+        color: #6b7280;
+        margin-bottom: 12px;
+    }
+
+    .migration-list {
+        background: #f9fafb;
+        border-radius: 4px;
+        padding: 12px;
+    }
+
+    .migration-item {
+        font-size: 12px;
+        color: #374151;
+        padding: 4px 0;
+    }
+
+    .pending-list {
+        font-size: 12px;
+        margin-top: 8px;
+    }
+
+    .alert {
+        padding: 12px 16px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+    }
+
+    .alert-warning {
+        background: #fef3c7;
+        border-left: 4px solid #f59e0b;
+        color: #92400e;
+    }
+
+    .alert-error {
+        background: #fee2e2;
+        border-left: 4px solid #ef4444;
+        color: #991b1b;
+    }
+
+    .alert-success {
+        background: #d1fae5;
+        border-left: 4px solid #10b981;
+        color: #065f46;
+    }
+
+    .alert-info {
+        background: #dbeafe;
+        border-left: 4px solid #3b82f6;
+        color: #1e40af;
+    }
+
+    .alert pre {
+        font-size: 11px;
+        margin-top: 8px;
+        background: rgba(0,0,0,0.05);
+        padding: 8px;
+        border-radius: 4px;
+    }
+
+    .btn-large {
+        width: 100%;
+        padding: 12px;
+        font-size: 16px;
+    }
+
+    .log-output {
+        background: #1f2937;
+        color: #f3f4f6;
+        padding: 12px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 400px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        margin: 0;
+    }
+</style>
+
+@code {
+    private string currentSchemaVersion = "Unknown";
+    private string expectedSchemaVersion = "20260420";
+    private List<string> pendingMigrations = new();
+    private List<string> appliedMigrationsList = new();
+    private List<string> allMigrationsInCode = new();
+    private bool isMigrating = false;
+    private string migrationLog = "";
+    private bool isAuthenticated = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        isAuthenticated = AuthService.IsAuthenticated();
+        await LoadDatabaseInfo();
+    }
+
+    private async Task LoadDatabaseInfo()
+    {
+        try
+        {
+            var appliedMigrations = await DbContext.Database
+                .SqlQueryRaw<string>("SELECT \"MigrationId\" FROM \"__EFMigrationsHistory\" ORDER BY \"MigrationId\"")
+                .ToListAsync();
+            
+            appliedMigrationsList = appliedMigrations;
+            
+            if (appliedMigrations.Any())
+            {
+                var latest = appliedMigrations.Last();
+                currentSchemaVersion = latest.Length >= 8 ? latest.Substring(0, 8) : latest;
+            }
+            else
+            {
+                currentSchemaVersion = "None";
+            }
+
+            var allMigrations = DbContext.Database.GetMigrations().ToList();
+            allMigrationsInCode = allMigrations;
+            
+            if (allMigrations.Any())
+            {
+                var latestCodeMigration = allMigrations.Last();
+                expectedSchemaVersion = latestCodeMigration.Length >= 8 ? latestCodeMigration.Substring(0, 8) : latestCodeMigration;
+            }
+            
+            pendingMigrations = allMigrations
+                .Where(m => !appliedMigrations.Contains(m))
+                .ToList();
+        }
+        catch
+        {
+            currentSchemaVersion = "Unknown";
+            appliedMigrationsList = new();
+            allMigrationsInCode = new();
+        }
+    }
+
+    private async Task ApplyMigrations()
+    {
+        if (!isAuthenticated)
+        {
+            migrationLog = "❌ Authentication required to apply migrations";
+            return;
+        }
+
+        isMigrating = true;
+        migrationLog = "";
+        StateHasChanged();
+
+        try
+        {
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] Starting migration...\n";
+            
+            foreach (var migration in pendingMigrations)
+            {
+                migrationLog += $"[{DateTime.Now:HH:mm:ss}] Applying: {migration}\n";
+            }
+
+            await DbContext.Database.MigrateAsync();
+            
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] ✅ Migrations applied successfully!\n";
+            
+            await LoadDatabaseInfo();
+            
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] Current schema version: {currentSchemaVersion}\n";
+        }
+        catch (Exception ex)
+        {
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] ❌ Error: {ex.Message}\n";
+            migrationLog += $"[{DateTime.Now:HH:mm:ss}] {ex.StackTrace}\n";
+        }
+        finally
+        {
+            isMigrating = false;
+            StateHasChanged();
+        }
+    }
+}
