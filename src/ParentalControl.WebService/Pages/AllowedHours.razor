@@ -8,23 +8,26 @@
 @inject NavigationManager Navigation
 @inject HttpClient Http
 @inject AuthService AuthService
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>Allowed Hours</PageTitle>
+<PageTitle>@T("AllowedHours.PageTitle")</PageTitle>
 
 <div style="padding: 20px; max-width: 1200px; margin: 0 auto;">
     <div style="margin-bottom: 30px; display: flex; justify-content: space-between; align-items: center;">
         <div>
-            <h1 style="margin: 0 0 8px 0; font-size: 28px;">🕐 Allowed Hours @(isReadOnly ? "(Read-Only)" : "")</h1>
-            <p style="color: #6b7280; margin: 0;">Define time windows when computer use is permitted. Multiple intervals per day supported.</p>
+            <h1 style="margin: 0 0 8px 0; font-size: 28px;">@T("AllowedHours.PageTitle") @(isReadOnly ? T("Common.ReadOnly") : "")</h1>
+            <p style="color: #6b7280; margin: 0;">@T("AllowedHours.Description")</p>
         </div>
         <div style="display: flex; gap: 10px;">
+            <LanguageSelector />
             @if (isReadOnly)
             {
                 <button @onclick="RequestAdminAuth" style="padding: 10px 20px; background: #f59e0b; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;">
-                    🔒 Unlock Editing
+                    @T("Common.Unlock")
                 </button>
             }
-            <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">← Dashboard</a>
+            <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">@T("Common.Back")</a>
         </div>
     </div>
 
@@ -104,6 +107,7 @@
 </div>
 
 @code {
+    private string currentLang = "en";
     private bool loading = true;
     private string selectedUserId = "";
     private string message = "";
@@ -123,6 +127,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        currentLang = LangService.GetCurrentLanguage();
         await CheckAuthStatus();
         users = await DbContext.Users
             .Where(u => u.AccountType == AccountType.Child && u.IsActive)
@@ -283,4 +288,6 @@
         public string StartTime { get; set; } = "08:00";
         public string EndTime { get; set; } = "22:00";
     }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
 }

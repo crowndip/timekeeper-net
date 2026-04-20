@@ -3,8 +3,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>1.35.0</Version>
-    <InformationalVersion>1.35.0</InformationalVersion>
+    <Version>1.36.0</Version>
+    <InformationalVersion>1.36.0</InformationalVersion>
   </PropertyGroup>
 
   <ItemGroup>

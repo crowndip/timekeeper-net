@@ -8,28 +8,33 @@
 @inject IUsageReportService ReportService
 @inject AppDbContext DbContext
 @inject IJSRuntime JS
+@inject LocalizationService Localizer
+@inject LanguageService LangService
 
-<PageTitle>Usage Reports</PageTitle>
+<PageTitle>@T("Reports.PageTitle")</PageTitle>
 
 <div style="padding: 20px; max-width: 1400px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0;">📊 Usage Reports</h2>
-        <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">← Dashboard</a>
+        <h2 style="margin: 0;">@T("Reports.PageTitle")</h2>
+        <div style="display: flex; gap: 12px;">
+            <LanguageSelector />
+            <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">@T("Common.Back")</a>
+        </div>
     </div>
 
     <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
         <div>
-            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Start Date</label>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("Reports.DateRange")</label>
             <input type="date" @bind="startDate" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
         </div>
         <div>
-            <label style="display: block; margin-bottom: 5px; font-weight: 600;">End Date</label>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">&nbsp;</label>
             <input type="date" @bind="endDate" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
         </div>
         <div>
             <label style="display: block; margin-bottom: 5px; font-weight: 600;">&nbsp;</label>
             <button @onclick="LoadReports" style="padding: 8px 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                Load Reports
+                @T("Reports.Generate")
             </button>
         </div>
     </div>
@@ -47,11 +52,11 @@
             <table style="width: 100%; border-collapse: collapse;">
                 <thead>
                     <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
-                        <th style="padding: 12px; text-align: left;">User</th>
-                        <th style="padding: 12px; text-align: right;">Total Minutes</th>
+                        <th style="padding: 12px; text-align: left;">@T("Users.Username")</th>
+                        <th style="padding: 12px; text-align: right;">@T("Reports.TotalUsage")</th>
                         <th style="padding: 12px; text-align: right;">Total Hours</th>
-                        <th style="padding: 12px; text-align: right;">Daily Average</th>
-                        <th style="padding: 12px; text-align: center;">Actions</th>
+                        <th style="padding: 12px; text-align: right;">@T("Reports.DailyAverage")</th>
+                        <th style="padding: 12px; text-align: center;">@T("Users.Actions")</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -139,6 +144,7 @@
 </style>
 
 @code {
+    private string currentLang = "en";
     private DateOnly startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7));
     private DateOnly endDate = DateOnly.FromDateTime(DateTime.Today);
     private List<UserUsageReport> reports = new();
@@ -151,6 +157,7 @@
 
     protected override async Task OnInitializedAsync()
     {
+        currentLang = LangService.GetCurrentLanguage();
         await LoadReports();
     }
 
@@ -383,4 +390,6 @@
         public string Username { get; set; } = string.Empty;
         public int TotalMinutes { get; set; }
     }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
 }
