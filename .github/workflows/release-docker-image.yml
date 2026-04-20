@@ -27,7 +27,8 @@ jobs:
 
       - name: Save Docker image
         run: |
-          docker save parental-control-webservice:${{ steps.version.outputs.VERSION }} | gzip > webservice-image.tar.gz
+          docker save parental-control-webservice:${{ steps.version.outputs.VERSION }} -o webservice-image.tar
+          gzip webservice-image.tar
 
       - name: Create Release
         uses: softprops/action-gh-release@v1
