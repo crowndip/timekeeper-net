@@ -15,8 +15,14 @@ fi
 
 echo "Using container: $CONTAINER"
 
-# Apply migration
-docker exec -i "$CONTAINER" psql -U parentalcontrol -d parentalcontrol <<'EOF'
+# Try common database users
+for DB_USER in parentalcontrol postgres parental_control; do
+    echo "Trying user: $DB_USER"
+    if docker exec -i "$CONTAINER" psql -U "$DB_USER" -d parentalcontrol -c "SELECT 1;" 2>/dev/null; then
+        echo "✅ Connected as $DB_USER"
+        
+        # Apply migration
+        docker exec -i "$CONTAINER" psql -U "$DB_USER" -d parentalcontrol <<'EOF'
 -- Check if column already exists
 DO $$
 BEGIN
@@ -46,5 +52,11 @@ BEGIN
     END IF;
 END $$;
 EOF
+        
+        echo "✅ Done!"
+        exit 0
+    fi
+done
 
-echo "✅ Done!"
+echo "❌ Could not connect to database with any known user"
+exit 1
