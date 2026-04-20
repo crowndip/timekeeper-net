@@ -1,0 +1,237 @@
+{
+  "Common": {
+    "AppTitle": "Systém rodičovské kontroly",
+    "Save": "Uložit",
+    "Cancel": "Zrušit",
+    "Edit": "Upravit",
+    "Delete": "Smazat",
+    "Add": "Přidat",
+    "Close": "Zavřít",
+    "Yes": "Ano",
+    "No": "Ne",
+    "Active": "Aktivní",
+    "Inactive": "Neaktivní",
+    "Loading": "Načítání...",
+    "Error": "Chyba",
+    "Success": "Úspěch",
+    "Dashboard": "Přehled",
+    "Unlock": "🔒 Odemknout",
+    "ReadOnly": "(Pouze pro čtení)",
+    "Back": "← Zpět"
+  },
+  "Dashboard": {
+    "PageTitle": "Systém rodičovské kontroly",
+    "Subtitle": "Centralizovaná správa času a monitorování",
+    "SystemStatus": "Stav systému",
+    "Users": "Uživatelé",
+    "UsersDesc": "Správa uživatelských účtů a oprávnění",
+    "ManageUsers": "Spravovat uživatele",
+    "TimeProfiles": "Časové profily",
+    "TimeProfilesDesc": "Nastavení denních a týdenních časových limitů",
+    "ManageProfiles": "Spravovat profily",
+    "AllowedHours": "Povolené hodiny",
+    "AllowedHoursDesc": "Nastavení povolených hodin používání počítače",
+    "ConfigureHours": "Nastavit hodiny",
+    "Devices": "Zařízení",
+    "DevicesDesc": "Zobrazení a správa připojených zařízení",
+    "ViewDevices": "Zobrazit zařízení",
+    "Reports": "Reporty",
+    "ReportsDesc": "Zobrazení statistik a reportů využití",
+    "ViewReports": "Zobrazit reporty",
+    "Configuration": "Konfigurace",
+    "ConfigurationDesc": "Schéma databáze a systémová nastavení",
+    "ViewConfiguration": "Zobrazit konfiguraci",
+    "About": "O aplikaci",
+    "AboutDesc": "Informace o projektu a licence",
+    "ViewAbout": "Zobrazit informace"
+  },
+  "Users": {
+    "PageTitle": "👥 Správa uživatelů",
+    "AddUser": "+ Přidat uživatele",
+    "Username": "Uživatelské jméno",
+    "FullName": "Celé jméno",
+    "Email": "E-mail",
+    "AccountType": "Typ účtu",
+    "Status": "Stav",
+    "Actions": "Akce",
+    "TimeButton": "⏱️ Čas",
+    "AliasesButton": "👥 Aliasy",
+    "NoUsers": "Nebyli nalezeni žádní uživatelé. Klikněte na \"Přidat uživatele\" pro vytvoření.",
+    "AccountTypes": {
+      "Unassigned": "Nepřiřazený (Vyžaduje konfiguraci)",
+      "Child": "Dítě (Pod dohledem)",
+      "Parent": "Rodič (Bez limitů)",
+      "Technical": "Technický (Systémový)"
+    },
+    "Dialog": {
+      "AddTitle": "Přidat uživatele",
+      "EditTitle": "Upravit uživatele",
+      "UsernamePlaceholder": "Zadejte uživatelské jméno",
+      "FullNamePlaceholder": "Zadejte celé jméno",
+      "EmailPlaceholder": "Zadejte e-mail",
+      "UsernameRequired": "Uživatelské jméno *",
+      "IsActive": "Aktivní"
+    },
+    "Aliases": {
+      "DialogTitle": "Správa aliasů pro {0}",
+      "CurrentAliases": "Aktuální aliasy",
+      "NoAliases": "Nejsou nakonfigurovány žádné aliasy",
+      "AddAlias": "Přidat alias",
+      "SelectUser": "Vyberte uživatele pro přidání jako alias",
+      "Unlink": "Odpojit",
+      "UnlinkConfirm": "Odpojit '{0}' od primárního uživatele? Stane se nezávislým uživatelem.",
+      "AliasCount": "({0} aliasů)"
+    },
+    "Messages": {
+      "DeleteConfirm": "Opravdu chcete smazat uživatele '{0}'? Tuto akci nelze vrátit zpět.",
+      "UserCreated": "Uživatel byl úspěšně vytvořen",
+      "UserUpdated": "Uživatel byl úspěšně aktualizován",
+      "UserDeleted": "Uživatel byl úspěšně smazán"
+    }
+  },
+  "TimeAdjust": {
+    "DialogTitle": "⏱️ Upravit čas pro {0}",
+    "TimeRemaining": "Zbývající čas",
+    "UsedToday": "Použito dnes",
+    "AdjustmentsToday": "Úpravy dnes",
+    "Description": "Přidejte extra čas pouze pro dnešek. Neovlivní to ostatní dny.",
+    "Unlimited": "Neomezeno",
+    "Minutes": "{0} minut",
+    "AddButton": "+{0} min",
+    "Messages": {
+      "TimeAdded": "Přidáno {0} minut pro dnešek"
+    }
+  },
+  "Profiles": {
+    "PageTitle": "⏰ Časové profily",
+    "AddProfile": "+ Přidat profil",
+    "ProfileName": "Název profilu",
+    "User": "Uživatel",
+    "DailyLimit": "Denní limit",
+    "WeeklyLimit": "Týdenní limit",
+    "NoProfiles": "Nebyly nalezeny žádné časové profily. Klikněte na \"Přidat profil\" pro vytvoření.",
+    "Dialog": {
+      "AddTitle": "Přidat časový profil",
+      "EditTitle": "Upravit časový profil",
+      "ProfileNamePlaceholder": "Zadejte název profilu",
+      "SelectUser": "Vyberte uživatele",
+      "DailyLimits": "Denní časové limity (minuty)",
+      "WeeklyLimit": "Týdenní limit (minuty)",
+      "IsActive": "Aktivní profil"
+    },
+    "Days": {
+      "Monday": "Pondělí",
+      "Tuesday": "Úterý",
+      "Wednesday": "Středa",
+      "Thursday": "Čtvrtek",
+      "Friday": "Pátek",
+      "Saturday": "Sobota",
+      "Sunday": "Neděle"
+    },
+    "Messages": {
+      "DeleteConfirm": "Opravdu chcete smazat profil '{0}'?",
+      "ProfileCreated": "Profil byl úspěšně vytvořen",
+      "ProfileUpdated": "Profil byl úspěšně aktualizován",
+      "ProfileDeleted": "Profil byl úspěšně smazán"
+    }
+  },
+  "AllowedHours": {
+    "PageTitle": "🕐 Povolené hodiny",
+    "Description": "Nastavte, kdy mohou uživatelé používat počítač",
+    "AddSchedule": "+ Přidat rozvrh",
+    "User": "Uživatel",
+    "Day": "Den",
+    "TimeRange": "Časový rozsah",
+    "NoSchedules": "Nejsou nakonfigurovány žádné rozvrhy. Klikněte na \"Přidat rozvrh\" pro vytvoření.",
+    "Dialog": {
+      "AddTitle": "Přidat povolené hodiny",
+      "EditTitle": "Upravit povolené hodiny",
+      "SelectUser": "Vyberte uživatele",
+      "SelectDay": "Vyberte den",
+      "StartTime": "Čas začátku",
+      "EndTime": "Čas konce"
+    },
+    "Messages": {
+      "DeleteConfirm": "Opravdu chcete smazat tento rozvrh?",
+      "ScheduleCreated": "Rozvrh byl úspěšně vytvořen",
+      "ScheduleUpdated": "Rozvrh byl úspěšně aktualizován",
+      "ScheduleDeleted": "Rozvrh byl úspěšně smazán"
+    }
+  },
+  "Computers": {
+    "PageTitle": "💻 Zařízení",
+    "ComputerName": "Název počítače",
+    "LastSeen": "Naposledy viděno",
+    "Status": "Stav",
+    "NoDevices": "Nebyla nalezena žádná zařízení.",
+    "Online": "Online",
+    "Offline": "Offline"
+  },
+  "Reports": {
+    "PageTitle": "📊 Reporty využití",
+    "SelectUser": "Vyberte uživatele",
+    "DateRange": "Časové období",
+    "Generate": "Vygenerovat report",
+    "TotalUsage": "Celkové využití",
+    "DailyAverage": "Denní průměr",
+    "NoData": "Pro vybrané období nejsou k dispozici žádná data o využití."
+  },
+  "Configuration": {
+    "PageTitle": "⚙️ Konfigurace",
+    "Description": "Schéma databáze a systémové informace",
+    "DatabaseSchema": "Schéma databáze",
+    "CurrentVersion": "Aktuální verze schématu",
+    "AppliedMigrations": "Aplikované migrace",
+    "DatabaseUpToDate": "✅ Databáze je aktuální",
+    "AuthRequired": "🔒 Vyžadováno ověření",
+    "AuthDescription": "Zadejte heslo administrátora pro aplikaci migrací",
+    "PasswordPlaceholder": "Heslo administrátora",
+    "Login": "Přihlásit",
+    "UpdateButton": "🔄 Aktualizovat schéma databáze",
+    "Updating": "⏳ Aplikuji migrace..."
+  },
+  "About": {
+    "PageTitle": "ℹ️ O aplikaci",
+    "AppName": "Systém rodičovské kontroly",
+    "Version": "Verze",
+    "Description": "Centralizovaný systém rodičovské kontroly pro Linux a Windows se sledováním času, vynucováním a webovou administrací.",
+    "Features": "Funkce",
+    "FeatureList": [
+      "✅ Centralizovaná správa času napříč více počítači",
+      "✅ Podpora více platforem (Linux a Windows)",
+      "✅ Časové limity sdílené napříč všemi zařízeními",
+      "✅ Denní a týdenní časové limity",
+      "✅ Automatické vynucování (odhlášení/zamčení)",
+      "✅ Sledování využití v reálném čase",
+      "✅ Uživatelské aliasy pro více účtů",
+      "✅ Nativní UI pro každou platformu"
+    ],
+    "TechStack": "Technologický stack",
+    "Backend": "Backend",
+    "Database": "Databáze",
+    "Client": "Klient",
+    "UI": "UI",
+    "License": "Licence",
+    "LicenseText": "Tento projekt je open source. Podrobnosti o licenci naleznete v repozitáři.",
+    "SourceCode": "Zdrojový kód",
+    "ViewOnGitHub": "📦 Zobrazit na GitHubu"
+  },
+  "Auth": {
+    "PageTitle": "Ověření administrátora",
+    "Title": "Přístup administrátora",
+    "PasswordLabel": "Heslo administrátora",
+    "AuthenticateButton": "Ověřit",
+    "Authenticating": "Ověřuji...",
+    "InvalidPassword": "Neplatné heslo administrátora",
+    "BackToDashboard": "← Zpět na přehled"
+  },
+  "Setup": {
+    "PageTitle": "Nastavení databáze",
+    "Title": "Vyžadováno nastavení databáze",
+    "Description": "Databáze ještě nebyla inicializována.",
+    "InitializeButton": "Inicializovat databázi",
+    "Initializing": "Inicializuji...",
+    "Success": "Databáze byla úspěšně inicializována!",
+    "GoToDashboard": "Přejít na přehled"
+  }
+}

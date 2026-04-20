@@ -1,0 +1,237 @@
+{
+  "Common": {
+    "AppTitle": "Parental Control System",
+    "Save": "Save",
+    "Cancel": "Cancel",
+    "Edit": "Edit",
+    "Delete": "Delete",
+    "Add": "Add",
+    "Close": "Close",
+    "Yes": "Yes",
+    "No": "No",
+    "Active": "Active",
+    "Inactive": "Inactive",
+    "Loading": "Loading...",
+    "Error": "Error",
+    "Success": "Success",
+    "Dashboard": "Dashboard",
+    "Unlock": "🔒 Unlock",
+    "ReadOnly": "(Read-Only)",
+    "Back": "← Back"
+  },
+  "Dashboard": {
+    "PageTitle": "Parental Control System",
+    "Subtitle": "Centralized time management and monitoring",
+    "SystemStatus": "System Status",
+    "Users": "Users",
+    "UsersDesc": "Manage user accounts and permissions",
+    "ManageUsers": "Manage Users",
+    "TimeProfiles": "Time Profiles",
+    "TimeProfilesDesc": "Configure daily and weekly time limits",
+    "ManageProfiles": "Manage Profiles",
+    "AllowedHours": "Allowed Hours",
+    "AllowedHoursDesc": "Set allowed computer usage hours",
+    "ConfigureHours": "Configure Hours",
+    "Devices": "Devices",
+    "DevicesDesc": "View and manage connected devices",
+    "ViewDevices": "View Devices",
+    "Reports": "Reports",
+    "ReportsDesc": "View usage statistics and reports",
+    "ViewReports": "View Reports",
+    "Configuration": "Configuration",
+    "ConfigurationDesc": "Database schema and system settings",
+    "ViewConfiguration": "View Configuration",
+    "About": "About",
+    "AboutDesc": "Project information and license",
+    "ViewAbout": "View About"
+  },
+  "Users": {
+    "PageTitle": "👥 Users Management",
+    "AddUser": "+ Add User",
+    "Username": "Username",
+    "FullName": "Full Name",
+    "Email": "Email",
+    "AccountType": "Account Type",
+    "Status": "Status",
+    "Actions": "Actions",
+    "TimeButton": "⏱️ Time",
+    "AliasesButton": "👥 Aliases",
+    "NoUsers": "No users found. Click \"Add User\" to create one.",
+    "AccountTypes": {
+      "Unassigned": "Unassigned (Needs configuration)",
+      "Child": "Child (Supervised)",
+      "Parent": "Parent (No limits)",
+      "Technical": "Technical (System)"
+    },
+    "Dialog": {
+      "AddTitle": "Add User",
+      "EditTitle": "Edit User",
+      "UsernamePlaceholder": "Enter username",
+      "FullNamePlaceholder": "Enter full name",
+      "EmailPlaceholder": "Enter email",
+      "UsernameRequired": "Username *",
+      "IsActive": "Active"
+    },
+    "Aliases": {
+      "DialogTitle": "Manage Aliases for {0}",
+      "CurrentAliases": "Current Aliases",
+      "NoAliases": "No aliases configured",
+      "AddAlias": "Add Alias",
+      "SelectUser": "Select user to add as alias",
+      "Unlink": "Unlink",
+      "UnlinkConfirm": "Unlink '{0}' from its primary user? It will become an independent user again.",
+      "AliasCount": "({0} aliases)"
+    },
+    "Messages": {
+      "DeleteConfirm": "Are you sure you want to delete user '{0}'? This action cannot be undone.",
+      "UserCreated": "User created successfully",
+      "UserUpdated": "User updated successfully",
+      "UserDeleted": "User deleted successfully"
+    }
+  },
+  "TimeAdjust": {
+    "DialogTitle": "⏱️ Adjust Time for {0}",
+    "TimeRemaining": "Time Remaining",
+    "UsedToday": "Used Today",
+    "AdjustmentsToday": "Adjustments Today",
+    "Description": "Add extra time for today only. This will not affect other days.",
+    "Unlimited": "Unlimited",
+    "Minutes": "{0} minutes",
+    "AddButton": "+{0} min",
+    "Messages": {
+      "TimeAdded": "Added {0} minutes for today"
+    }
+  },
+  "Profiles": {
+    "PageTitle": "⏰ Time Profiles",
+    "AddProfile": "+ Add Profile",
+    "ProfileName": "Profile Name",
+    "User": "User",
+    "DailyLimit": "Daily Limit",
+    "WeeklyLimit": "Weekly Limit",
+    "NoProfiles": "No time profiles found. Click \"Add Profile\" to create one.",
+    "Dialog": {
+      "AddTitle": "Add Time Profile",
+      "EditTitle": "Edit Time Profile",
+      "ProfileNamePlaceholder": "Enter profile name",
+      "SelectUser": "Select User",
+      "DailyLimits": "Daily Time Limits (minutes)",
+      "WeeklyLimit": "Weekly Limit (minutes)",
+      "IsActive": "Active Profile"
+    },
+    "Days": {
+      "Monday": "Monday",
+      "Tuesday": "Tuesday",
+      "Wednesday": "Wednesday",
+      "Thursday": "Thursday",
+      "Friday": "Friday",
+      "Saturday": "Saturday",
+      "Sunday": "Sunday"
+    },
+    "Messages": {
+      "DeleteConfirm": "Are you sure you want to delete profile '{0}'?",
+      "ProfileCreated": "Profile created successfully",
+      "ProfileUpdated": "Profile updated successfully",
+      "ProfileDeleted": "Profile deleted successfully"
+    }
+  },
+  "AllowedHours": {
+    "PageTitle": "🕐 Allowed Hours",
+    "Description": "Configure when users are allowed to use the computer",
+    "AddSchedule": "+ Add Schedule",
+    "User": "User",
+    "Day": "Day",
+    "TimeRange": "Time Range",
+    "NoSchedules": "No schedules configured. Click \"Add Schedule\" to create one.",
+    "Dialog": {
+      "AddTitle": "Add Allowed Hours",
+      "EditTitle": "Edit Allowed Hours",
+      "SelectUser": "Select User",
+      "SelectDay": "Select Day",
+      "StartTime": "Start Time",
+      "EndTime": "End Time"
+    },
+    "Messages": {
+      "DeleteConfirm": "Are you sure you want to delete this schedule?",
+      "ScheduleCreated": "Schedule created successfully",
+      "ScheduleUpdated": "Schedule updated successfully",
+      "ScheduleDeleted": "Schedule deleted successfully"
+    }
+  },
+  "Computers": {
+    "PageTitle": "💻 Devices",
+    "ComputerName": "Computer Name",
+    "LastSeen": "Last Seen",
+    "Status": "Status",
+    "NoDevices": "No devices found.",
+    "Online": "Online",
+    "Offline": "Offline"
+  },
+  "Reports": {
+    "PageTitle": "📊 Usage Reports",
+    "SelectUser": "Select User",
+    "DateRange": "Date Range",
+    "Generate": "Generate Report",
+    "TotalUsage": "Total Usage",
+    "DailyAverage": "Daily Average",
+    "NoData": "No usage data available for the selected period."
+  },
+  "Configuration": {
+    "PageTitle": "⚙️ Configuration",
+    "Description": "Database schema and system information",
+    "DatabaseSchema": "Database Schema",
+    "CurrentVersion": "Current Schema Version",
+    "AppliedMigrations": "Applied Migrations",
+    "DatabaseUpToDate": "✅ Database is up to date",
+    "AuthRequired": "🔒 Authentication Required",
+    "AuthDescription": "Enter administrator password to apply migrations",
+    "PasswordPlaceholder": "Administrator Password",
+    "Login": "Login",
+    "UpdateButton": "🔄 Update Database Schema",
+    "Updating": "⏳ Applying Migrations..."
+  },
+  "About": {
+    "PageTitle": "ℹ️ About",
+    "AppName": "Parental Control System",
+    "Version": "Version",
+    "Description": "A centralized parental control system for Linux and Windows with time tracking, enforcement, and web-based administration.",
+    "Features": "Features",
+    "FeatureList": [
+      "✅ Centralized time management across multiple computers",
+      "✅ Cross-platform support (Linux and Windows)",
+      "✅ Time limits shared across all devices",
+      "✅ Per-day and weekly time limits",
+      "✅ Automatic enforcement (logout/lock)",
+      "✅ Real-time usage tracking",
+      "✅ User aliases for multiple accounts",
+      "✅ Native UI for each platform"
+    ],
+    "TechStack": "Technology Stack",
+    "Backend": "Backend",
+    "Database": "Database",
+    "Client": "Client",
+    "UI": "UI",
+    "License": "License",
+    "LicenseText": "This project is open source. See the repository for license details.",
+    "SourceCode": "Source Code",
+    "ViewOnGitHub": "📦 View on GitHub"
+  },
+  "Auth": {
+    "PageTitle": "Administrator Authentication",
+    "Title": "Administrator Access",
+    "PasswordLabel": "Administrator Password",
+    "AuthenticateButton": "Authenticate",
+    "Authenticating": "Authenticating...",
+    "InvalidPassword": "Invalid administrator password",
+    "BackToDashboard": "← Back to Dashboard"
+  },
+  "Setup": {
+    "PageTitle": "Database Setup",
+    "Title": "Database Setup Required",
+    "Description": "The database has not been initialized yet.",
+    "InitializeButton": "Initialize Database",
+    "Initializing": "Initializing...",
+    "Success": "Database initialized successfully!",
+    "GoToDashboard": "Go to Dashboard"
+  }
+}
