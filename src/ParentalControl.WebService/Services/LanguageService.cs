@@ -54,6 +54,10 @@ public class LanguageService
                 return "cs";
             if (lang.StartsWith("de", StringComparison.OrdinalIgnoreCase))
                 return "de";
+            if (lang.StartsWith("fr", StringComparison.OrdinalIgnoreCase))
+                return "fr";
+            if (lang.StartsWith("es", StringComparison.OrdinalIgnoreCase))
+                return "es";
         }
 
         return "en"; // Default

@@ -1,6 +1,8 @@
+@using Microsoft.JSInterop
 @inject LanguageService LangService
 @inject LocalizationService Localizer
 @inject NavigationManager Navigation
+@inject IJSRuntime JS
 
 <div class="language-selector">
     <select @bind="selectedLanguage" @bind:after="OnLanguageChanged" class="language-select">
@@ -49,7 +51,7 @@
 
     private void OnLanguageChanged()
     {
-        LangService.SetLanguage(selectedLanguage);
+        JS.InvokeVoidAsync("eval", $"document.cookie = 'language={selectedLanguage}; path=/; max-age=31536000; SameSite=Lax';");
         Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
     }
 }
