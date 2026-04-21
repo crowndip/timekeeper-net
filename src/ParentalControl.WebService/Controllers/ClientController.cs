@@ -25,7 +25,9 @@ public class ClientController : ControllerBase
     [HttpPost("register")]
     public async Task<ActionResult<RegisterComputerResponse>> Register(RegisterComputerRequest request)
     {
-        var computer = await _context.Computers.FirstOrDefaultAsync(c => c.MachineId == request.MachineId);
+        // Check for existing computer by MachineId OR Hostname (both are unique)
+        var computer = await _context.Computers
+            .FirstOrDefaultAsync(c => c.MachineId == request.MachineId || c.Hostname == request.Hostname);
         
         if (computer == null)
         {
@@ -40,7 +42,9 @@ public class ClientController : ControllerBase
         }
         else
         {
+            // Update existing computer
             computer.Hostname = request.Hostname;
+            computer.MachineId = request.MachineId;
             computer.OsInfo = request.OsInfo;
             computer.LastSeenAt = DateTime.UtcNow;
         }
