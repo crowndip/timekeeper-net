@@ -1,0 +1,237 @@
+{
+  "Common": {
+    "AppTitle": "Sistema de control parental",
+    "Save": "Guardar",
+    "Cancel": "Cancelar",
+    "Edit": "Editar",
+    "Delete": "Eliminar",
+    "Add": "Añadir",
+    "Close": "Cerrar",
+    "Yes": "Sí",
+    "No": "No",
+    "Active": "Activo",
+    "Inactive": "Inactivo",
+    "Loading": "Cargando...",
+    "Error": "Error",
+    "Success": "Éxito",
+    "Dashboard": "Panel",
+    "Unlock": "🔒 Desbloquear",
+    "ReadOnly": "(Solo lectura)",
+    "Back": "← Volver"
+  },
+  "Dashboard": {
+    "PageTitle": "Sistema de control parental",
+    "Subtitle": "Gestión centralizada del tiempo y supervisión",
+    "SystemStatus": "Estado del sistema",
+    "Users": "Usuarios",
+    "UsersDesc": "Gestionar cuentas de usuario y permisos",
+    "ManageUsers": "Gestionar usuarios",
+    "TimeProfiles": "Perfiles de tiempo",
+    "TimeProfilesDesc": "Configurar límites de tiempo diarios y semanales",
+    "ManageProfiles": "Gestionar perfiles",
+    "AllowedHours": "Horas permitidas",
+    "AllowedHoursDesc": "Establecer horas de uso del ordenador permitidas",
+    "ConfigureHours": "Configurar horas",
+    "Devices": "Dispositivos",
+    "DevicesDesc": "Ver y gestionar dispositivos conectados",
+    "ViewDevices": "Ver dispositivos",
+    "Reports": "Informes",
+    "ReportsDesc": "Ver estadísticas e informes de uso",
+    "ViewReports": "Ver informes",
+    "Configuration": "Configuración",
+    "ConfigurationDesc": "Esquema de base de datos y configuración del sistema",
+    "ViewConfiguration": "Ver configuración",
+    "About": "Acerca de",
+    "AboutDesc": "Información del proyecto y licencia",
+    "ViewAbout": "Ver información"
+  },
+  "Users": {
+    "PageTitle": "👥 Gestión de usuarios",
+    "AddUser": "+ Añadir usuario",
+    "Username": "Nombre de usuario",
+    "FullName": "Nombre completo",
+    "Email": "Correo electrónico",
+    "AccountType": "Tipo de cuenta",
+    "Status": "Estado",
+    "Actions": "Acciones",
+    "TimeButton": "⏱️ Tiempo",
+    "AliasesButton": "👥 Alias",
+    "NoUsers": "No se encontraron usuarios. Haga clic en \"Añadir usuario\" para crear uno.",
+    "AccountTypes": {
+      "Unassigned": "Sin asignar (Requiere configuración)",
+      "Child": "Niño (Supervisado)",
+      "Parent": "Padre (Sin límites)",
+      "Technical": "Técnico (Sistema)"
+    },
+    "Dialog": {
+      "AddTitle": "Añadir usuario",
+      "EditTitle": "Editar usuario",
+      "UsernamePlaceholder": "Introducir nombre de usuario",
+      "FullNamePlaceholder": "Introducir nombre completo",
+      "EmailPlaceholder": "Introducir correo electrónico",
+      "UsernameRequired": "Nombre de usuario *",
+      "IsActive": "Activo"
+    },
+    "Aliases": {
+      "DialogTitle": "Gestionar alias para {0}",
+      "CurrentAliases": "Alias actuales",
+      "NoAliases": "No hay alias configurados",
+      "AddAlias": "Añadir alias",
+      "SelectUser": "Seleccionar usuario para añadir como alias",
+      "Unlink": "Desvincular",
+      "UnlinkConfirm": "¿Desvincular '{0}' de su usuario principal? Se convertirá en un usuario independiente de nuevo.",
+      "AliasCount": "({0} alias)"
+    },
+    "Messages": {
+      "DeleteConfirm": "¿Está seguro de que desea eliminar el usuario '{0}'? Esta acción no se puede deshacer.",
+      "UserCreated": "Usuario creado correctamente",
+      "UserUpdated": "Usuario actualizado correctamente",
+      "UserDeleted": "Usuario eliminado correctamente"
+    }
+  },
+  "TimeAdjust": {
+    "DialogTitle": "⏱️ Ajustar tiempo para {0}",
+    "TimeRemaining": "Tiempo restante",
+    "UsedToday": "Usado hoy",
+    "AdjustmentsToday": "Ajustes de hoy",
+    "Description": "Añadir tiempo extra solo para hoy. Esto no afectará a otros días.",
+    "Unlimited": "Ilimitado",
+    "Minutes": "{0} minutos",
+    "AddButton": "+{0} min",
+    "Messages": {
+      "TimeAdded": "{0} minutos añadidos para hoy"
+    }
+  },
+  "Profiles": {
+    "PageTitle": "⏰ Perfiles de tiempo",
+    "AddProfile": "+ Añadir perfil",
+    "ProfileName": "Nombre del perfil",
+    "User": "Usuario",
+    "DailyLimit": "Límite diario",
+    "WeeklyLimit": "Límite semanal",
+    "NoProfiles": "No se encontraron perfiles de tiempo. Haga clic en \"Añadir perfil\" para crear uno.",
+    "Dialog": {
+      "AddTitle": "Añadir perfil de tiempo",
+      "EditTitle": "Editar perfil de tiempo",
+      "ProfileNamePlaceholder": "Introducir nombre del perfil",
+      "SelectUser": "Seleccionar usuario",
+      "DailyLimits": "Límites de tiempo diarios (minutos)",
+      "WeeklyLimit": "Límite semanal (minutos)",
+      "IsActive": "Perfil activo"
+    },
+    "Days": {
+      "Monday": "Lunes",
+      "Tuesday": "Martes",
+      "Wednesday": "Miércoles",
+      "Thursday": "Jueves",
+      "Friday": "Viernes",
+      "Saturday": "Sábado",
+      "Sunday": "Domingo"
+    },
+    "Messages": {
+      "DeleteConfirm": "¿Está seguro de que desea eliminar el perfil '{0}'?",
+      "ProfileCreated": "Perfil creado correctamente",
+      "ProfileUpdated": "Perfil actualizado correctamente",
+      "ProfileDeleted": "Perfil eliminado correctamente"
+    }
+  },
+  "AllowedHours": {
+    "PageTitle": "🕐 Horas permitidas",
+    "Description": "Configurar cuándo los usuarios pueden usar el ordenador",
+    "AddSchedule": "+ Añadir horario",
+    "User": "Usuario",
+    "Day": "Día",
+    "TimeRange": "Rango horario",
+    "NoSchedules": "No hay horarios configurados. Haga clic en \"Añadir horario\" para crear uno.",
+    "Dialog": {
+      "AddTitle": "Añadir horas permitidas",
+      "EditTitle": "Editar horas permitidas",
+      "SelectUser": "Seleccionar usuario",
+      "SelectDay": "Seleccionar día",
+      "StartTime": "Hora de inicio",
+      "EndTime": "Hora de fin"
+    },
+    "Messages": {
+      "DeleteConfirm": "¿Está seguro de que desea eliminar este horario?",
+      "ScheduleCreated": "Horario creado correctamente",
+      "ScheduleUpdated": "Horario actualizado correctamente",
+      "ScheduleDeleted": "Horario eliminado correctamente"
+    }
+  },
+  "Computers": {
+    "PageTitle": "💻 Dispositivos",
+    "ComputerName": "Nombre del ordenador",
+    "LastSeen": "Última conexión",
+    "Status": "Estado",
+    "NoDevices": "No se encontraron dispositivos.",
+    "Online": "En línea",
+    "Offline": "Desconectado"
+  },
+  "Reports": {
+    "PageTitle": "📊 Informes de uso",
+    "SelectUser": "Seleccionar usuario",
+    "DateRange": "Período",
+    "Generate": "Generar informe",
+    "TotalUsage": "Uso total",
+    "DailyAverage": "Promedio diario",
+    "NoData": "No hay datos de uso disponibles para el período seleccionado."
+  },
+  "Configuration": {
+    "PageTitle": "⚙️ Configuración",
+    "Description": "Esquema de base de datos e información del sistema",
+    "DatabaseSchema": "Esquema de base de datos",
+    "CurrentVersion": "Versión actual del esquema",
+    "AppliedMigrations": "Migraciones aplicadas",
+    "DatabaseUpToDate": "✅ La base de datos está actualizada",
+    "AuthRequired": "🔒 Autenticación requerida",
+    "AuthDescription": "Introduzca la contraseña de administrador para aplicar migraciones",
+    "PasswordPlaceholder": "Contraseña de administrador",
+    "Login": "Iniciar sesión",
+    "UpdateButton": "🔄 Actualizar esquema de base de datos",
+    "Updating": "⏳ Aplicando migraciones..."
+  },
+  "About": {
+    "PageTitle": "ℹ️ Acerca de",
+    "AppName": "Sistema de control parental",
+    "Version": "Versión",
+    "Description": "Un sistema de control parental centralizado para Linux y Windows con seguimiento del tiempo, aplicación y administración web.",
+    "Features": "Características",
+    "FeatureList": [
+      "✅ Gestión centralizada del tiempo en múltiples ordenadores",
+      "✅ Soporte multiplataforma (Linux y Windows)",
+      "✅ Límites de tiempo compartidos en todos los dispositivos",
+      "✅ Límites de tiempo diarios y semanales",
+      "✅ Aplicación automática (cerrar sesión/bloquear)",
+      "✅ Seguimiento de uso en tiempo real",
+      "✅ Alias de usuario para múltiples cuentas",
+      "✅ Interfaz nativa para cada plataforma"
+    ],
+    "TechStack": "Stack tecnológico",
+    "Backend": "Backend",
+    "Database": "Base de datos",
+    "Client": "Cliente",
+    "UI": "Interfaz de usuario",
+    "License": "Licencia",
+    "LicenseText": "Este proyecto es de código abierto. Consulte el repositorio para detalles de la licencia.",
+    "SourceCode": "Código fuente",
+    "ViewOnGitHub": "📦 Ver en GitHub"
+  },
+  "Auth": {
+    "PageTitle": "Autenticación de administrador",
+    "Title": "Acceso de administrador",
+    "PasswordLabel": "Contraseña de administrador",
+    "AuthenticateButton": "Autenticar",
+    "Authenticating": "Autenticando...",
+    "InvalidPassword": "Contraseña de administrador inválida",
+    "BackToDashboard": "← Volver al panel"
+  },
+  "Setup": {
+    "PageTitle": "Configuración de base de datos",
+    "Title": "Se requiere configuración de base de datos",
+    "Description": "La base de datos aún no ha sido inicializada.",
+    "InitializeButton": "Inicializar base de datos",
+    "Initializing": "Inicializando...",
+    "Success": "¡Base de datos inicializada correctamente!",
+    "GoToDashboard": "Ir al panel"
+  }
+}
