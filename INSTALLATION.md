@@ -1,6 +1,6 @@
 # Installation Guide
 
-**Version**: v1.4.0  
+**Version**: v1.45.0  
 **Status**: ✅ Production Ready
 
 Complete installation instructions for Parental Control System.

@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.45.0] - 2026-04-21
+
+### Added
+- **Multi-Language Support**: Complete internationalization with 5 languages
+  - 🇬🇧 English (en)
+  - 🇨🇿 Czech (cs)
+  - 🇩🇪 German (de)
+  - 🇫🇷 French (fr)
+  - 🇪🇸 Spanish (es)
+- **Language Selector**: Dropdown in dashboard header for manual language selection
+- **Browser Language Detection**: Automatically detects and uses browser's preferred language
+- **Persistent Language Preference**: Cookie-based storage (1 year expiration)
+- **Dynamic Language Discovery**: New languages automatically appear when JSON file added
+- **474 Translated Strings**: All pages, dialogs, messages, and UI elements translated
+
+### Changed
+- Language selector uses JavaScript interop for cookie setting (Blazor Server compatibility)
+- All 13 pages now support localization (Dashboard, Users, Profiles, Reports, etc.)
+
+### Technical
+- JSON-based translations in `wwwroot/localization/` (Docker-safe)
+- LocalizationService with nested key support and fallback to English
+- LanguageService with cookie management and browser detection
+- Easy to extend: just add new `{lang}.json` file
+
 ## [1.4.2] - 2026-04-17
 
 ### Added

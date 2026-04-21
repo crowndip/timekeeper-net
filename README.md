@@ -1,6 +1,6 @@
 # Parental Control System - .NET 8
 
-**Version**: v1.4.0  
+**Version**: v1.45.0  
 **Status**: ✅ Production Ready
 
 A centralized parental control system for Linux and Windows with time tracking, enforcement, and web-based administration.
@@ -25,6 +25,13 @@ A centralized parental control system for Linux and Windows with time tracking, 
 - ✅ Real-time usage tracking
 - ✅ Offline mode support
 - ✅ Native UI for each platform
+
+### Multi-Language Support (v1.45.0)
+- ✅ **5 Languages**: English, Czech, German, French, Spanish
+- ✅ **Automatic Detection**: Browser language auto-detection
+- ✅ **Manual Selection**: Language selector in dashboard
+- ✅ **Persistent Preference**: Cookie-based language storage
+- ✅ **Easy Extension**: Add new languages by creating JSON file
 
 ### Security & Administration (v1.4.0)
 - ✅ **Dashboard Authentication** - Password-protected admin interface
