@@ -1,0 +1,237 @@
+{
+  "Common": {
+    "AppTitle": "Kindersicherungssystem",
+    "Save": "Speichern",
+    "Cancel": "Abbrechen",
+    "Edit": "Bearbeiten",
+    "Delete": "Löschen",
+    "Add": "Hinzufügen",
+    "Close": "Schließen",
+    "Yes": "Ja",
+    "No": "Nein",
+    "Active": "Aktiv",
+    "Inactive": "Inaktiv",
+    "Loading": "Laden...",
+    "Error": "Fehler",
+    "Success": "Erfolg",
+    "Dashboard": "Dashboard",
+    "Unlock": "🔒 Entsperren",
+    "ReadOnly": "(Nur Lesen)",
+    "Back": "← Zurück"
+  },
+  "Dashboard": {
+    "PageTitle": "Kindersicherungssystem",
+    "Subtitle": "Zentralisierte Zeitverwaltung und Überwachung",
+    "SystemStatus": "Systemstatus",
+    "Users": "Benutzer",
+    "UsersDesc": "Benutzerkonten und Berechtigungen verwalten",
+    "ManageUsers": "Benutzer verwalten",
+    "TimeProfiles": "Zeitprofile",
+    "TimeProfilesDesc": "Tägliche und wöchentliche Zeitlimits konfigurieren",
+    "ManageProfiles": "Profile verwalten",
+    "AllowedHours": "Erlaubte Stunden",
+    "AllowedHoursDesc": "Erlaubte Computernutzungszeiten festlegen",
+    "ConfigureHours": "Stunden konfigurieren",
+    "Devices": "Geräte",
+    "DevicesDesc": "Verbundene Geräte anzeigen und verwalten",
+    "ViewDevices": "Geräte anzeigen",
+    "Reports": "Berichte",
+    "ReportsDesc": "Nutzungsstatistiken und Berichte anzeigen",
+    "ViewReports": "Berichte anzeigen",
+    "Configuration": "Konfiguration",
+    "ConfigurationDesc": "Datenbankschema und Systemeinstellungen",
+    "ViewConfiguration": "Konfiguration anzeigen",
+    "About": "Über",
+    "AboutDesc": "Projektinformationen und Lizenz",
+    "ViewAbout": "Informationen anzeigen"
+  },
+  "Users": {
+    "PageTitle": "👥 Benutzerverwaltung",
+    "AddUser": "+ Benutzer hinzufügen",
+    "Username": "Benutzername",
+    "FullName": "Vollständiger Name",
+    "Email": "E-Mail",
+    "AccountType": "Kontotyp",
+    "Status": "Status",
+    "Actions": "Aktionen",
+    "TimeButton": "⏱️ Zeit",
+    "AliasesButton": "👥 Aliase",
+    "NoUsers": "Keine Benutzer gefunden. Klicken Sie auf \"Benutzer hinzufügen\", um einen zu erstellen.",
+    "AccountTypes": {
+      "Unassigned": "Nicht zugewiesen (Benötigt Konfiguration)",
+      "Child": "Kind (Überwacht)",
+      "Parent": "Elternteil (Keine Limits)",
+      "Technical": "Technisch (System)"
+    },
+    "Dialog": {
+      "AddTitle": "Benutzer hinzufügen",
+      "EditTitle": "Benutzer bearbeiten",
+      "UsernamePlaceholder": "Benutzernamen eingeben",
+      "FullNamePlaceholder": "Vollständigen Namen eingeben",
+      "EmailPlaceholder": "E-Mail eingeben",
+      "UsernameRequired": "Benutzername *",
+      "IsActive": "Aktiv"
+    },
+    "Aliases": {
+      "DialogTitle": "Aliase für {0} verwalten",
+      "CurrentAliases": "Aktuelle Aliase",
+      "NoAliases": "Keine Aliase konfiguriert",
+      "AddAlias": "Alias hinzufügen",
+      "SelectUser": "Benutzer als Alias auswählen",
+      "Unlink": "Trennen",
+      "UnlinkConfirm": "'{0}' vom Hauptbenutzer trennen? Es wird wieder ein unabhängiger Benutzer.",
+      "AliasCount": "({0} Aliase)"
+    },
+    "Messages": {
+      "DeleteConfirm": "Möchten Sie den Benutzer '{0}' wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+      "UserCreated": "Benutzer erfolgreich erstellt",
+      "UserUpdated": "Benutzer erfolgreich aktualisiert",
+      "UserDeleted": "Benutzer erfolgreich gelöscht"
+    }
+  },
+  "TimeAdjust": {
+    "DialogTitle": "⏱️ Zeit anpassen für {0}",
+    "TimeRemaining": "Verbleibende Zeit",
+    "UsedToday": "Heute verwendet",
+    "AdjustmentsToday": "Anpassungen heute",
+    "Description": "Zusätzliche Zeit nur für heute hinzufügen. Dies wirkt sich nicht auf andere Tage aus.",
+    "Unlimited": "Unbegrenzt",
+    "Minutes": "{0} Minuten",
+    "AddButton": "+{0} Min",
+    "Messages": {
+      "TimeAdded": "{0} Minuten für heute hinzugefügt"
+    }
+  },
+  "Profiles": {
+    "PageTitle": "⏰ Zeitprofile",
+    "AddProfile": "+ Profil hinzufügen",
+    "ProfileName": "Profilname",
+    "User": "Benutzer",
+    "DailyLimit": "Tageslimit",
+    "WeeklyLimit": "Wochenlimit",
+    "NoProfiles": "Keine Zeitprofile gefunden. Klicken Sie auf \"Profil hinzufügen\", um eines zu erstellen.",
+    "Dialog": {
+      "AddTitle": "Zeitprofil hinzufügen",
+      "EditTitle": "Zeitprofil bearbeiten",
+      "ProfileNamePlaceholder": "Profilnamen eingeben",
+      "SelectUser": "Benutzer auswählen",
+      "DailyLimits": "Tägliche Zeitlimits (Minuten)",
+      "WeeklyLimit": "Wochenlimit (Minuten)",
+      "IsActive": "Aktives Profil"
+    },
+    "Days": {
+      "Monday": "Montag",
+      "Tuesday": "Dienstag",
+      "Wednesday": "Mittwoch",
+      "Thursday": "Donnerstag",
+      "Friday": "Freitag",
+      "Saturday": "Samstag",
+      "Sunday": "Sonntag"
+    },
+    "Messages": {
+      "DeleteConfirm": "Möchten Sie das Profil '{0}' wirklich löschen?",
+      "ProfileCreated": "Profil erfolgreich erstellt",
+      "ProfileUpdated": "Profil erfolgreich aktualisiert",
+      "ProfileDeleted": "Profil erfolgreich gelöscht"
+    }
+  },
+  "AllowedHours": {
+    "PageTitle": "🕐 Erlaubte Stunden",
+    "Description": "Konfigurieren Sie, wann Benutzer den Computer verwenden dürfen",
+    "AddSchedule": "+ Zeitplan hinzufügen",
+    "User": "Benutzer",
+    "Day": "Tag",
+    "TimeRange": "Zeitbereich",
+    "NoSchedules": "Keine Zeitpläne konfiguriert. Klicken Sie auf \"Zeitplan hinzufügen\", um einen zu erstellen.",
+    "Dialog": {
+      "AddTitle": "Erlaubte Stunden hinzufügen",
+      "EditTitle": "Erlaubte Stunden bearbeiten",
+      "SelectUser": "Benutzer auswählen",
+      "SelectDay": "Tag auswählen",
+      "StartTime": "Startzeit",
+      "EndTime": "Endzeit"
+    },
+    "Messages": {
+      "DeleteConfirm": "Möchten Sie diesen Zeitplan wirklich löschen?",
+      "ScheduleCreated": "Zeitplan erfolgreich erstellt",
+      "ScheduleUpdated": "Zeitplan erfolgreich aktualisiert",
+      "ScheduleDeleted": "Zeitplan erfolgreich gelöscht"
+    }
+  },
+  "Computers": {
+    "PageTitle": "💻 Geräte",
+    "ComputerName": "Computername",
+    "LastSeen": "Zuletzt gesehen",
+    "Status": "Status",
+    "NoDevices": "Keine Geräte gefunden.",
+    "Online": "Online",
+    "Offline": "Offline"
+  },
+  "Reports": {
+    "PageTitle": "📊 Nutzungsberichte",
+    "SelectUser": "Benutzer auswählen",
+    "DateRange": "Zeitraum",
+    "Generate": "Bericht erstellen",
+    "TotalUsage": "Gesamtnutzung",
+    "DailyAverage": "Tagesdurchschnitt",
+    "NoData": "Für den ausgewählten Zeitraum sind keine Nutzungsdaten verfügbar."
+  },
+  "Configuration": {
+    "PageTitle": "⚙️ Konfiguration",
+    "Description": "Datenbankschema und Systeminformationen",
+    "DatabaseSchema": "Datenbankschema",
+    "CurrentVersion": "Aktuelle Schemaversion",
+    "AppliedMigrations": "Angewendete Migrationen",
+    "DatabaseUpToDate": "✅ Datenbank ist aktuell",
+    "AuthRequired": "🔒 Authentifizierung erforderlich",
+    "AuthDescription": "Geben Sie das Administratorpasswort ein, um Migrationen anzuwenden",
+    "PasswordPlaceholder": "Administratorpasswort",
+    "Login": "Anmelden",
+    "UpdateButton": "🔄 Datenbankschema aktualisieren",
+    "Updating": "⏳ Migrationen werden angewendet..."
+  },
+  "About": {
+    "PageTitle": "ℹ️ Über",
+    "AppName": "Kindersicherungssystem",
+    "Version": "Version",
+    "Description": "Ein zentralisiertes Kindersicherungssystem für Linux und Windows mit Zeiterfassung, Durchsetzung und webbasierter Verwaltung.",
+    "Features": "Funktionen",
+    "FeatureList": [
+      "✅ Zentralisierte Zeitverwaltung über mehrere Computer",
+      "✅ Plattformübergreifende Unterstützung (Linux und Windows)",
+      "✅ Zeitlimits über alle Geräte hinweg geteilt",
+      "✅ Tages- und Wochenzeitlimits",
+      "✅ Automatische Durchsetzung (Abmelden/Sperren)",
+      "✅ Echtzeit-Nutzungsverfolgung",
+      "✅ Benutzeraliase für mehrere Konten",
+      "✅ Native Benutzeroberfläche für jede Plattform"
+    ],
+    "TechStack": "Technologie-Stack",
+    "Backend": "Backend",
+    "Database": "Datenbank",
+    "Client": "Client",
+    "UI": "Benutzeroberfläche",
+    "License": "Lizenz",
+    "LicenseText": "Dieses Projekt ist Open Source. Siehe Repository für Lizenzdetails.",
+    "SourceCode": "Quellcode",
+    "ViewOnGitHub": "📦 Auf GitHub anzeigen"
+  },
+  "Auth": {
+    "PageTitle": "Administratorauthentifizierung",
+    "Title": "Administratorzugang",
+    "PasswordLabel": "Administratorpasswort",
+    "AuthenticateButton": "Authentifizieren",
+    "Authenticating": "Authentifizierung läuft...",
+    "InvalidPassword": "Ungültiges Administratorpasswort",
+    "BackToDashboard": "← Zurück zum Dashboard"
+  },
+  "Setup": {
+    "PageTitle": "Datenbankeinrichtung",
+    "Title": "Datenbankeinrichtung erforderlich",
+    "Description": "Die Datenbank wurde noch nicht initialisiert.",
+    "InitializeButton": "Datenbank initialisieren",
+    "Initializing": "Initialisierung läuft...",
+    "Success": "Datenbank erfolgreich initialisiert!",
+    "GoToDashboard": "Zum Dashboard gehen"
+  }
+}
