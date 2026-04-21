@@ -1,11 +1,13 @@
 @inject LanguageService LangService
+@inject LocalizationService Localizer
 @inject NavigationManager Navigation
 
 <div class="language-selector">
     <select @bind="selectedLanguage" @bind:after="OnLanguageChanged" class="language-select">
-        <option value="en">🇬🇧 English</option>
-        <option value="cs">🇨🇿 Čeština</option>
-        <option value="de">🇩🇪 Deutsch</option>
+        @foreach (var lang in availableLanguages)
+        {
+            <option value="@lang.Key">@lang.Value</option>
+        }
     </select>
 </div>
 
@@ -37,10 +39,12 @@
 
 @code {
     private string selectedLanguage = "en";
+    private Dictionary<string, string> availableLanguages = new();
 
     protected override void OnInitialized()
     {
         selectedLanguage = LangService.GetCurrentLanguage();
+        availableLanguages = Localizer.GetAvailableLanguages();
     }
 
     private void OnLanguageChanged()

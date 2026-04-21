@@ -6,6 +6,17 @@ public class LocalizationService
 {
     private readonly IWebHostEnvironment _env;
     private readonly Dictionary<string, JsonElement> _translations = new();
+    private readonly Dictionary<string, string> _languageNames = new()
+    {
+        { "en", "🇬🇧 English" },
+        { "cs", "🇨🇿 Čeština" },
+        { "de", "🇩🇪 Deutsch" },
+        { "es", "🇪🇸 Español" },
+        { "fr", "🇫🇷 Français" },
+        { "pl", "🇵🇱 Polski" },
+        { "sk", "🇸🇰 Slovenčina" },
+        { "ru", "🇷🇺 Русский" }
+    };
     private readonly ILogger<LocalizationService> _logger;
 
     public LocalizationService(IWebHostEnvironment env, ILogger<LocalizationService> logger)
@@ -91,5 +102,15 @@ public class LocalizationService
     public IEnumerable<string> GetAvailableCultures()
     {
         return _translations.Keys;
+    }
+
+    public Dictionary<string, string> GetAvailableLanguages()
+    {
+        var result = new Dictionary<string, string>();
+        foreach (var culture in _translations.Keys.OrderBy(c => c))
+        {
+            result[culture] = _languageNames.TryGetValue(culture, out var name) ? name : culture.ToUpper();
+        }
+        return result;
     }
 }
