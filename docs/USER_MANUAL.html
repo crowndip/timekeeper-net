@@ -1,0 +1,1334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parental Control System - User Manual</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        
+        header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        nav {
+            background: #2d3748;
+            padding: 20px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        nav a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            transition: background 0.3s;
+        }
+        
+        nav a:hover {
+            background: rgba(255,255,255,0.1);
+        }
+        
+        .content {
+            padding: 40px;
+        }
+        
+        section {
+            margin-bottom: 60px;
+        }
+        
+        h2 {
+            color: #667eea;
+            font-size: 2em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #667eea;
+        }
+        
+        h3 {
+            color: #4a5568;
+            font-size: 1.5em;
+            margin: 30px 0 15px 0;
+        }
+        
+        h4 {
+            color: #2d3748;
+            font-size: 1.2em;
+            margin: 20px 0 10px 0;
+        }
+        
+        p {
+            margin-bottom: 15px;
+        }
+        
+        .diagram {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .diagram svg {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .info-box {
+            background: #ebf8ff;
+            border-left: 4px solid #4299e1;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .warning-box {
+            background: #fffaf0;
+            border-left: 4px solid #ed8936;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        .success-box {
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        
+        code {
+            background: #2d3748;
+            color: #68d391;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+        
+        pre {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 20px 0;
+        }
+        
+        pre code {
+            background: none;
+            padding: 0;
+            color: inherit;
+        }
+        
+        .step-list {
+            counter-reset: step-counter;
+            list-style: none;
+        }
+        
+        .step-list li {
+            counter-increment: step-counter;
+            margin-bottom: 30px;
+            padding-left: 60px;
+            position: relative;
+        }
+        
+        .step-list li::before {
+            content: counter(step-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+        
+        tr:hover {
+            background: #f7fafc;
+        }
+        
+        .screenshot {
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        footer {
+            background: #2d3748;
+            color: white;
+            padding: 30px 40px;
+            text-align: center;
+        }
+        
+        @media print {
+            nav {
+                position: static;
+            }
+            
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🛡️ Parental Control System</h1>
+            <p>User Manual - Version 1.45.0</p>
+        </header>
+        
+        <nav class="no-print">
+            <ul>
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#server">Server Setup</a></li>
+                <li><a href="#dashboard">Dashboard</a></li>
+                <li><a href="#client">Client Setup</a></li>
+                <li><a href="#tray">Tray Application</a></li>
+                <li><a href="#scenarios">Usage Scenarios</a></li>
+                <li><a href="#troubleshooting">Troubleshooting</a></li>
+            </ul>
+        </nav>
+        
+        <div class="content">
+            <!-- OVERVIEW SECTION -->
+            <section id="overview">
+                <h2>📖 Overview</h2>
+                
+                <p>The Parental Control System is a centralized solution for managing computer time across multiple devices. It consists of three main components:</p>
+                
+                <div class="diagram">
+                    <svg viewBox="0 0 800 400" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Server -->
+                        <rect x="300" y="20" width="200" height="100" fill="#667eea" rx="10"/>
+                        <text x="400" y="60" text-anchor="middle" fill="white" font-size="18" font-weight="bold">Central Server</text>
+                        <text x="400" y="85" text-anchor="middle" fill="white" font-size="14">PostgreSQL Database</text>
+                        <text x="400" y="105" text-anchor="middle" fill="white" font-size="14">Web Dashboard</text>
+                        
+                        <!-- Linux Client -->
+                        <rect x="50" y="250" width="200" height="120" fill="#48bb78" rx="10"/>
+                        <text x="150" y="285" text-anchor="middle" fill="white" font-size="18" font-weight="bold">Linux Client</text>
+                        <text x="150" y="310" text-anchor="middle" fill="white" font-size="14">Background Service</text>
+                        <text x="150" y="330" text-anchor="middle" fill="white" font-size="14">Avalonia UI</text>
+                        <text x="150" y="350" text-anchor="middle" fill="white" font-size="14">System Tray</text>
+                        
+                        <!-- Windows Client -->
+                        <rect x="550" y="250" width="200" height="120" fill="#4299e1" rx="10"/>
+                        <text x="650" y="285" text-anchor="middle" fill="white" font-size="18" font-weight="bold">Windows Client</text>
+                        <text x="650" y="310" text-anchor="middle" fill="white" font-size="14">Windows Service</text>
+                        <text x="650" y="330" text-anchor="middle" fill="white" font-size="14">WPF UI</text>
+                        <text x="650" y="350" text-anchor="middle" fill="white" font-size="14">System Tray</text>
+                        
+                        <!-- Arrows -->
+                        <path d="M 400 120 L 150 250" stroke="#2d3748" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                        <path d="M 400 120 L 650 250" stroke="#2d3748" stroke-width="3" fill="none" marker-end="url(#arrowhead)"/>
+                        
+                        <text x="250" y="180" fill="#2d3748" font-size="14">HTTP/REST API</text>
+                        <text x="500" y="180" fill="#2d3748" font-size="14">HTTP/REST API</text>
+                        
+                        <!-- Arrow marker -->
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#2d3748"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+                
+                <h3>Key Features</h3>
+                <ul>
+                    <li><strong>Centralized Management:</strong> Control all devices from one web dashboard</li>
+                    <li><strong>Cross-Platform:</strong> Works on Linux and Windows</li>
+                    <li><strong>Shared Time Limits:</strong> Time is tracked across all devices</li>
+                    <li><strong>Multi-Language:</strong> Supports English, Czech, German, French, and Spanish</li>
+                    <li><strong>Real-Time Enforcement:</strong> Automatic logout/lock when time expires</li>
+                    <li><strong>Offline Mode:</strong> Continues working even without server connection</li>
+                </ul>
+                
+                <div class="info-box">
+                    <strong>💡 How It Works:</strong> The server stores all time limits and usage data. Clients check in every minute to report usage and get remaining time. When time runs out, the client automatically logs out the user.
+                </div>
+            </section>
+
+            <!-- SERVER SETUP SECTION -->
+            <section id="server">
+                <h2>🖥️ Server Setup</h2>
+                
+                <h3>Prerequisites</h3>
+                <ul>
+                    <li>Docker and Docker Compose installed</li>
+                    <li>2GB RAM minimum</li>
+                    <li>10GB disk space</li>
+                    <li>Network access from client devices</li>
+                </ul>
+                
+                <h3>Installation Steps</h3>
+                <ol class="step-list">
+                    <li>
+                        <h4>Download docker-compose.yml</h4>
+                        <pre><code>wget https://raw.githubusercontent.com/crowndip/timekeeper-net/main/docker-compose.yml</code></pre>
+                    </li>
+                    
+                    <li>
+                        <h4>Set Environment Variables</h4>
+                        <pre><code>export ADMIN_PASSWORD=your_dashboard_password
+export LIMIT_ADMIN_PASSWORD=your_admin_operations_password
+export DB_PASSWORD=your_database_password</code></pre>
+                        <div class="warning-box">
+                            <strong>⚠️ Important:</strong> Change these passwords! The default <code>ADMIN_PASSWORD</code> is "admin" which is insecure.
+                        </div>
+                    </li>
+                    
+                    <li>
+                        <h4>Start the Server</h4>
+                        <pre><code>docker-compose up -d</code></pre>
+                        <p>This will start two containers:</p>
+                        <ul>
+                            <li><strong>webservice:</strong> The main application (port 8080)</li>
+                            <li><strong>postgres:</strong> The database (port 5432, internal only)</li>
+                        </ul>
+                    </li>
+                    
+                    <li>
+                        <h4>Verify Installation</h4>
+                        <p>Open your browser and navigate to:</p>
+                        <pre><code>http://your-server-ip:8080</code></pre>
+                        <p>You should see the dashboard login page.</p>
+                    </li>
+                </ol>
+                
+                <div class="success-box">
+                    <strong>✅ Server is Ready!</strong> You can now access the dashboard and configure users and time limits.
+                </div>
+                
+                <h3>Server Architecture</h3>
+                <div class="diagram">
+                    <svg viewBox="0 0 600 300" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Docker Host -->
+                        <rect x="50" y="20" width="500" height="260" fill="none" stroke="#2d3748" stroke-width="2" stroke-dasharray="5,5" rx="10"/>
+                        <text x="300" y="45" text-anchor="middle" fill="#2d3748" font-size="16" font-weight="bold">Docker Host</text>
+                        
+                        <!-- Web Service Container -->
+                        <rect x="80" y="70" width="200" height="180" fill="#667eea" rx="8"/>
+                        <text x="180" y="95" text-anchor="middle" fill="white" font-size="16" font-weight="bold">webservice</text>
+                        <text x="180" y="120" text-anchor="middle" fill="white" font-size="12">ASP.NET Core 8</text>
+                        <text x="180" y="140" text-anchor="middle" fill="white" font-size="12">Blazor Dashboard</text>
+                        <text x="180" y="160" text-anchor="middle" fill="white" font-size="12">REST API</text>
+                        <text x="180" y="185" text-anchor="middle" fill="white" font-size="12">Port: 8080</text>
+                        <rect x="100" y="200" width="160" height="30" fill="rgba(255,255,255,0.2)" rx="4"/>
+                        <text x="180" y="220" text-anchor="middle" fill="white" font-size="11">http://server:8080</text>
+                        
+                        <!-- PostgreSQL Container -->
+                        <rect x="320" y="70" width="200" height="180" fill="#336791" rx="8"/>
+                        <text x="420" y="95" text-anchor="middle" fill="white" font-size="16" font-weight="bold">postgres</text>
+                        <text x="420" y="120" text-anchor="middle" fill="white" font-size="12">PostgreSQL 16</text>
+                        <text x="420" y="140" text-anchor="middle" fill="white" font-size="12">Database</text>
+                        <text x="420" y="160" text-anchor="middle" fill="white" font-size="12">Persistent Volume</text>
+                        <text x="420" y="185" text-anchor="middle" fill="white" font-size="12">Port: 5432 (internal)</text>
+                        
+                        <!-- Connection -->
+                        <path d="M 280 160 L 320 160" stroke="white" stroke-width="2" marker-end="url(#arrowwhite)"/>
+                        <text x="300" y="150" text-anchor="middle" fill="#2d3748" font-size="11" font-weight="bold">SQL</text>
+                        
+                        <defs>
+                            <marker id="arrowwhite" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="white"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+            </section>
+
+            <!-- DASHBOARD SECTION -->
+            <section id="dashboard">
+                <h2>📊 Web Dashboard</h2>
+                
+                <h3>Accessing the Dashboard</h3>
+                <p>Navigate to <code>http://your-server-ip:8080</code> in your web browser.</p>
+                
+                <div class="info-box">
+                    <strong>🔒 Authentication:</strong> The dashboard requires a password. Default is "admin" but you should change this via the <code>ADMIN_PASSWORD</code> environment variable.
+                </div>
+                
+                <h3>Dashboard Overview</h3>
+                <div class="diagram">
+                    <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Dashboard mockup -->
+                        <rect x="50" y="20" width="700" height="460" fill="white" stroke="#e2e8f0" stroke-width="2" rx="8"/>
+                        
+                        <!-- Header -->
+                        <rect x="50" y="20" width="700" height="60" fill="#667eea" rx="8 8 0 0"/>
+                        <text x="80" y="55" fill="white" font-size="20" font-weight="bold">🛡️ Parental Control System</text>
+                        <rect x="620" y="35" width="110" height="30" fill="rgba(255,255,255,0.2)" rx="4"/>
+                        <text x="675" y="55" text-anchor="middle" fill="white" font-size="12">🌐 Language ▼</text>
+                        
+                        <!-- System Status Card -->
+                        <rect x="80" y="100" width="640" height="80" fill="#f7fafc" stroke="#e2e8f0" stroke-width="1" rx="6"/>
+                        <text x="100" y="125" fill="#2d3748" font-size="16" font-weight="bold">✅ System Status</text>
+                        <text x="100" y="150" fill="#4a5568" font-size="12">Database: Online</text>
+                        <text x="250" y="150" fill="#4a5568" font-size="12">Active Users: 3</text>
+                        <text x="400" y="150" fill="#4a5568" font-size="12">Devices: 5</text>
+                        
+                        <!-- Cards Grid -->
+                        <rect x="80" y="200" width="200" height="120" fill="#ebf8ff" stroke="#4299e1" stroke-width="2" rx="6"/>
+                        <text x="180" y="235" text-anchor="middle" fill="#2d3748" font-size="16" font-weight="bold">👥 Users</text>
+                        <text x="180" y="260" text-anchor="middle" fill="#4a5568" font-size="12">Manage accounts</text>
+                        <rect x="140" y="280" width="80" height="25" fill="#4299e1" rx="4"/>
+                        <text x="180" y="297" text-anchor="middle" fill="white" font-size="12">Manage</text>
+                        
+                        <rect x="300" y="200" width="200" height="120" fill="#f0fff4" stroke="#48bb78" stroke-width="2" rx="6"/>
+                        <text x="400" y="235" text-anchor="middle" fill="#2d3748" font-size="16" font-weight="bold">⏰ Time Profiles</text>
+                        <text x="400" y="260" text-anchor="middle" fill="#4a5568" font-size="12">Set time limits</text>
+                        <rect x="360" y="280" width="80" height="25" fill="#48bb78" rx="4"/>
+                        <text x="400" y="297" text-anchor="middle" fill="white" font-size="12">Configure</text>
+                        
+                        <rect x="520" y="200" width="200" height="120" fill="#fffaf0" stroke="#ed8936" stroke-width="2" rx="6"/>
+                        <text x="620" y="235" text-anchor="middle" fill="#2d3748" font-size="16" font-weight="bold">🕐 Allowed Hours</text>
+                        <text x="620" y="260" text-anchor="middle" fill="#4a5568" font-size="12">Set schedules</text>
+                        <rect x="580" y="280" width="80" height="25" fill="#ed8936" rx="4"/>
+                        <text x="620" y="297" text-anchor="middle" fill="white" font-size="12">Set Hours</text>
+                        
+                        <rect x="80" y="340" width="200" height="120" fill="#faf5ff" stroke="#9f7aea" stroke-width="2" rx="6"/>
+                        <text x="180" y="375" text-anchor="middle" fill="#2d3748" font-size="16" font-weight="bold">💻 Devices</text>
+                        <text x="180" y="400" text-anchor="middle" fill="#4a5568" font-size="12">View computers</text>
+                        <rect x="140" y="420" width="80" height="25" fill="#9f7aea" rx="4"/>
+                        <text x="180" y="437" text-anchor="middle" fill="white" font-size="12">View</text>
+                        
+                        <rect x="300" y="340" width="200" height="120" fill="#fff5f5" stroke="#f56565" stroke-width="2" rx="6"/>
+                        <text x="400" y="375" text-anchor="middle" fill="#2d3748" font-size="16" font-weight="bold">📊 Reports</text>
+                        <text x="400" y="400" text-anchor="middle" fill="#4a5568" font-size="12">Usage statistics</text>
+                        <rect x="360" y="420" width="80" height="25" fill="#f56565" rx="4"/>
+                        <text x="400" y="437" text-anchor="middle" fill="white" font-size="12">View</text>
+                    </svg>
+                </div>
+                
+                <h3>Managing Users</h3>
+                <p>Click on <strong>Users</strong> to manage user accounts:</p>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Action</th>
+                            <th>Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Add User</strong></td>
+                            <td>Create a new user account manually (users are also auto-created on first login)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Edit User</strong></td>
+                            <td>Change username, full name, email, account type (Parent/Child/Unassigned)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>⏱️ Time Button</strong></td>
+                            <td>Grant emergency time (+5, +15, +30, +60 minutes) for today only</td>
+                        </tr>
+                        <tr>
+                            <td><strong>👥 Aliases</strong></td>
+                            <td>Link multiple usernames to the same account (e.g., "john" and "John")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Delete User</strong></td>
+                            <td>Remove user account (cannot be undone)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="info-box">
+                    <strong>💡 Account Types:</strong>
+                    <ul>
+                        <li><strong>Parent:</strong> No time limits, unrestricted access</li>
+                        <li><strong>Child:</strong> Subject to time limits and restrictions</li>
+                        <li><strong>Unassigned:</strong> Needs configuration (default for auto-created users)</li>
+                    </ul>
+                </div>
+                
+                <h3>Setting Time Limits</h3>
+                <p>Click on <strong>Time Profiles</strong> to configure time limits:</p>
+                
+                <ol class="step-list">
+                    <li>
+                        <h4>Click "+ Add Profile"</h4>
+                        <p>Create a new time profile for a user</p>
+                    </li>
+                    <li>
+                        <h4>Select User</h4>
+                        <p>Choose which user this profile applies to</p>
+                    </li>
+                    <li>
+                        <h4>Set Daily Limits</h4>
+                        <p>Enter time limits in minutes for each day of the week:</p>
+                        <ul>
+                            <li>Monday through Sunday</li>
+                            <li>0 = No access</li>
+                            <li>Leave empty = Unlimited</li>
+                            <li>Example: 120 = 2 hours</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h4>Set Weekly Limit (Optional)</h4>
+                        <p>Total minutes allowed per week across all days</p>
+                    </li>
+                    <li>
+                        <h4>Save Profile</h4>
+                        <p>Profile becomes active immediately</p>
+                    </li>
+                </ol>
+                
+                <div class="warning-box">
+                    <strong>⚠️ Time Limits:</strong> Both daily AND weekly limits are enforced. If either limit is reached, access is blocked.
+                </div>
+                
+                <h3>Configuring Allowed Hours</h3>
+                <p>Click on <strong>Allowed Hours</strong> to set when users can access computers:</p>
+                
+                <p>Example: Allow computer use only from 3:00 PM to 8:00 PM on weekdays</p>
+                
+                <ol class="step-list">
+                    <li>Click "+ Add Schedule"</li>
+                    <li>Select user</li>
+                    <li>Select day (Monday-Sunday)</li>
+                    <li>Set start time (e.g., 15:00)</li>
+                    <li>Set end time (e.g., 20:00)</li>
+                    <li>Save</li>
+                </ol>
+                
+                <div class="info-box">
+                    <strong>💡 Tip:</strong> You can create multiple schedules for the same user on different days. For example, different hours for weekdays vs. weekends.
+                </div>
+                
+                <h3>Language Selection</h3>
+                <p>The dashboard supports 5 languages:</p>
+                <ul>
+                    <li>🇬🇧 English</li>
+                    <li>🇨🇿 Čeština (Czech)</li>
+                    <li>🇩🇪 Deutsch (German)</li>
+                    <li>🇫🇷 Français (French)</li>
+                    <li>🇪🇸 Español (Spanish)</li>
+                </ul>
+                
+                <p>The language is automatically detected from your browser, but you can change it using the dropdown in the top-right corner.</p>
+            </section>
+
+            <!-- CLIENT SETUP SECTION -->
+            <section id="client">
+                <h2>💻 Client Setup</h2>
+                
+                <h3>Linux Client Installation</h3>
+                
+                <h4>Option 1: Automatic Installation (Recommended)</h4>
+                <p>One-line installation script:</p>
+                <pre><code>curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/install-linux-client.sh | sudo bash -s -- http://your-server-ip:8080</code></pre>
+                
+                <p>Or interactive mode (prompts for server URL):</p>
+                <pre><code>curl -fsSL https://raw.githubusercontent.com/crowndip/timekeeper-net/main/scripts/install-linux-client.sh | sudo bash</code></pre>
+                
+                <div class="success-box">
+                    <strong>✅ What the script does:</strong>
+                    <ul>
+                        <li>Downloads latest client release</li>
+                        <li>Installs to <code>/opt/parental-control</code></li>
+                        <li>Configures systemd service</li>
+                        <li>Starts service automatically</li>
+                    </ul>
+                </div>
+                
+                <h4>Option 2: Ubuntu/Debian Package</h4>
+                <pre><code># Download .deb package
+wget https://github.com/crowndip/timekeeper-net/releases/latest/download/parental-control-client_amd64.deb
+
+# Install
+sudo dpkg -i parental-control-client_*.deb
+
+# Configure server URL
+sudo nano /opt/parental-control/appsettings.json
+
+# Start service
+sudo systemctl start parental-control-client</code></pre>
+                
+                <h3>Windows Client Installation</h3>
+                
+                <ol class="step-list">
+                    <li>
+                        <h4>Download Windows Client</h4>
+                        <p>Download <code>client-windows-x64.zip</code> from <a href="https://github.com/crowndip/timekeeper-net/releases">GitHub Releases</a></p>
+                    </li>
+                    <li>
+                        <h4>Extract Files</h4>
+                        <p>Extract to a temporary folder (e.g., <code>C:\Temp\parental-control</code>)</p>
+                    </li>
+                    <li>
+                        <h4>Run Installer</h4>
+                        <p>Open PowerShell as Administrator and run:</p>
+                        <pre><code>.\install-windows-client.ps1 -ServerUrl "http://your-server-ip:8080"</code></pre>
+                    </li>
+                    <li>
+                        <h4>Verify Installation</h4>
+                        <pre><code>Get-Service ParentalControlClient</code></pre>
+                        <p>Status should be "Running"</p>
+                    </li>
+                </ol>
+                
+                <h3>Client Configuration</h3>
+                
+                <p>The client configuration file is located at:</p>
+                <ul>
+                    <li><strong>Linux:</strong> <code>/opt/parental-control/appsettings.json</code></li>
+                    <li><strong>Windows:</strong> <code>C:\Program Files\ParentalControl\appsettings.json</code></li>
+                </ul>
+                
+                <pre><code>{
+  "ParentalControl": {
+    "ServerUrl": "http://your-server-ip:8080",
+    "TickIntervalSeconds": 60
+  }
+}</code></pre>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Setting</th>
+                            <th>Description</th>
+                            <th>Default</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>ServerUrl</code></td>
+                            <td>URL of the central server</td>
+                            <td>http://localhost:8080</td>
+                        </tr>
+                        <tr>
+                            <td><code>TickIntervalSeconds</code></td>
+                            <td>How often to check with server (in seconds)</td>
+                            <td>60</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <div class="warning-box">
+                    <strong>⚠️ After changing configuration:</strong>
+                    <ul>
+                        <li><strong>Linux:</strong> <code>sudo systemctl restart parental-control-client</code></li>
+                        <li><strong>Windows:</strong> <code>Restart-Service ParentalControlClient</code></li>
+                    </ul>
+                </div>
+                
+                <h3>How the Client Works</h3>
+                
+                <div class="diagram">
+                    <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Timeline -->
+                        <line x1="50" y1="200" x2="650" y2="200" stroke="#2d3748" stroke-width="2"/>
+                        
+                        <!-- Time markers -->
+                        <circle cx="100" cy="200" r="8" fill="#667eea"/>
+                        <text x="100" y="230" text-anchor="middle" font-size="12">0:00</text>
+                        <text x="100" y="180" text-anchor="middle" font-size="14" font-weight="bold">Login</text>
+                        
+                        <circle cx="250" cy="200" r="8" fill="#48bb78"/>
+                        <text x="250" y="230" text-anchor="middle" font-size="12">0:01</text>
+                        <text x="250" y="170" text-anchor="middle" font-size="12">Check-in #1</text>
+                        <text x="250" y="185" text-anchor="middle" font-size="11" fill="#4a5568">Report 1 min</text>
+                        
+                        <circle cx="400" cy="200" r="8" fill="#48bb78"/>
+                        <text x="400" y="230" text-anchor="middle" font-size="12">0:02</text>
+                        <text x="400" y="170" text-anchor="middle" font-size="12">Check-in #2</text>
+                        <text x="400" y="185" text-anchor="middle" font-size="11" fill="#4a5568">Report 1 min</text>
+                        
+                        <circle cx="550" cy="200" r="8" fill="#f56565"/>
+                        <text x="550" y="230" text-anchor="middle" font-size="12">2:00</text>
+                        <text x="550" y="180" text-anchor="middle" font-size="14" font-weight="bold" fill="#f56565">Logout</text>
+                        
+                        <!-- Arrows -->
+                        <path d="M 100 200 L 240 200" stroke="#4299e1" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowblue)"/>
+                        <path d="M 260 200 L 390 200" stroke="#4299e1" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowblue)"/>
+                        <path d="M 410 200 L 540 200" stroke="#4299e1" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrowblue)"/>
+                        
+                        <!-- Info boxes -->
+                        <rect x="50" y="280" width="280" height="80" fill="#ebf8ff" stroke="#4299e1" stroke-width="2" rx="6"/>
+                        <text x="190" y="305" text-anchor="middle" font-size="14" font-weight="bold">Every Minute:</text>
+                        <text x="190" y="325" text-anchor="middle" font-size="12">1. Report usage to server</text>
+                        <text x="190" y="345" text-anchor="middle" font-size="12">2. Get remaining time</text>
+                        
+                        <rect x="370" y="280" width="280" height="80" fill="#fff5f5" stroke="#f56565" stroke-width="2" rx="6"/>
+                        <text x="510" y="305" text-anchor="middle" font-size="14" font-weight="bold">When Time Expires:</text>
+                        <text x="510" y="325" text-anchor="middle" font-size="12">1. Show warning notification</text>
+                        <text x="510" y="345" text-anchor="middle" font-size="12">2. Automatic logout/lock</text>
+                        
+                        <defs>
+                            <marker id="arrowblue" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#4299e1"/>
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+                
+                <h3>Verifying Client Status</h3>
+                
+                <h4>Linux</h4>
+                <pre><code># Check service status
+sudo systemctl status parental-control-client
+
+# View logs
+sudo journalctl -u parental-control-client -f
+
+# Check if running
+ps aux | grep ParentalControl</code></pre>
+                
+                <h4>Windows</h4>
+                <pre><code># Check service status
+Get-Service ParentalControlClient
+
+# View logs
+Get-Content "C:\ProgramData\ParentalControl\Logs\client-*.log" -Tail 50
+
+# Check if running
+Get-Process | Where-Object {$_.Name -like "*ParentalControl*"}</code></pre>
+            </section>
+
+            <!-- TRAY APPLICATION SECTION -->
+            <section id="tray">
+                <h2>🔔 Tray Application</h2>
+                
+                <p>The tray application provides visual feedback about remaining time and system status.</p>
+                
+                <h3>Tray Icon States</h3>
+                
+                <div class="diagram">
+                    <svg viewBox="0 0 800 300" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Normal State -->
+                        <circle cx="100" cy="80" r="40" fill="#48bb78" stroke="#2d3748" stroke-width="3"/>
+                        <text x="100" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">✓</text>
+                        <text x="100" y="150" text-anchor="middle" font-size="14" font-weight="bold">Normal</text>
+                        <text x="100" y="170" text-anchor="middle" font-size="12" fill="#4a5568">Plenty of time</text>
+                        <text x="100" y="190" text-anchor="middle" font-size="12" fill="#4a5568">remaining</text>
+                        
+                        <!-- Warning State -->
+                        <circle cx="300" cy="80" r="40" fill="#ed8936" stroke="#2d3748" stroke-width="3"/>
+                        <text x="300" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">!</text>
+                        <text x="300" y="150" text-anchor="middle" font-size="14" font-weight="bold">Warning</text>
+                        <text x="300" y="170" text-anchor="middle" font-size="12" fill="#4a5568">Less than 10</text>
+                        <text x="300" y="190" text-anchor="middle" font-size="12" fill="#4a5568">minutes left</text>
+                        
+                        <!-- Critical State -->
+                        <circle cx="500" cy="80" r="40" fill="#f56565" stroke="#2d3748" stroke-width="3"/>
+                        <text x="500" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">⏰</text>
+                        <text x="500" y="150" text-anchor="middle" font-size="14" font-weight="bold">Critical</text>
+                        <text x="500" y="170" text-anchor="middle" font-size="12" fill="#4a5568">Less than 5</text>
+                        <text x="500" y="190" text-anchor="middle" font-size="12" fill="#4a5568">minutes left</text>
+                        
+                        <!-- Offline State -->
+                        <circle cx="700" cy="80" r="40" fill="#a0aec0" stroke="#2d3748" stroke-width="3"/>
+                        <text x="700" y="90" text-anchor="middle" fill="white" font-size="30" font-weight="bold">⚠</text>
+                        <text x="700" y="150" text-anchor="middle" font-size="14" font-weight="bold">Offline</text>
+                        <text x="700" y="170" text-anchor="middle" font-size="12" fill="#4a5568">No server</text>
+                        <text x="700" y="190" text-anchor="middle" font-size="12" fill="#4a5568">connection</text>
+                    </svg>
+                </div>
+                
+                <h3>Notification Types</h3>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Notification</th>
+                            <th>When</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Time Warning</strong></td>
+                            <td>10 minutes remaining</td>
+                            <td>Save your work</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Critical Warning</strong></td>
+                            <td>5 minutes remaining</td>
+                            <td>Save and close applications</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Final Warning</strong></td>
+                            <td>1 minute remaining</td>
+                            <td>Logout imminent</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Time Expired</strong></td>
+                            <td>0 minutes remaining</td>
+                            <td>Automatic logout/lock</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Outside Allowed Hours</strong></td>
+                            <td>Login outside schedule</td>
+                            <td>Immediate logout</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>Tray Menu Options</h3>
+                
+                <div class="diagram">
+                    <svg viewBox="0 0 400 350" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Tray icon -->
+                        <circle cx="50" cy="50" r="25" fill="#48bb78" stroke="#2d3748" stroke-width="2"/>
+                        <text x="50" y="60" text-anchor="middle" fill="white" font-size="20" font-weight="bold">✓</text>
+                        
+                        <!-- Menu -->
+                        <rect x="100" y="20" width="250" height="300" fill="white" stroke="#2d3748" stroke-width="2" rx="8"/>
+                        
+                        <!-- Menu items -->
+                        <text x="120" y="50" font-size="14" font-weight="bold">Parental Control</text>
+                        <line x1="110" y1="60" x2="340" y2="60" stroke="#e2e8f0" stroke-width="1"/>
+                        
+                        <text x="120" y="90" font-size="13">⏱️ Time Remaining:</text>
+                        <text x="140" y="110" font-size="16" font-weight="bold" fill="#48bb78">1h 45m</text>
+                        
+                        <line x1="110" y1="125" x2="340" y2="125" stroke="#e2e8f0" stroke-width="1"/>
+                        
+                        <text x="120" y="155" font-size="13">📊 Used Today:</text>
+                        <text x="140" y="175" font-size="13" fill="#4a5568">15 minutes</text>
+                        
+                        <line x1="110" y1="190" x2="340" y2="190" stroke="#e2e8f0" stroke-width="1"/>
+                        
+                        <text x="120" y="220" font-size="13">📅 Daily Limit:</text>
+                        <text x="140" y="240" font-size="13" fill="#4a5568">120 minutes</text>
+                        
+                        <line x1="110" y1="255" x2="340" y2="255" stroke="#e2e8f0" stroke-width="1"/>
+                        
+                        <rect x="120" y="270" width="210" height="30" fill="#f7fafc" rx="4"/>
+                        <text x="225" y="292" text-anchor="middle" font-size="13">🚪 Exit</text>
+                    </svg>
+                </div>
+                
+                <h3>Linux Tray (Avalonia UI)</h3>
+                <p>The Linux client uses Avalonia UI for the system tray icon. It appears in the system tray of most desktop environments:</p>
+                <ul>
+                    <li>GNOME (with AppIndicator extension)</li>
+                    <li>KDE Plasma</li>
+                    <li>XFCE</li>
+                    <li>Cinnamon</li>
+                    <li>MATE</li>
+                </ul>
+                
+                <div class="info-box">
+                    <strong>💡 GNOME Users:</strong> Install the AppIndicator extension for tray icon support:
+                    <pre><code>sudo apt install gnome-shell-extension-appindicator</code></pre>
+                </div>
+                
+                <h3>Windows Tray (WPF UI)</h3>
+                <p>The Windows client uses WPF for the system tray icon. It appears in the Windows system tray (bottom-right corner).</p>
+                
+                <div class="info-box">
+                    <strong>💡 Tip:</strong> If you don't see the icon, click the "^" arrow in the system tray to show hidden icons.
+                </div>
+                
+                <h3>Notification Examples</h3>
+                
+                <div class="diagram">
+                    <svg viewBox="0 0 700 400" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Warning notification -->
+                        <rect x="50" y="30" width="300" height="100" fill="#fffaf0" stroke="#ed8936" stroke-width="3" rx="8"/>
+                        <text x="70" y="60" font-size="16" font-weight="bold" fill="#ed8936">⚠️ Time Warning</text>
+                        <text x="70" y="85" font-size="13" fill="#2d3748">You have 10 minutes remaining</text>
+                        <text x="70" y="105" font-size="13" fill="#4a5568">Please save your work</text>
+                        
+                        <!-- Critical notification -->
+                        <rect x="50" y="160" width="300" height="100" fill="#fff5f5" stroke="#f56565" stroke-width="3" rx="8"/>
+                        <text x="70" y="190" font-size="16" font-weight="bold" fill="#f56565">🚨 Critical Warning</text>
+                        <text x="70" y="215" font-size="13" fill="#2d3748">Only 5 minutes left!</text>
+                        <text x="70" y="235" font-size="13" fill="#4a5568">Save and close applications now</text>
+                        
+                        <!-- Expired notification -->
+                        <rect x="380" y="30" width="300" height="100" fill="#fff5f5" stroke="#c53030" stroke-width="3" rx="8"/>
+                        <text x="400" y="60" font-size="16" font-weight="bold" fill="#c53030">⏰ Time Expired</text>
+                        <text x="400" y="85" font-size="13" fill="#2d3748">Your time is up</text>
+                        <text x="400" y="105" font-size="13" fill="#4a5568">Logging out in 30 seconds...</text>
+                        
+                        <!-- Outside hours notification -->
+                        <rect x="380" y="160" width="300" height="100" fill="#fff5f5" stroke="#c53030" stroke-width="3" rx="8"/>
+                        <text x="400" y="190" font-size="16" font-weight="bold" fill="#c53030">🚫 Outside Allowed Hours</text>
+                        <text x="400" y="215" font-size="13" fill="#2d3748">Computer use not allowed now</text>
+                        <text x="400" y="235" font-size="13" fill="#4a5568">Allowed: 3:00 PM - 8:00 PM</text>
+                    </svg>
+                </div>
+            </section>
+
+            <!-- USAGE SCENARIOS SECTION -->
+            <section id="scenarios">
+                <h2>📝 Usage Scenarios</h2>
+                
+                <h3>Scenario 1: Basic Time Limits</h3>
+                <p><strong>Goal:</strong> Limit child to 2 hours per day on weekdays, 3 hours on weekends</p>
+                
+                <ol class="step-list">
+                    <li>
+                        <h4>Create User</h4>
+                        <p>Go to <strong>Users</strong> → <strong>Add User</strong></p>
+                        <ul>
+                            <li>Username: <code>sarah</code></li>
+                            <li>Account Type: <strong>Child</strong></li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h4>Create Time Profile</h4>
+                        <p>Go to <strong>Time Profiles</strong> → <strong>Add Profile</strong></p>
+                        <ul>
+                            <li>User: <code>sarah</code></li>
+                            <li>Monday-Friday: <code>120</code> minutes</li>
+                            <li>Saturday-Sunday: <code>180</code> minutes</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h4>Install Client</h4>
+                        <p>Install client on child's computer(s)</p>
+                    </li>
+                    <li>
+                        <h4>Done!</h4>
+                        <p>Sarah can now use the computer for 2 hours on weekdays and 3 hours on weekends</p>
+                    </li>
+                </ol>
+                
+                <h3>Scenario 2: Homework Hours Only</h3>
+                <p><strong>Goal:</strong> Allow computer use only during homework time (3 PM - 8 PM)</p>
+                
+                <ol class="step-list">
+                    <li>
+                        <h4>Create User</h4>
+                        <p>Username: <code>alex</code>, Account Type: <strong>Child</strong></p>
+                    </li>
+                    <li>
+                        <h4>Set Allowed Hours</h4>
+                        <p>Go to <strong>Allowed Hours</strong> → <strong>Add Schedule</strong></p>
+                        <p>Create schedules for Monday through Friday:</p>
+                        <ul>
+                            <li>User: <code>alex</code></li>
+                            <li>Day: Monday</li>
+                            <li>Start: <code>15:00</code></li>
+                            <li>End: <code>20:00</code></li>
+                        </ul>
+                        <p>Repeat for Tuesday through Friday</p>
+                    </li>
+                    <li>
+                        <h4>Optional: Add Time Limit</h4>
+                        <p>Create time profile with 180 minutes daily limit</p>
+                    </li>
+                </ol>
+                
+                <div class="info-box">
+                    <strong>💡 Result:</strong> Alex can only log in between 3 PM and 8 PM on weekdays. Any login attempt outside these hours will be immediately terminated.
+                </div>
+                
+                <h3>Scenario 3: Multiple Devices, Shared Time</h3>
+                <p><strong>Goal:</strong> Child has laptop and desktop, time limit applies to both</p>
+                
+                <div class="diagram">
+                    <svg viewBox="0 0 700 300" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Server -->
+                        <rect x="275" y="20" width="150" height="80" fill="#667eea" rx="8"/>
+                        <text x="350" y="50" text-anchor="middle" fill="white" font-size="14" font-weight="bold">Server</text>
+                        <text x="350" y="70" text-anchor="middle" fill="white" font-size="12">Daily Limit: 120 min</text>
+                        <text x="350" y="90" text-anchor="middle" fill="white" font-size="12">Used: 45 min</text>
+                        
+                        <!-- Laptop -->
+                        <rect x="50" y="180" width="150" height="80" fill="#48bb78" rx="8"/>
+                        <text x="125" y="210" text-anchor="middle" fill="white" font-size="14" font-weight="bold">💻 Laptop</text>
+                        <text x="125" y="230" text-anchor="middle" fill="white" font-size="12">Used: 30 min</text>
+                        <text x="125" y="250" text-anchor="middle" fill="white" font-size="12">Remaining: 75 min</text>
+                        
+                        <!-- Desktop -->
+                        <rect x="500" y="180" width="150" height="80" fill="#4299e1" rx="8"/>
+                        <text x="575" y="210" text-anchor="middle" fill="white" font-size="14" font-weight="bold">🖥️ Desktop</text>
+                        <text x="575" y="230" text-anchor="middle" fill="white" font-size="12">Used: 15 min</text>
+                        <text x="575" y="250" text-anchor="middle" fill="white" font-size="12">Remaining: 75 min</text>
+                        
+                        <!-- Arrows -->
+                        <path d="M 350 100 L 125 180" stroke="#2d3748" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        <path d="M 350 100 L 575 180" stroke="#2d3748" stroke-width="2" marker-end="url(#arrowhead)"/>
+                        
+                        <text x="220" y="140" fill="#2d3748" font-size="12">Sync</text>
+                        <text x="450" y="140" fill="#2d3748" font-size="12">Sync</text>
+                    </svg>
+                </div>
+                
+                <p><strong>How it works:</strong></p>
+                <ul>
+                    <li>Child uses laptop for 30 minutes → Server records 30 minutes used</li>
+                    <li>Child switches to desktop → Server reports 75 minutes remaining (120 - 30 - 15)</li>
+                    <li>Total time across both devices: 120 minutes per day</li>
+                </ul>
+                
+                <h3>Scenario 4: Emergency Time Grant</h3>
+                <p><strong>Goal:</strong> Child needs extra time for school project</p>
+                
+                <ol class="step-list">
+                    <li>
+                        <h4>Open Dashboard</h4>
+                        <p>Navigate to <strong>Users</strong> page</p>
+                    </li>
+                    <li>
+                        <h4>Click Time Button</h4>
+                        <p>Click the <strong>⏱️ Time</strong> button next to the user</p>
+                    </li>
+                    <li>
+                        <h4>Grant Extra Time</h4>
+                        <p>Choose from quick options:</p>
+                        <ul>
+                            <li>+5 minutes</li>
+                            <li>+15 minutes</li>
+                            <li>+30 minutes</li>
+                            <li>+60 minutes</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <h4>Time Added</h4>
+                        <p>Extra time is added immediately and applies only to today</p>
+                    </li>
+                </ol>
+                
+                <div class="warning-box">
+                    <strong>⚠️ Note:</strong> Emergency time grants are for TODAY ONLY. Tomorrow's limit resets to normal.
+                </div>
+                
+                <h3>Scenario 5: Parent Account (Unlimited)</h3>
+                <p><strong>Goal:</strong> Parent needs unrestricted access</p>
+                
+                <ol class="step-list">
+                    <li>
+                        <h4>Create User</h4>
+                        <p>Username: <code>mom</code>, Account Type: <strong>Parent</strong></p>
+                    </li>
+                    <li>
+                        <h4>No Time Profile Needed</h4>
+                        <p>Parent accounts have unlimited access by default</p>
+                    </li>
+                    <li>
+                        <h4>Done!</h4>
+                        <p>Mom can use the computer without any time restrictions</p>
+                    </li>
+                </ol>
+                
+                <h3>Scenario 6: Username Aliases</h3>
+                <p><strong>Goal:</strong> Child has multiple usernames (john, John, johnny) - treat as same user</p>
+                
+                <ol class="step-list">
+                    <li>
+                        <h4>Primary User Exists</h4>
+                        <p>User <code>john</code> already exists with time limits</p>
+                    </li>
+                    <li>
+                        <h4>Child Logs In as "John"</h4>
+                        <p>System auto-creates user <code>John</code> (capital J)</p>
+                    </li>
+                    <li>
+                        <h4>Link Accounts</h4>
+                        <p>Go to <strong>Users</strong> → Click <strong>👥 Aliases</strong> next to <code>john</code></p>
+                        <p>Select <code>John</code> from dropdown → Click <strong>Add Alias</strong></p>
+                    </li>
+                    <li>
+                        <h4>Done!</h4>
+                        <p>Now <code>John</code> shares the same time limits as <code>john</code></p>
+                    </li>
+                </ol>
+                
+                <div class="info-box">
+                    <strong>💡 Tip:</strong> Aliases are useful when:
+                    <ul>
+                        <li>Different capitalization (john vs John)</li>
+                        <li>Nicknames (johnny, john)</li>
+                        <li>Different computers use different username formats</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- TROUBLESHOOTING SECTION -->
+            <section id="troubleshooting">
+                <h2>🔧 Troubleshooting</h2>
+                
+                <h3>Server Issues</h3>
+                
+                <h4>Problem: Cannot access dashboard</h4>
+                <p><strong>Solutions:</strong></p>
+                <ol>
+                    <li>Check if containers are running:
+                        <pre><code>docker ps</code></pre>
+                        You should see <code>webservice</code> and <code>postgres</code>
+                    </li>
+                    <li>Check logs:
+                        <pre><code>docker logs webservice</code></pre>
+                    </li>
+                    <li>Verify port 8080 is not blocked:
+                        <pre><code>curl http://localhost:8080</code></pre>
+                    </li>
+                    <li>Restart containers:
+                        <pre><code>docker-compose restart</code></pre>
+                    </li>
+                </ol>
+                
+                <h4>Problem: Database connection errors</h4>
+                <p><strong>Solutions:</strong></p>
+                <ol>
+                    <li>Check PostgreSQL container:
+                        <pre><code>docker logs postgres</code></pre>
+                    </li>
+                    <li>Verify database password matches in docker-compose.yml</li>
+                    <li>Restart both containers:
+                        <pre><code>docker-compose down
+docker-compose up -d</code></pre>
+                    </li>
+                </ol>
+                
+                <h3>Client Issues</h3>
+                
+                <h4>Problem: Client not connecting to server</h4>
+                <p><strong>Solutions:</strong></p>
+                
+                <div class="diagram">
+                    <svg viewBox="0 0 600 250" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Checklist -->
+                        <rect x="50" y="20" width="500" height="210" fill="#f7fafc" stroke="#e2e8f0" stroke-width="2" rx="8"/>
+                        
+                        <text x="80" y="50" font-size="16" font-weight="bold">Connection Checklist:</text>
+                        
+                        <circle cx="80" cy="80" r="8" fill="#48bb78"/>
+                        <text x="100" y="85" font-size="13">1. Verify ServerUrl in appsettings.json</text>
+                        
+                        <circle cx="80" cy="110" r="8" fill="#48bb78"/>
+                        <text x="100" y="115" font-size="13">2. Test server connectivity: curl http://server:8080</text>
+                        
+                        <circle cx="80" cy="140" r="8" fill="#48bb78"/>
+                        <text x="100" y="145" font-size="13">3. Check firewall rules (port 8080)</text>
+                        
+                        <circle cx="80" cy="170" r="8" fill="#48bb78"/>
+                        <text x="100" y="175" font-size="13">4. Restart client service</text>
+                        
+                        <circle cx="80" cy="200" r="8" fill="#48bb78"/>
+                        <text x="100" y="205" font-size="13">5. Check client logs for errors</text>
+                    </svg>
+                </div>
+                
+                <p><strong>Linux:</strong></p>
+                <pre><code># Test connection
+curl http://your-server-ip:8080
+
+# Check configuration
+cat /opt/parental-control/appsettings.json
+
+# Restart service
+sudo systemctl restart parental-control-client
+
+# View logs
+sudo journalctl -u parental-control-client -n 50</code></pre>
+                
+                <p><strong>Windows:</strong></p>
+                <pre><code># Test connection
+Invoke-WebRequest http://your-server-ip:8080
+
+# Check configuration
+Get-Content "C:\Program Files\ParentalControl\appsettings.json"
+
+# Restart service
+Restart-Service ParentalControlClient
+
+# View logs
+Get-Content "C:\ProgramData\ParentalControl\Logs\client-*.log" -Tail 50</code></pre>
+                
+                <h4>Problem: Tray icon not showing</h4>
+                <p><strong>Linux Solutions:</strong></p>
+                <ul>
+                    <li><strong>GNOME:</strong> Install AppIndicator extension
+                        <pre><code>sudo apt install gnome-shell-extension-appindicator</code></pre>
+                    </li>
+                    <li><strong>KDE:</strong> Enable system tray in panel settings</li>
+                    <li><strong>Check if UI process is running:</strong>
+                        <pre><code>ps aux | grep ParentalControl.Client.UI</code></pre>
+                    </li>
+                </ul>
+                
+                <p><strong>Windows Solutions:</strong></p>
+                <ul>
+                    <li>Click "^" arrow in system tray to show hidden icons</li>
+                    <li>Check if UI process is running:
+                        <pre><code>Get-Process | Where-Object {$_.Name -like "*ParentalControl*"}</code></pre>
+                    </li>
+                </ul>
+                
+                <h4>Problem: User not being logged out when time expires</h4>
+                <p><strong>Solutions:</strong></p>
+                <ol>
+                    <li>Verify time profile is active in dashboard</li>
+                    <li>Check client is reporting usage:
+                        <ul>
+                            <li>Go to <strong>Devices</strong> in dashboard</li>
+                            <li>Verify "Last Seen" is recent (within 1 minute)</li>
+                        </ul>
+                    </li>
+                    <li>Check client logs for enforcement errors</li>
+                    <li>Verify user account type is "Child" (not "Parent")</li>
+                </ol>
+                
+                <h3>Common Issues</h3>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Issue</th>
+                            <th>Cause</th>
+                            <th>Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Time not syncing across devices</td>
+                            <td>Clients not connecting to same server</td>
+                            <td>Verify ServerUrl is identical on all clients</td>
+                        </tr>
+                        <tr>
+                            <td>User has unlimited time</td>
+                            <td>Account type is "Parent" or "Unassigned"</td>
+                            <td>Change account type to "Child"</td>
+                        </tr>
+                        <tr>
+                            <td>Dashboard shows wrong language</td>
+                            <td>Browser language detection</td>
+                            <td>Use language selector in top-right corner</td>
+                        </tr>
+                        <tr>
+                            <td>Cannot edit in dashboard</td>
+                            <td>Read-only mode (not authenticated)</td>
+                            <td>Click "🔒 Unlock" and enter admin password</td>
+                        </tr>
+                        <tr>
+                            <td>Multiple users for same person</td>
+                            <td>Different username capitalization</td>
+                            <td>Use Aliases feature to link accounts</td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+                <h3>Getting Help</h3>
+                
+                <div class="info-box">
+                    <strong>📚 Resources:</strong>
+                    <ul>
+                        <li><strong>GitHub Repository:</strong> <a href="https://github.com/crowndip/timekeeper-net">https://github.com/crowndip/timekeeper-net</a></li>
+                        <li><strong>Issues:</strong> Report bugs at <a href="https://github.com/crowndip/timekeeper-net/issues">GitHub Issues</a></li>
+                        <li><strong>Documentation:</strong> See README.md and docs/ folder</li>
+                    </ul>
+                </div>
+                
+                <h3>Log Locations</h3>
+                
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Component</th>
+                            <th>Platform</th>
+                            <th>Log Location</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Server</td>
+                            <td>Docker</td>
+                            <td><code>docker logs webservice</code></td>
+                        </tr>
+                        <tr>
+                            <td>Client</td>
+                            <td>Linux</td>
+                            <td><code>journalctl -u parental-control-client</code></td>
+                        </tr>
+                        <tr>
+                            <td>Client</td>
+                            <td>Windows</td>
+                            <td><code>C:\ProgramData\ParentalControl\Logs\</code></td>
+                        </tr>
+                        <tr>
+                            <td>Database</td>
+                            <td>Docker</td>
+                            <td><code>docker logs postgres</code></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+            
+        </div>
+        
+        <footer>
+            <p><strong>Parental Control System</strong> - Version 1.45.0</p>
+            <p>Open Source Project - <a href="https://github.com/crowndip/timekeeper-net" style="color: #68d391;">GitHub Repository</a></p>
+            <p style="margin-top: 10px; opacity: 0.8;">© 2026 - Licensed under open source license</p>
+        </footer>
+    </div>
+</body>
+</html>
