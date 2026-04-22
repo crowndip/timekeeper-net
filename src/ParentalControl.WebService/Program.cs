@@ -99,6 +99,10 @@ try
             Log.Warning(ex, "Database check failed. Connection string: {ConnectionString}", 
                 connectionString.Replace(builder.Configuration["DbPassword"] ?? "", "***"));
         }
+        
+        // Force LocalizationService to load at startup
+        var localizationService = scope.ServiceProvider.GetRequiredService<LocalizationService>();
+        Log.Information("LocalizationService initialized");
     }
 
     if (app.Environment.IsDevelopment())
