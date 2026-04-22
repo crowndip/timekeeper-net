@@ -11,3 +11,4 @@ postgres_data/
 appsettings.Development.json
 # Work folder is tracked but can be ignored in local development
 # work/
+debug.md
