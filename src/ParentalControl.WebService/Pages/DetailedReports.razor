@@ -7,6 +7,7 @@
 @inject ITimeCalculationService TimeCalc
 @inject LocalizationService Localizer
 @inject LanguageService LangService
+@inject ILogger<DetailedReports> Logger
 
 <PageTitle>@T("DetailedReports.PageTitle")</PageTitle>
 
@@ -150,7 +151,7 @@
         @if (otherReports.Any())
         {
             <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
-                <h3 style="margin-bottom: 20px; color: #6b7280;">Parent & Technical Accounts</h3>
+                <h3 style="margin-bottom: 20px; color: #6b7280;">Other Accounts (Parent, Technical, Unassigned)</h3>
                 
                 @foreach (var report in otherReports)
                 {
@@ -271,8 +272,11 @@
         
         // Get all users with Parent or Technical account type
         var otherUsers = await DbContext.Users
-            .Where(u => u.AccountType == AccountType.Parent || u.AccountType == AccountType.Technical)
+            .Where(u => u.AccountType != AccountType.Child)
             .ToListAsync();
+        
+        Logger.LogInformation("DetailedReports: Found {ChildCount} child users and {OtherCount} other users", 
+            childUsers.Count, otherUsers.Count);
         
         // Process child users
         foreach (var user in childUsers)
