@@ -38,7 +38,10 @@
     }
     else if (userReports.Any())
     {
-        @foreach (var report in userReports)
+        var childReports = userReports.Where(r => r.IsChild).ToList();
+        var otherReports = userReports.Where(r => !r.IsChild).ToList();
+        
+        @foreach (var report in childReports)
         {
             <div style="background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -143,6 +146,57 @@
                 }
             </div>
         }
+        
+        @if (otherReports.Any())
+        {
+            <div style="margin-top: 30px; padding-top: 20px; border-top: 2px solid #e2e8f0;">
+                <h3 style="margin-bottom: 20px; color: #6b7280;">Parent & Technical Accounts</h3>
+                
+                @foreach (var report in otherReports)
+                {
+                    <div style="background: #f9fafb; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0; color: #6b7280;">@report.Username</h3>
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; color: #6b7280;">
+                                    @T("DetailedReports.TotalUsed"): @report.TotalUsed @T("DetailedReports.Minutes")
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Computer Legend -->
+                        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 10px;">
+                            @foreach (var usage in report.ComputerUsages)
+                            {
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <div style="width: 16px; height: 16px; background: @usage.Color; border-radius: 3px;"></div>
+                                    <span style="font-size: 0.9em;"><strong>@usage.ComputerName:</strong> @usage.Minutes @T("DetailedReports.Minutes")</span>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Time Segments -->
+                        @if (report.TimeSegments.Any())
+                        {
+                            <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                                <h4 style="margin-bottom: 10px; font-size: 1em; color: #6b7280;">@T("DetailedReports.SessionTimeline")</h4>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    @foreach (var segment in report.TimeSegments)
+                                    {
+                                        <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: white; border-radius: 4px; font-size: 0.9em;">
+                                            <div style="width: 12px; height: 12px; background: @segment.Color; border-radius: 50%; flex-shrink: 0;"></div>
+                                            <div style="font-weight: 600; min-width: 120px;">@segment.TimeRange</div>
+                                            <div style="color: #6b7280;">@segment.ComputerName</div>
+                                            <div style="margin-left: auto; color: #6b7280;">@segment.Duration @T("DetailedReports.Minutes")</div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
     }
     else
     {
@@ -187,6 +241,7 @@
         public int TimeRemaining { get; set; }
         public List<ComputerUsage> ComputerUsages { get; set; } = new();
         public List<TimeSegment> TimeSegments { get; set; } = new();
+        public bool IsChild { get; set; }
     }
     
     private List<UserReport> userReports = new();
@@ -209,40 +264,62 @@
         userReports.Clear();
         
         // Get all users with Child account type
-        var users = await DbContext.Users
+        var childUsers = await DbContext.Users
             .Where(u => u.AccountType == AccountType.Child)
             .Include(u => u.TimeProfiles.Where(p => p.IsActive))
             .ToListAsync();
         
-        foreach (var user in users)
+        // Get all users with Parent or Technical account type
+        var otherUsers = await DbContext.Users
+            .Where(u => u.AccountType == AccountType.Parent || u.AccountType == AccountType.Technical)
+            .ToListAsync();
+        
+        // Process child users
+        foreach (var user in childUsers)
         {
-            // Get usage by computer for this date
-            var usageByComputer = await DbContext.TimeUsage
-                .Where(tu => tu.UserId == user.Id && tu.UsageDate == selectedDate)
-                .Include(tu => tu.Computer)
-                .Select(tu => new { tu.Computer.Hostname, tu.MinutesUsed })
-                .ToListAsync();
-            
-            var totalUsed = usageByComputer.Sum(u => u.MinutesUsed);
-            
-            // Get sessions for timeline
-            var sessions = await DbContext.Sessions
-                .Where(s => s.UserId == user.Id && DateOnly.FromDateTime(s.SessionStart) == selectedDate)
-                .Include(s => s.Computer)
-                .OrderBy(s => s.SessionStart)
-                .Select(s => new 
-                { 
-                    s.SessionStart, 
-                    s.SessionEnd,
-                    s.Computer.Hostname,
-                    s.ActiveMinutes
-                })
-                .ToListAsync();
-            
-            // Get daily limit
+            await ProcessUser(user, true);
+        }
+        
+        // Process other users
+        foreach (var user in otherUsers)
+        {
+            await ProcessUser(user, false);
+        }
+        
+        userReports = userReports.OrderBy(r => r.Username).ToList();
+        loading = false;
+    }
+    
+    private async Task ProcessUser(User user, bool isChild)
+    {
+        // Get usage by computer for this date
+        var usageByComputer = await DbContext.TimeUsage
+            .Where(tu => tu.UserId == user.Id && tu.UsageDate == selectedDate)
+            .Include(tu => tu.Computer)
+            .Select(tu => new { tu.Computer.Hostname, tu.MinutesUsed })
+            .ToListAsync();
+        
+        var totalUsed = usageByComputer.Sum(u => u.MinutesUsed);
+        
+        // Get sessions for timeline
+        var sessions = await DbContext.Sessions
+            .Where(s => s.UserId == user.Id && DateOnly.FromDateTime(s.SessionStart) == selectedDate)
+            .Include(s => s.Computer)
+            .OrderBy(s => s.SessionStart)
+            .Select(s => new 
+            { 
+                s.SessionStart, 
+                s.SessionEnd,
+                s.Computer.Hostname,
+                s.ActiveMinutes
+            })
+            .ToListAsync();
+        
+        // Get daily limit (only for child users)
+        int? dailyLimit = null;
+        if (isChild)
+        {
             var profile = user.TimeProfiles.FirstOrDefault();
-            int? dailyLimit = null;
-            
             if (profile != null)
             {
                 var dayOfWeek = selectedDate.DayOfWeek;
@@ -258,54 +335,52 @@
                     _ => null
                 };
             }
-            
-            var timeRemaining = dailyLimit.HasValue ? dailyLimit.Value - totalUsed : int.MaxValue;
-            
-            // Create computer-to-color mapping
-            var computerColors = usageByComputer
-                .Select((u, index) => new { u.Hostname, Color = colors[index % colors.Length] })
-                .ToDictionary(x => x.Hostname, x => x.Color);
-            
-            // Create computer usage segments with colors
-            var computerUsages = usageByComputer
-                .Select(u => new ComputerUsage
-                {
-                    ComputerName = u.Hostname,
-                    Minutes = u.MinutesUsed,
-                    Color = computerColors[u.Hostname]
-                })
-                .OrderByDescending(u => u.Minutes)
-                .ToList();
-            
-            // Create time segments from sessions
-            var timeSegments = sessions
-                .Where(s => s.ActiveMinutes > 0)
-                .Select(s => new TimeSegment
-                {
-                    TimeRange = $"{s.SessionStart:HH:mm}-{(s.SessionEnd?.ToString("HH:mm") ?? "active")}",
-                    ComputerName = s.Hostname,
-                    Duration = s.ActiveMinutes,
-                    Color = computerColors.GetValueOrDefault(s.Hostname, "#6b7280")
-                })
-                .ToList();
-            
-            // Only show users who have usage or have limits set
-            if (totalUsed > 0 || dailyLimit.HasValue)
-            {
-                userReports.Add(new UserReport
-                {
-                    Username = user.Username,
-                    DailyLimit = dailyLimit,
-                    TotalUsed = totalUsed,
-                    TimeRemaining = timeRemaining,
-                    ComputerUsages = computerUsages,
-                    TimeSegments = timeSegments
-                });
-            }
         }
         
-        userReports = userReports.OrderBy(r => r.Username).ToList();
-        loading = false;
+        var timeRemaining = dailyLimit.HasValue ? dailyLimit.Value - totalUsed : int.MaxValue;
+        
+        // Create computer-to-color mapping
+        var computerColors = usageByComputer
+            .Select((u, index) => new { u.Hostname, Color = colors[index % colors.Length] })
+            .ToDictionary(x => x.Hostname, x => x.Color);
+        
+        // Create computer usage segments with colors
+        var computerUsages = usageByComputer
+            .Select(u => new ComputerUsage
+            {
+                ComputerName = u.Hostname,
+                Minutes = u.MinutesUsed,
+                Color = computerColors[u.Hostname]
+            })
+            .OrderByDescending(u => u.Minutes)
+            .ToList();
+        
+        // Create time segments from sessions
+        var timeSegments = sessions
+            .Where(s => s.ActiveMinutes > 0)
+            .Select(s => new TimeSegment
+            {
+                TimeRange = $"{s.SessionStart:HH:mm}-{(s.SessionEnd?.ToString("HH:mm") ?? "active")}",
+                ComputerName = s.Hostname,
+                Duration = s.ActiveMinutes,
+                Color = computerColors.GetValueOrDefault(s.Hostname, "#6b7280")
+            })
+            .ToList();
+        
+        // Show child users if they have usage or limits, show other users only if they have usage
+        if ((isChild && (totalUsed > 0 || dailyLimit.HasValue)) || (!isChild && totalUsed > 0))
+        {
+            userReports.Add(new UserReport
+            {
+                Username = user.Username,
+                DailyLimit = dailyLimit,
+                TotalUsed = totalUsed,
+                TimeRemaining = timeRemaining,
+                ComputerUsages = computerUsages,
+                TimeSegments = timeSegments,
+                IsChild = isChild
+            });
+        }
     }
     
     private string T(string key) => Localizer.Get(currentLang, key);
