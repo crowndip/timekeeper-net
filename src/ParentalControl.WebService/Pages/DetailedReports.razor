@@ -117,6 +117,25 @@
                         </div>
                     }
                 </div>
+
+                <!-- Time Segments -->
+                @if (report.TimeSegments.Any())
+                {
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
+                        <h4 style="margin-bottom: 10px; font-size: 1em; color: #4a5568;">Session Timeline</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            @foreach (var segment in report.TimeSegments)
+                            {
+                                <div style="display: flex; align-items: center; gap: 12px; padding: 8px; background: #f7fafc; border-radius: 4px; font-size: 0.9em;">
+                                    <div style="width: 12px; height: 12px; background: @segment.Color; border-radius: 50%; flex-shrink: 0;"></div>
+                                    <div style="font-weight: 600; min-width: 120px;">@segment.TimeRange</div>
+                                    <div style="color: #6b7280;">@segment.ComputerName</div>
+                                    <div style="margin-left: auto; color: #6b7280;">@segment.Duration min</div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
             </div>
         }
     }
@@ -147,6 +166,14 @@
         public string Color { get; set; } = "";
     }
     
+    private class TimeSegment
+    {
+        public string TimeRange { get; set; } = "";
+        public string ComputerName { get; set; } = "";
+        public int Duration { get; set; }
+        public string Color { get; set; } = "";
+    }
+    
     private class UserReport
     {
         public string Username { get; set; } = "";
@@ -154,6 +181,7 @@
         public int TotalUsed { get; set; }
         public int TimeRemaining { get; set; }
         public List<ComputerUsage> ComputerUsages { get; set; } = new();
+        public List<TimeSegment> TimeSegments { get; set; } = new();
     }
     
     private List<UserReport> userReports = new();
@@ -192,6 +220,20 @@
             
             var totalUsed = usageByComputer.Sum(u => u.MinutesUsed);
             
+            // Get sessions for timeline
+            var sessions = await DbContext.Sessions
+                .Where(s => s.UserId == user.Id && DateOnly.FromDateTime(s.SessionStart) == selectedDate)
+                .Include(s => s.Computer)
+                .OrderBy(s => s.SessionStart)
+                .Select(s => new 
+                { 
+                    s.SessionStart, 
+                    s.SessionEnd,
+                    s.Computer.Hostname,
+                    s.ActiveMinutes
+                })
+                .ToListAsync();
+            
             // Get daily limit
             var profile = user.TimeProfiles.FirstOrDefault();
             int? dailyLimit = null;
@@ -214,15 +256,32 @@
             
             var timeRemaining = dailyLimit.HasValue ? dailyLimit.Value - totalUsed : int.MaxValue;
             
+            // Create computer-to-color mapping
+            var computerColors = usageByComputer
+                .Select((u, index) => new { u.Hostname, Color = colors[index % colors.Length] })
+                .ToDictionary(x => x.Hostname, x => x.Color);
+            
             // Create computer usage segments with colors
             var computerUsages = usageByComputer
-                .Select((u, index) => new ComputerUsage
+                .Select(u => new ComputerUsage
                 {
                     ComputerName = u.Hostname,
                     Minutes = u.MinutesUsed,
-                    Color = colors[index % colors.Length]
+                    Color = computerColors[u.Hostname]
                 })
                 .OrderByDescending(u => u.Minutes)
+                .ToList();
+            
+            // Create time segments from sessions
+            var timeSegments = sessions
+                .Where(s => s.ActiveMinutes > 0)
+                .Select(s => new TimeSegment
+                {
+                    TimeRange = $"{s.SessionStart:HH:mm}-{(s.SessionEnd?.ToString("HH:mm") ?? "active")}",
+                    ComputerName = s.Hostname,
+                    Duration = s.ActiveMinutes,
+                    Color = computerColors.GetValueOrDefault(s.Hostname, "#6b7280")
+                })
                 .ToList();
             
             // Only show users who have usage or have limits set
@@ -234,7 +293,8 @@
                     DailyLimit = dailyLimit,
                     TotalUsed = totalUsed,
                     TimeRemaining = timeRemaining,
-                    ComputerUsages = computerUsages
+                    ComputerUsages = computerUsages,
+                    TimeSegments = timeSegments
                 });
             }
         }
