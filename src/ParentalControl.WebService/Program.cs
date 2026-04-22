@@ -54,6 +54,9 @@ try
     builder.Services.AddRazorPages();
     builder.Services.AddServerSideBlazor();
     
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo("/app/keys"));
+    
     builder.Services.AddDistributedMemoryCache();
     builder.Services.AddSession(options =>
     {
