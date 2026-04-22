@@ -57,16 +57,27 @@ public class TrayApp : Application
     private string? _serverUrl;
     private Guid? _computerId;
     private string? _username;
+    private string _statusText = "Loading...";
 
     public override void Initialize()
     {
         LoadConfig();
         
+        var menu = new NativeMenu();
+        var statusItem = new NativeMenuItem { Header = _statusText };
+        var exitItem = new NativeMenuItem { Header = "Exit" };
+        exitItem.Click += (s, e) => Environment.Exit(0);
+        
+        menu.Add(statusItem);
+        menu.Add(new NativeMenuItemSeparator());
+        menu.Add(exitItem);
+        
         _trayIcon = new Avalonia.Controls.TrayIcon
         {
             IsVisible = true,
-            ToolTipText = "Loading...",
-            Icon = LoadIcon()
+            ToolTipText = _statusText,
+            Icon = LoadIcon(),
+            Menu = menu
         };
 
         _timer = new Timer(_ => UpdateTime(), null, TimeSpan.Zero, TimeSpan.FromSeconds(30));
@@ -199,7 +210,11 @@ public class TrayApp : Application
             Dispatcher.UIThread.Post(() =>
             {
                 if (_trayIcon != null)
-                    _trayIcon.ToolTipText = "Not configured";
+                {
+                    _statusText = "Not configured";
+                    _trayIcon.ToolTipText = _statusText;
+                    UpdateMenu();
+                }
             });
             return;
         }
@@ -238,12 +253,16 @@ public class TrayApp : Application
                             // Check if parent account (unlimited time)
                             if (minutes >= int.MaxValue - 1000)
                             {
-                                _trayIcon.ToolTipText = "Parent - No time limit";
+                                _statusText = "Parent - No time limit";
+                                _trayIcon.ToolTipText = _statusText;
+                                UpdateMenu();
                                 Console.WriteLine($"[Tray] Parent account detected");
                             }
                             else
                             {
-                                _trayIcon.ToolTipText = $"{minutes}m remaining";
+                                _statusText = $"{minutes}m remaining";
+                                _trayIcon.ToolTipText = _statusText;
+                                UpdateMenu();
                                 Console.WriteLine($"[Tray] Time remaining: {minutes} minutes");
                             }
                         }
@@ -262,8 +281,23 @@ public class TrayApp : Application
             Dispatcher.UIThread.Post(() =>
             {
                 if (_trayIcon != null)
-                    _trayIcon.ToolTipText = "Server unavailable";
+                {
+                    _statusText = "Server unavailable";
+                    _trayIcon.ToolTipText = _statusText;
+                    UpdateMenu();
+                }
             });
+        }
+    }
+
+    private void UpdateMenu()
+    {
+        if (_trayIcon?.Menu is NativeMenu menu && menu.Items.Count > 0)
+        {
+            if (menu.Items[0] is NativeMenuItem statusItem)
+            {
+                statusItem.Header = _statusText;
+            }
         }
     }
 
