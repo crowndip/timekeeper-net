@@ -1,0 +1,395 @@
+@page "/detailed-reports"
+@using ParentalControl.WebService.Services
+@using ParentalControl.WebService.Data
+@using ParentalControl.WebService.Models
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.JSInterop
+@using System.Text.Json
+@inject IUsageReportService ReportService
+@inject AppDbContext DbContext
+@inject IJSRuntime JS
+@inject LocalizationService Localizer
+@inject LanguageService LangService
+
+<PageTitle>@T("Reports.PageTitle")</PageTitle>
+
+<div style="padding: 20px; max-width: 1400px; margin: 0 auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="margin: 0;">@T("Reports.PageTitle")</h2>
+        <div style="display: flex; gap: 12px;">
+            <LanguageSelector />
+            <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">@T("Common.Back")</a>
+        </div>
+    </div>
+
+    <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("Reports.DateRange")</label>
+            <input type="date" @bind="startDate" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">&nbsp;</label>
+            <input type="date" @bind="endDate" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+        </div>
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">&nbsp;</label>
+            <button @onclick="LoadReports" style="padding: 8px 20px; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                @T("Reports.Generate")
+            </button>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div style="text-align: center; padding: 40px;">
+            <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        </div>
+    }
+    else if (reports.Any())
+    {
+        <div style="background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0;">Summary</h3>
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f9fafb; border-bottom: 2px solid #e5e7eb;">
+                        <th style="padding: 12px; text-align: left;">@T("Users.Username")</th>
+                        <th style="padding: 12px; text-align: right;">@T("Reports.TotalUsage")</th>
+                        <th style="padding: 12px; text-align: right;">Total Hours</th>
+                        <th style="padding: 12px; text-align: right;">@T("Reports.DailyAverage")</th>
+                        <th style="padding: 12px; text-align: center;">@T("Users.Actions")</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var report in reports)
+                    {
+                        var hasAliases = userBreakdowns.ContainsKey(report.UserId) && userBreakdowns[report.UserId].ByUser.Count > 1;
+                        var isExpanded = expandedUsers.Contains(report.UserId);
+                        
+                        <tr style="border-bottom: 1px solid #e5e7eb;">
+                            <td style="padding: 12px;">
+                                @if (hasAliases)
+                                {
+                                    <button @onclick="() => ToggleExpand(report.UserId)" 
+                                            style="background: none; border: none; cursor: pointer; padding: 0; margin-right: 8px; font-size: 14px;">
+                                        @(isExpanded ? "▼" : "▶")
+                                    </button>
+                                }
+                                <strong>@report.Username</strong>
+                                @if (hasAliases)
+                                {
+                                    <span style="color: #6b7280; font-size: 12px; margin-left: 8px;">
+                                        (@userBreakdowns[report.UserId].ByUser.Count users)
+                                    </span>
+                                }
+                            </td>
+                            <td style="padding: 12px; text-align: right;">@report.TotalMinutes</td>
+                            <td style="padding: 12px; text-align: right;">@((report.TotalMinutes / 60.0).ToString("F1"))</td>
+                            <td style="padding: 12px; text-align: right;">@report.DailyAverage.ToString("F1") min/day</td>
+                            <td style="padding: 12px; text-align: center;">
+                                <button @onclick="() => LoadUserChart(report.UserId, report.Username)" 
+                                        style="padding: 6px 12px; background: #10b981; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                    View Chart
+                                </button>
+                            </td>
+                        </tr>
+                        
+                        @if (isExpanded && hasAliases)
+                        {
+                            @foreach (var userUsage in userBreakdowns[report.UserId].ByUser)
+                            {
+                                <tr style="border-bottom: 1px solid #e5e7eb; background: #f9fafb;">
+                                    <td style="padding: 12px; padding-left: 50px;">
+                                        <span style="color: #6b7280;">↳</span> @userUsage.Username
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; color: #6b7280;">@userUsage.TotalMinutes</td>
+                                    <td style="padding: 12px; text-align: right; color: #6b7280;">@((userUsage.TotalMinutes / 60.0).ToString("F1"))</td>
+                                    <td style="padding: 12px; text-align: right; color: #6b7280;">
+                                        @(((double)userUsage.TotalMinutes / ((endDate.DayNumber - startDate.DayNumber) + 1)).ToString("F1")) min/day
+                                    </td>
+                                    <td style="padding: 12px; text-align: center;">-</td>
+                                </tr>
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div style="background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <h3 style="margin-top: 0;">All Users - Daily Usage</h3>
+            <canvas id="allUsersChart" style="max-height: 400px;"></canvas>
+        </div>
+
+        @if (selectedUserId != Guid.Empty)
+        {
+            <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <h3 style="margin-top: 0;">@selectedUsername - Time Allotted vs Used</h3>
+                <canvas id="userChart" style="max-height: 400px;"></canvas>
+            </div>
+        }
+    }
+    else if (!loading)
+    {
+        <div style="text-align: center; padding: 40px; color: #6b7280;">
+            No usage data found for the selected date range.
+        </div>
+    }
+</div>
+
+<style>
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+
+@code {
+    private string currentLang = "en";
+    private DateOnly startDate = DateOnly.FromDateTime(DateTime.Today.AddDays(-7));
+    private DateOnly endDate = DateOnly.FromDateTime(DateTime.Today);
+    private List<UserUsageReport> reports = new();
+    private Dictionary<Guid, UsageBreakdown> userBreakdowns = new();
+    private HashSet<Guid> expandedUsers = new();
+    private bool loading = false;
+    private Guid selectedUserId = Guid.Empty;
+    private string selectedUsername = string.Empty;
+    private bool chartsRendered = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentLang = LangService.GetCurrentLanguage();
+        await LoadReports();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (reports.Any() && !chartsRendered)
+        {
+            try
+            {
+                await RenderAllUsersChart();
+                if (selectedUserId != Guid.Empty)
+                {
+                    await RenderUserChart();
+                }
+                chartsRendered = true;
+            }
+            catch
+            {
+                // Chart rendering failed, allow retry on next render
+                chartsRendered = false;
+            }
+        }
+    }
+
+    private async Task LoadReports()
+    {
+        loading = true;
+        chartsRendered = false;
+        userBreakdowns.Clear();
+        expandedUsers.Clear();
+        StateHasChanged();
+        
+        reports = await ReportService.GetUsageReportAsync(startDate, endDate);
+        
+        // Pre-load breakdowns for users that might have aliases
+        var userIds = reports.Select(r => r.UserId).ToList();
+        var usersWithAliases = await DbContext.Users
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new { u.Id, HasAliases = DbContext.Users.Any(a => a.PrimaryUserId == u.Id) })
+            .ToListAsync();
+        
+        foreach (var user in usersWithAliases.Where(u => u.HasAliases))
+        {
+            await LoadUserBreakdown(user.Id);
+        }
+        
+        loading = false;
+        
+        // Force chart re-render after data loads
+        await Task.Delay(100);
+        StateHasChanged();
+    }
+
+    private async Task LoadUserChart(Guid userId, string username)
+    {
+        selectedUserId = userId;
+        selectedUsername = username;
+        chartsRendered = false;
+        
+        // Force re-render
+        await Task.Delay(100);
+        StateHasChanged();
+    }
+
+    private async Task RenderAllUsersChart()
+    {
+        var dates = Enumerable.Range(0, (endDate.DayNumber - startDate.DayNumber) + 1)
+            .Select(i => startDate.AddDays(i))
+            .ToList();
+
+        var labels = dates.Select(d => d.ToString("MM/dd")).ToArray();
+        var datasets = new List<object>();
+
+        var colors = new[] { "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", "#ec4899" };
+        var colorIndex = 0;
+
+        foreach (var report in reports)
+        {
+            var dailyData = await ReportService.GetDailyUsageAsync(report.UserId, startDate, endDate);
+            var dataPoints = dates.Select(d => 
+            {
+                var usage = dailyData.FirstOrDefault(dd => dd.Date == d);
+                return usage?.MinutesUsed ?? 0;
+            }).ToArray();
+
+            var color = colors[colorIndex % colors.Length];
+            datasets.Add(new
+            {
+                label = report.Username,
+                data = dataPoints,
+                backgroundColor = color + "80",
+                borderColor = color,
+                borderWidth = 2
+            });
+            colorIndex++;
+        }
+
+        await JS.InvokeVoidAsync("renderUsageChart", "allUsersChart", labels, datasets);
+    }
+
+    private async Task RenderUserChart()
+    {
+        var dates = Enumerable.Range(0, (endDate.DayNumber - startDate.DayNumber) + 1)
+            .Select(i => startDate.AddDays(i))
+            .ToList();
+
+        var labels = dates.Select(d => d.ToString("MM/dd")).ToArray();
+        
+        // Get daily usage
+        var dailyData = await ReportService.GetDailyUsageAsync(selectedUserId, startDate, endDate);
+        var usedData = dates.Select(d =>
+        {
+            var usage = dailyData.FirstOrDefault(dd => dd.Date == d);
+            return usage?.MinutesUsed ?? 0;
+        }).ToArray();
+
+        // Get daily limits from active profile
+        var profile = await DbContext.TimeProfiles
+            .FirstOrDefaultAsync(p => p.UserId == selectedUserId && p.IsActive);
+
+        var limitData = dates.Select(d =>
+        {
+            if (profile == null) return 0;
+            return d.DayOfWeek switch
+            {
+                DayOfWeek.Monday => profile.MondayLimit,
+                DayOfWeek.Tuesday => profile.TuesdayLimit,
+                DayOfWeek.Wednesday => profile.WednesdayLimit,
+                DayOfWeek.Thursday => profile.ThursdayLimit,
+                DayOfWeek.Friday => profile.FridayLimit,
+                DayOfWeek.Saturday => profile.SaturdayLimit,
+                DayOfWeek.Sunday => profile.SundayLimit,
+                _ => 0
+            };
+        }).ToArray();
+
+        var datasets = new List<object>
+        {
+            new
+            {
+                label = "Time Allotted",
+                data = limitData,
+                backgroundColor = "#10b98180",
+                borderColor = "#10b981",
+                borderWidth = 2
+            },
+            new
+            {
+                label = "Time Used",
+                data = usedData,
+                backgroundColor = "#ef444480",
+                borderColor = "#ef4444",
+                borderWidth = 2
+            }
+        };
+
+        await JS.InvokeVoidAsync("renderUsageChart", "userChart", labels, datasets);
+    }
+
+    private async Task ToggleExpand(Guid userId)
+    {
+        if (expandedUsers.Contains(userId))
+        {
+            expandedUsers.Remove(userId);
+        }
+        else
+        {
+            expandedUsers.Add(userId);
+            // Load breakdown if not already loaded
+            if (!userBreakdowns.ContainsKey(userId))
+            {
+                await LoadUserBreakdown(userId);
+            }
+        }
+    }
+
+    private async Task LoadUserBreakdown(Guid userId)
+    {
+        try
+        {
+            var response = await DbContext.Database.SqlQueryRaw<UsageBreakdownResult>(@"
+                SELECT 
+                    u.""Id"" as ""UserId"",
+                    u.""Username"",
+                    COALESCE(SUM(tu.""MinutesUsed""), 0) as ""TotalMinutes""
+                FROM ""Users"" u
+                LEFT JOIN ""TimeUsage"" tu ON tu.""UserId"" = u.""Id"" 
+                    AND tu.""UsageDate"" >= {0} 
+                    AND tu.""UsageDate"" <= {1}
+                WHERE u.""Id"" = {2} OR u.""PrimaryUserId"" = {2}
+                GROUP BY u.""Id"", u.""Username""
+                ORDER BY ""TotalMinutes"" DESC",
+                startDate, endDate, userId).ToListAsync();
+
+            var breakdown = new UsageBreakdown
+            {
+                PrimaryUserId = userId,
+                ByUser = response.Select(r => new UserUsageInfo
+                {
+                    UserId = r.UserId,
+                    Username = r.Username,
+                    TotalMinutes = r.TotalMinutes
+                }).ToList()
+            };
+
+            userBreakdowns[userId] = breakdown;
+        }
+        catch
+        {
+            // If breakdown fails, just don't show it
+        }
+    }
+
+    private class UsageBreakdown
+    {
+        public Guid PrimaryUserId { get; set; }
+        public List<UserUsageInfo> ByUser { get; set; } = new();
+    }
+
+    private class UserUsageInfo
+    {
+        public Guid UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public int TotalMinutes { get; set; }
+    }
+
+    private class UsageBreakdownResult
+    {
+        public Guid UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public int TotalMinutes { get; set; }
+    }
+
+    private string T(string key) => Localizer.Get(currentLang, key);
+}
