@@ -298,7 +298,7 @@
                 Aliases allow multiple OS usernames to share the same time limits. All aliases will count toward the same daily/weekly limits.
             </p>
 
-            @if (userAliases.ContainsKey(aliasManageUser?.Id ?? Guid.Empty) && userAliases[aliasManageUser.Id].Any())
+            @if (aliasManageUser != null && userAliases.ContainsKey(aliasManageUser.Id) && userAliases[aliasManageUser.Id].Any())
             {
                 <div style="margin-bottom: 20px;">
                     <h3 style="font-size: 16px; margin-bottom: 10px;">Current Aliases:</h3>
