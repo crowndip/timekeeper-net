@@ -209,7 +209,7 @@
     "JustNow": "À l'instant",
     "MinutesAgo": "il y a {0}m",
     "HoursAgo": "il y a {0}h",
-    "DaysAgo": "il y a {0}j",
+    "DaysAgo": "il y a {0}j"
   },
   "Reports": {
     "PageTitle": "📊 Rapports d'utilisation",

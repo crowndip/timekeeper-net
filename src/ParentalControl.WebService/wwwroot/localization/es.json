@@ -209,7 +209,7 @@
     "JustNow": "Justo ahora",
     "MinutesAgo": "hace {0}m",
     "HoursAgo": "hace {0}h",
-    "DaysAgo": "hace {0}d",
+    "DaysAgo": "hace {0}d"
   },
   "Reports": {
     "PageTitle": "📊 Informes de uso",
