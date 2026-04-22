@@ -33,14 +33,14 @@
 
     @if (loading)
     {
-        <div style="text-align: center; padding: 40px; color: #6b7280;">Loading...</div>
+        <div style="text-align: center; padding: 40px; color: #6b7280;">@T("AllowedHours.Loading")</div>
     }
     else
     {
         <div style="background: white; border-radius: 12px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 20px;">
-            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">Select User</label>
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #374151;">@T("AllowedHours.SelectUser")</label>
             <select @bind="selectedUserId" @bind:after="LoadAllowedHours" style="padding: 12px 16px; border: 2px solid #e5e7eb; border-radius: 8px; width: 100%; max-width: 400px; font-size: 15px; cursor: pointer;">
-                <option value="">-- Choose a user --</option>
+                <option value="">@T("AllowedHours.ChooseUser")</option>
                 @foreach (var user in users)
                 {
                     <option value="@user.Id">@user.Username</option>
@@ -56,11 +56,11 @@
                     var intervals = schedule[day.Key];
                     <div style="border-bottom: 1px solid #f3f4f6; padding: 20px 0;">
                         <div style="display: flex; align-items: flex-start; gap: 20px;">
-                            <div style="width: 100px; font-weight: 600; color: #1f2937; padding-top: 8px;">@day.Value</div>
+                            <div style="width: 100px; font-weight: 600; color: #1f2937; padding-top: 8px;">@T($"Profiles.Days.{day.Value}")</div>
                             <div style="flex: 1;">
                                 @if (!intervals.Any())
                                 {
-                                    <div style="color: #9ca3af; font-style: italic; padding: 8px 0;">No restrictions - allowed all day</div>
+                                    <div style="color: #9ca3af; font-style: italic; padding: 8px 0;">@T("AllowedHours.NoRestrictions")</div>
                                 }
                                 else
                                 {
@@ -68,13 +68,13 @@
                                     {
                                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
                                             <input type="time" value="@interval.StartTime" @onchange="e => interval.StartTime = e.Value?.ToString() ?? interval.StartTime" disabled="@isReadOnly" style="padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 130px; cursor: @(isReadOnly ? "not-allowed" : "text"); opacity: @(isReadOnly ? "0.6" : "1");" />
-                                            <span style="color: #6b7280; font-weight: 500;">to</span>
+                                            <span style="color: #6b7280; font-weight: 500;">@T("AllowedHours.To")</span>
                                             <input type="time" value="@interval.EndTime" @onchange="e => interval.EndTime = e.Value?.ToString() ?? interval.EndTime" disabled="@isReadOnly" style="padding: 10px 12px; border: 2px solid #e5e7eb; border-radius: 8px; font-size: 14px; width: 130px; cursor: @(isReadOnly ? "not-allowed" : "text"); opacity: @(isReadOnly ? "0.6" : "1");" />
-                                            <button @onclick="() => RemoveInterval(day.Key, interval)" disabled="@isReadOnly" style="padding: 8px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 13px; opacity: @(isReadOnly ? "0.5" : "1");">✕ Remove</button>
+                                            <button @onclick="() => RemoveInterval(day.Key, interval)" disabled="@isReadOnly" style="padding: 8px 12px; background: #ef4444; color: white; border: none; border-radius: 6px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 13px; opacity: @(isReadOnly ? "0.5" : "1");">✕ @T("AllowedHours.Remove")</button>
                                         </div>
                                     }
                                 }
-                                <button @onclick="() => AddInterval(day.Key)" disabled="@isReadOnly" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 13px; margin-top: 4px; opacity: @(isReadOnly ? "0.5" : "1");">+ Add Time Window</button>
+                                <button @onclick="() => AddInterval(day.Key)" disabled="@isReadOnly" style="padding: 8px 16px; background: #3b82f6; color: white; border: none; border-radius: 6px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 13px; margin-top: 4px; opacity: @(isReadOnly ? "0.5" : "1");">@T("AllowedHours.AddTimeWindow")</button>
                             </div>
                         </div>
                     </div>
@@ -82,16 +82,16 @@
                 
                 <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
                     <button @onclick="SaveSchedule" disabled="@isReadOnly" style="padding: 14px 28px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-weight: 600; font-size: 15px; box-shadow: 0 2px 4px rgba(16,185,129,0.2); opacity: @(isReadOnly ? "0.5" : "1");">
-                        💾 Save Schedule
+                        @T("AllowedHours.SaveSchedule")
                     </button>
                     <button @onclick="CopyMondayToWeekdays" disabled="@isReadOnly" style="padding: 14px 28px; background: #6366f1; color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 14px; opacity: @(isReadOnly ? "0.5" : "1");">
-                        Copy Monday → Weekdays
+                        @T("AllowedHours.CopyMondayToWeekdays")
                     </button>
                     <button @onclick="CopyMondayToAll" disabled="@isReadOnly" style="padding: 14px 28px; background: #8b5cf6; color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 14px; opacity: @(isReadOnly ? "0.5" : "1");">
-                        Copy Monday → All Days
+                        @T("AllowedHours.CopyMondayToAll")
                     </button>
                     <button @onclick="ClearAll" disabled="@isReadOnly" style="padding: 14px 28px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: @(isReadOnly ? "not-allowed" : "pointer"); font-size: 14px; opacity: @(isReadOnly ? "0.5" : "1");">
-                        Clear All
+                        @T("AllowedHours.ClearAll")
                     </button>
                 </div>
             </div>
