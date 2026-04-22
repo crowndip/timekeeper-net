@@ -4,22 +4,30 @@
 @using ParentalControl.WebService.Models
 @using Microsoft.EntityFrameworkCore
 @inject AppDbContext DbContext
+@inject ITimeCalculationService TimeCalc
 @inject LocalizationService Localizer
 @inject LanguageService LangService
 
-<PageTitle>Detailed Reports - User Registration by Computer</PageTitle>
+<PageTitle>Detailed Reports - Usage by Computer</PageTitle>
 
 <div style="padding: 20px; max-width: 1400px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0;">📊 Detailed Reports - User Registration by Computer</h2>
+        <h2 style="margin: 0;">📊 Detailed Reports - Usage by Computer</h2>
         <div style="display: flex; gap: 12px;">
             <LanguageSelector />
             <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">@T("Common.Back")</a>
         </div>
     </div>
 
+    <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+        <div>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date</label>
+            <input type="date" @bind="selectedDate" @bind:after="LoadData" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+        </div>
+    </div>
+
     <div style="background: #ebf8ff; border-left: 4px solid #4299e1; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
-        <strong>ℹ️ About this report:</strong> This shows which users have logged in from which computers. The same user may appear on multiple computers.
+        <strong>ℹ️ About this report:</strong> Shows time usage broken down by computer for each user. Segments show which computer was used.
     </div>
 
     @if (loading)
@@ -28,73 +36,94 @@
             <div style="display: inline-block; width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
         </div>
     }
-    else if (userComputerData.Any())
+    else if (userReports.Any())
     {
-        <div style="background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <h3 style="margin-bottom: 15px;">User Registration by Computer</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
-                        <th style="padding: 12px; text-align: left; font-weight: 600;">Username</th>
-                        <th style="padding: 12px; text-align: left; font-weight: 600;">Computer</th>
-                        <th style="padding: 12px; text-align: left; font-weight: 600;">First Seen</th>
-                        <th style="padding: 12px; text-align: left; font-weight: 600;">Last Seen</th>
-                        <th style="padding: 12px; text-align: right; font-weight: 600;">Total Sessions</th>
-                        <th style="padding: 12px; text-align: right; font-weight: 600;">Total Minutes</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var item in userComputerData)
-                    {
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <td style="padding: 12px;">
-                                <strong>@item.Username</strong>
-                                @if (!string.IsNullOrEmpty(item.FullName))
-                                {
-                                    <br/><span style="font-size: 0.9em; color: #6b7280;">@item.FullName</span>
-                                }
-                            </td>
-                            <td style="padding: 12px;">
-                                <strong>@item.ComputerHostname</strong>
-                                <br/><span style="font-size: 0.85em; color: #6b7280;">@item.ComputerOs</span>
-                            </td>
-                            <td style="padding: 12px; font-size: 0.9em;">@item.FirstSeen.ToString("yyyy-MM-dd HH:mm")</td>
-                            <td style="padding: 12px; font-size: 0.9em;">@item.LastSeen.ToString("yyyy-MM-dd HH:mm")</td>
-                            <td style="padding: 12px; text-align: right;">@item.SessionCount</td>
-                            <td style="padding: 12px; text-align: right; font-weight: 600;">@item.TotalMinutes min</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+        @foreach (var report in userReports)
+        {
+            <div style="background: white; border-radius: 8px; padding: 20px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">@report.Username</h3>
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.9em; color: #6b7280;">Daily Limit: @(report.DailyLimit.HasValue ? $"{report.DailyLimit} min" : "Unlimited")</div>
+                        <div style="font-weight: 600; color: @(report.TimeRemaining < 0 ? "#ef4444" : "#10b981");">
+                            Remaining: @(report.TimeRemaining < 0 ? "0" : report.TimeRemaining.ToString()) min
+                        </div>
+                    </div>
+                </div>
 
-        <div style="margin-top: 30px; background: white; border-radius: 8px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
-            <h3 style="margin-bottom: 15px;">Summary by User</h3>
-            <table style="width: 100%; border-collapse: collapse;">
-                <thead>
-                    <tr style="background: #f7fafc; border-bottom: 2px solid #e2e8f0;">
-                        <th style="padding: 12px; text-align: left; font-weight: 600;">Username</th>
-                        <th style="padding: 12px; text-align: right; font-weight: 600;">Computers Used</th>
-                        <th style="padding: 12px; text-align: left; font-weight: 600;">Computer List</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var summary in userSummary)
+                <!-- Usage Bar with Computer Segments -->
+                <div style="margin-bottom: 15px;">
+                    <div style="display: flex; height: 40px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0;">
+                        @if (report.ComputerUsages.Any())
+                        {
+                            @foreach (var usage in report.ComputerUsages)
+                            {
+                                var widthPercent = report.DailyLimit.HasValue && report.DailyLimit > 0 
+                                    ? (usage.Minutes * 100.0 / report.DailyLimit.Value) 
+                                    : (usage.Minutes * 100.0 / report.TotalUsed);
+                                
+                                <div style="width: @(widthPercent)%; background: @usage.Color; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.85em; padding: 0 5px; white-space: nowrap; overflow: hidden;">
+                                    @if (widthPercent > 8)
+                                    {
+                                        <span>@usage.Minutes min</span>
+                                    }
+                                </div>
+                            }
+                            
+                            @if (report.TimeRemaining > 0 && report.DailyLimit.HasValue)
+                            {
+                                var remainingPercent = (report.TimeRemaining * 100.0 / report.DailyLimit.Value);
+                                <div style="width: @(remainingPercent)%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 0.85em;">
+                                    @if (remainingPercent > 8)
+                                    {
+                                        <span>@report.TimeRemaining min</span>
+                                    }
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div style="width: 100%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280;">
+                                No usage today
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Computer Legend -->
+                <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 10px;">
+                    @foreach (var usage in report.ComputerUsages)
                     {
-                        <tr style="border-bottom: 1px solid #e2e8f0;">
-                            <td style="padding: 12px;"><strong>@summary.Username</strong></td>
-                            <td style="padding: 12px; text-align: right;">@summary.ComputerCount</td>
-                            <td style="padding: 12px; font-size: 0.9em; color: #4a5568;">@summary.ComputerList</td>
-                        </tr>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 16px; height: 16px; background: @usage.Color; border-radius: 3px;"></div>
+                            <span style="font-size: 0.9em;"><strong>@usage.ComputerName:</strong> @usage.Minutes min</span>
+                        </div>
                     }
-                </tbody>
-            </table>
-        </div>
+                </div>
+
+                <!-- Summary -->
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 0.95em;">
+                    <div>
+                        <strong>Total Used:</strong> @report.TotalUsed min
+                        @if (report.ComputerUsages.Count > 1)
+                        {
+                            <span style="color: #6b7280;"> (across @report.ComputerUsages.Count computers)</span>
+                        }
+                    </div>
+                    @if (report.DailyLimit.HasValue)
+                    {
+                        <div>
+                            <strong>Usage:</strong> @((report.TotalUsed * 100 / report.DailyLimit.Value).ToString("F1"))%
+                        </div>
+                    }
+                </div>
+            </div>
+        }
     }
     else
     {
         <div style="text-align: center; padding: 40px; background: white; border-radius: 8px;">
-            <p style="color: #6b7280;">No data available. Users will appear here after they log in from computers.</p>
+            <p style="color: #6b7280;">No usage data for selected date.</p>
         </div>
     }
 </div>
@@ -104,37 +133,36 @@
         0% { transform: rotate(0deg); }
         100% { transform: rotate(360deg); }
     }
-    
-    table tr:hover {
-        background: #f7fafc;
-    }
 </style>
 
 @code {
     private string currentLang = "en";
     private bool loading = true;
+    private DateOnly selectedDate = DateOnly.FromDateTime(DateTime.Today);
     
-    private class UserComputerData
+    private class ComputerUsage
     {
-        public string Username { get; set; } = "";
-        public string? FullName { get; set; }
-        public string ComputerHostname { get; set; } = "";
-        public string? ComputerOs { get; set; }
-        public DateTime FirstSeen { get; set; }
-        public DateTime LastSeen { get; set; }
-        public int SessionCount { get; set; }
-        public int TotalMinutes { get; set; }
+        public string ComputerName { get; set; } = "";
+        public int Minutes { get; set; }
+        public string Color { get; set; } = "";
     }
     
-    private class UserSummary
+    private class UserReport
     {
         public string Username { get; set; } = "";
-        public int ComputerCount { get; set; }
-        public string ComputerList { get; set; } = "";
+        public int? DailyLimit { get; set; }
+        public int TotalUsed { get; set; }
+        public int TimeRemaining { get; set; }
+        public List<ComputerUsage> ComputerUsages { get; set; } = new();
     }
     
-    private List<UserComputerData> userComputerData = new();
-    private List<UserSummary> userSummary = new();
+    private List<UserReport> userReports = new();
+    
+    private readonly string[] colors = new[] 
+    { 
+        "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6", 
+        "#ec4899", "#14b8a6", "#f97316", "#06b6d4", "#84cc16" 
+    };
     
     protected override async Task OnInitializedAsync()
     {
@@ -145,41 +173,73 @@
     private async Task LoadData()
     {
         loading = true;
+        userReports.Clear();
         
-        // Get all sessions with user and computer info
-        var data = await DbContext.Sessions
-            .Include(s => s.User)
-            .Include(s => s.Computer)
-            .GroupBy(s => new { s.UserId, s.ComputerId })
-            .Select(g => new UserComputerData
-            {
-                Username = g.First().User.Username,
-                FullName = g.First().User.FullName,
-                ComputerHostname = g.First().Computer.Hostname,
-                ComputerOs = g.First().Computer.OsInfo,
-                FirstSeen = g.Min(s => s.SessionStart),
-                LastSeen = g.Max(s => s.SessionStart),
-                SessionCount = g.Count(),
-                TotalMinutes = g.Sum(s => s.ActiveMinutes)
-            })
-            .OrderBy(d => d.Username)
-            .ThenBy(d => d.ComputerHostname)
+        // Get all users with Child account type
+        var users = await DbContext.Users
+            .Where(u => u.AccountType == AccountType.Child)
+            .Include(u => u.TimeProfiles.Where(p => p.IsActive))
             .ToListAsync();
         
-        userComputerData = data;
-        
-        // Create summary by user
-        userSummary = data
-            .GroupBy(d => d.Username)
-            .Select(g => new UserSummary
+        foreach (var user in users)
+        {
+            // Get usage by computer for this date
+            var usageByComputer = await DbContext.TimeUsage
+                .Where(tu => tu.UserId == user.Id && tu.UsageDate == selectedDate)
+                .Include(tu => tu.Computer)
+                .Select(tu => new { tu.Computer.Hostname, tu.MinutesUsed })
+                .ToListAsync();
+            
+            var totalUsed = usageByComputer.Sum(u => u.MinutesUsed);
+            
+            // Get daily limit
+            var profile = user.TimeProfiles.FirstOrDefault();
+            int? dailyLimit = null;
+            
+            if (profile != null)
             {
-                Username = g.Key,
-                ComputerCount = g.Count(),
-                ComputerList = string.Join(", ", g.Select(d => d.ComputerHostname))
-            })
-            .OrderBy(s => s.Username)
-            .ToList();
+                var dayOfWeek = selectedDate.DayOfWeek;
+                dailyLimit = dayOfWeek switch
+                {
+                    DayOfWeek.Monday => profile.MondayLimit,
+                    DayOfWeek.Tuesday => profile.TuesdayLimit,
+                    DayOfWeek.Wednesday => profile.WednesdayLimit,
+                    DayOfWeek.Thursday => profile.ThursdayLimit,
+                    DayOfWeek.Friday => profile.FridayLimit,
+                    DayOfWeek.Saturday => profile.SaturdayLimit,
+                    DayOfWeek.Sunday => profile.SundayLimit,
+                    _ => null
+                };
+            }
+            
+            var timeRemaining = dailyLimit.HasValue ? dailyLimit.Value - totalUsed : int.MaxValue;
+            
+            // Create computer usage segments with colors
+            var computerUsages = usageByComputer
+                .Select((u, index) => new ComputerUsage
+                {
+                    ComputerName = u.Hostname,
+                    Minutes = u.MinutesUsed,
+                    Color = colors[index % colors.Length]
+                })
+                .OrderByDescending(u => u.Minutes)
+                .ToList();
+            
+            // Only show users who have usage or have limits set
+            if (totalUsed > 0 || dailyLimit.HasValue)
+            {
+                userReports.Add(new UserReport
+                {
+                    Username = user.Username,
+                    DailyLimit = dailyLimit,
+                    TotalUsed = totalUsed,
+                    TimeRemaining = timeRemaining,
+                    ComputerUsages = computerUsages
+                });
+            }
+        }
         
+        userReports = userReports.OrderBy(r => r.Username).ToList();
         loading = false;
     }
     
