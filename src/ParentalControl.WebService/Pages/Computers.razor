@@ -72,7 +72,7 @@
 
         @if (computers.Count == 0)
         {
-            <p style="text-align: center; padding: 40px; color: #6b7280;">No devices registered yet. Devices will appear here when clients connect.</p>
+            <p style="text-align: center; padding: 40px; color: #6b7280;">@T("Computers.NoDevices")</p>
         }
     }
 </div>
@@ -81,32 +81,32 @@
 {
     <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @onclick="CloseDetails">
         <div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%;" @onclick:stopPropagation="true">
-            <h2 style="margin-top: 0;">Device Details</h2>
+            <h2 style="margin-top: 0;">@T("Computers.DeviceDetails")</h2>
             
             <div style="margin-bottom: 15px;">
-                <strong>Hostname:</strong> @selectedComputer.Hostname
+                <strong>@T("Computers.Hostname"):</strong> @selectedComputer.Hostname
             </div>
             <div style="margin-bottom: 15px;">
-                <strong>Machine ID:</strong><br/>
+                <strong>@T("Computers.MachineId"):</strong><br/>
                 <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; display: block; word-break: break-all;">@selectedComputer.MachineId</code>
             </div>
             <div style="margin-bottom: 15px;">
-                <strong>OS Info:</strong> @(selectedComputer.OsInfo ?? "Unknown")
+                <strong>@T("Computers.OsInfo"):</strong> @(selectedComputer.OsInfo ?? T("Computers.Unknown"))
             </div>
             <div style="margin-bottom: 15px;">
-                <strong>Last Seen:</strong> @(selectedComputer.LastSeenAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Never")
+                <strong>@T("Computers.LastSeen"):</strong> @(selectedComputer.LastSeenAt?.ToString("yyyy-MM-dd HH:mm:ss") ?? T("Computers.Never"))
             </div>
             <div style="margin-bottom: 15px;">
-                <strong>Status:</strong> @(selectedComputer.IsActive ? "Active" : "Inactive")
+                <strong>@T("Computers.Status"):</strong> @(selectedComputer.IsActive ? T("Computers.Active") : T("Common.Inactive"))
             </div>
             <div style="margin-bottom: 15px;">
-                <strong>API Key:</strong><br/>
+                <strong>@T("Computers.ApiKey"):</strong><br/>
                 <div style="display: flex; gap: 10px; align-items: center;">
                     <code style="background: #f3f4f6; padding: 8px; border-radius: 4px; flex: 1; word-break: break-all;">
                         @(showApiKey ? selectedComputer.ApiKey : "••••••••••••••••")
                     </code>
                     <button @onclick="ToggleApiKey" style="padding: 6px 12px; background: #6b7280; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                        @(showApiKey ? "Hide" : "Show")
+                        @(showApiKey ? T("Computers.Hide") : T("Computers.Show"))
                     </button>
                 </div>
             </div>
@@ -159,10 +159,31 @@
     private string GetRelativeTime(DateTime dateTime)
     {
         var diff = DateTime.UtcNow - dateTime;
-        if (diff.TotalMinutes < 1) return "Just now";
-        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
-        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
-        return $"{(int)diff.TotalDays}d ago";
+        if (diff.TotalMinutes < 1) return T("Computers.JustNow");
+        if (diff.TotalMinutes < 60)
+        {
+            var minutes = (int)diff.TotalMinutes;
+            return currentLang == "en" ? $"{minutes}m ago" :
+                   currentLang == "cs" ? $"před {minutes}m" :
+                   currentLang == "de" ? $"vor {minutes}m" :
+                   currentLang == "fr" ? $"il y a {minutes}m" :
+                   $"hace {minutes}m";
+        }
+        if (diff.TotalHours < 24)
+        {
+            var hours = (int)diff.TotalHours;
+            return currentLang == "en" ? $"{hours}h ago" :
+                   currentLang == "cs" ? $"před {hours}h" :
+                   currentLang == "de" ? $"vor {hours}h" :
+                   currentLang == "fr" ? $"il y a {hours}h" :
+                   $"hace {hours}h";
+        }
+        var days = (int)diff.TotalDays;
+        return currentLang == "en" ? $"{days}d ago" :
+               currentLang == "cs" ? $"před {days}d" :
+               currentLang == "de" ? $"vor {days}d" :
+               currentLang == "fr" ? $"il y a {days}j" :
+               $"hace {days}d";
     }
 
     private void ShowDetails(Computer computer)
