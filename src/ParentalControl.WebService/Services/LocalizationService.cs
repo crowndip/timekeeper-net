@@ -30,13 +30,26 @@ public class LocalizationService
     {
         var localizationPath = Path.Combine(_env.WebRootPath, "localization");
         
+        _logger.LogInformation("WebRootPath: {WebRootPath}", _env.WebRootPath);
+        _logger.LogInformation("Localization path: {LocalizationPath}", localizationPath);
+        _logger.LogInformation("Directory exists: {Exists}", Directory.Exists(localizationPath));
+        
         if (!Directory.Exists(localizationPath))
         {
             _logger.LogWarning("Localization directory not found: {Path}", localizationPath);
+            // Try to list what's in wwwroot
+            if (Directory.Exists(_env.WebRootPath))
+            {
+                var dirs = Directory.GetDirectories(_env.WebRootPath);
+                _logger.LogWarning("Directories in wwwroot: {Dirs}", string.Join(", ", dirs.Select(Path.GetFileName)));
+            }
             return;
         }
 
-        foreach (var file in Directory.GetFiles(localizationPath, "*.json"))
+        var files = Directory.GetFiles(localizationPath, "*.json");
+        _logger.LogInformation("Found {Count} JSON files in localization directory", files.Length);
+        
+        foreach (var file in files)
         {
             try
             {
@@ -44,13 +57,15 @@ public class LocalizationService
                 var json = File.ReadAllText(file);
                 var doc = JsonDocument.Parse(json);
                 _translations[culture] = doc.RootElement.Clone();
-                _logger.LogInformation("Loaded translations for culture: {Culture}", culture);
+                _logger.LogInformation("Loaded translations for culture: {Culture} from {File}", culture, file);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load translation file: {File}", file);
             }
         }
+        
+        _logger.LogInformation("Total translations loaded: {Count}", _translations.Count);
     }
 
     public string Get(string culture, string key)
