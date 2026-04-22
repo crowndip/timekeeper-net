@@ -195,7 +195,7 @@
     "Status": "Stav",
     "NoDevices": "Nebyla nalezena žádná zařízení.",
     "Online": "Online",
-    "Offline": "Offline"
+    "Offline": "Offline",
     "DeviceDetails": "Detaily zařízení",
     "Hostname": "Název hostitele",
     "MachineId": "ID počítače",

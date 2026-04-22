@@ -195,7 +195,7 @@
     "Status": "Estado",
     "NoDevices": "No se encontraron dispositivos.",
     "Online": "En línea",
-    "Offline": "Desconectado"
+    "Offline": "Desconectado",
     "DeviceDetails": "Detalles del dispositivo",
     "Hostname": "Nombre del host",
     "MachineId": "ID de máquina",
