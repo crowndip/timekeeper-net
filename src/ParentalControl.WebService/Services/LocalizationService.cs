@@ -121,6 +121,9 @@ public class LocalizationService
 
     public Dictionary<string, string> GetAvailableLanguages()
     {
+        _logger.LogInformation("GetAvailableLanguages called. Translations count: {Count}", _translations.Count);
+        _logger.LogInformation("Available cultures: {Cultures}", string.Join(", ", _translations.Keys));
+        
         var result = new Dictionary<string, string>();
         foreach (var culture in _translations.Keys.OrderBy(c => c))
         {
