@@ -8,11 +8,11 @@
 @inject LocalizationService Localizer
 @inject LanguageService LangService
 
-<PageTitle>Detailed Reports - Usage by Computer</PageTitle>
+<PageTitle>@T("DetailedReports.PageTitle")</PageTitle>
 
 <div style="padding: 20px; max-width: 1400px; margin: 0 auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-        <h2 style="margin: 0;">📊 Detailed Reports - Usage by Computer</h2>
+        <h2 style="margin: 0;">@T("DetailedReports.PageTitle")</h2>
         <div style="display: flex; gap: 12px;">
             <LanguageSelector />
             <a href="/" style="padding: 10px 20px; background: #6b7280; color: white; text-decoration: none; border-radius: 8px; font-weight: 500;">@T("Common.Back")</a>
@@ -21,13 +21,13 @@
 
     <div style="display: flex; gap: 15px; margin-bottom: 20px;">
         <div>
-            <label style="display: block; margin-bottom: 5px; font-weight: 600;">Date</label>
+            <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("DetailedReports.Date")</label>
             <input type="date" @bind="selectedDate" @bind:after="LoadData" style="padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
         </div>
     </div>
 
     <div style="background: #ebf8ff; border-left: 4px solid #4299e1; padding: 15px; margin-bottom: 20px; border-radius: 4px;">
-        <strong>ℹ️ About this report:</strong> Shows time usage broken down by computer for each user. Segments show which computer was used.
+        <strong>ℹ️ @T("Common.About"):</strong> @T("DetailedReports.InfoText")
     </div>
 
     @if (loading)
@@ -44,9 +44,9 @@
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h3 style="margin: 0;">@report.Username</h3>
                     <div style="text-align: right;">
-                        <div style="font-size: 0.9em; color: #6b7280;">Daily Limit: @(report.DailyLimit.HasValue ? $"{report.DailyLimit} min" : "Unlimited")</div>
+                        <div style="font-size: 0.9em; color: #6b7280;">@T("DetailedReports.DailyLimit"): @(report.DailyLimit.HasValue ? $"{report.DailyLimit} {T("DetailedReports.Minutes")}" : T("DetailedReports.Unlimited"))</div>
                         <div style="font-weight: 600; color: @(report.TimeRemaining < 0 ? "#ef4444" : "#10b981");">
-                            Remaining: @(report.TimeRemaining < 0 ? "0" : report.TimeRemaining.ToString()) min
+                            @T("DetailedReports.Remaining"): @(report.TimeRemaining < 0 ? "0" : report.TimeRemaining.ToString()) @T("DetailedReports.Minutes")
                         </div>
                     </div>
                 </div>
@@ -65,7 +65,7 @@
                                 <div style="width: @(widthPercent)%; background: @usage.Color; display: flex; align-items: center; justify-content: center; color: white; font-weight: 600; font-size: 0.85em; padding: 0 5px; white-space: nowrap; overflow: hidden;">
                                     @if (widthPercent > 8)
                                     {
-                                        <span>@usage.Minutes min</span>
+                                        <span>@usage.Minutes @T("DetailedReports.Minutes")</span>
                                     }
                                 </div>
                             }
@@ -76,7 +76,7 @@
                                 <div style="width: @(remainingPercent)%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280; font-size: 0.85em;">
                                     @if (remainingPercent > 8)
                                     {
-                                        <span>@report.TimeRemaining min</span>
+                                        <span>@report.TimeRemaining @T("DetailedReports.Minutes")</span>
                                     }
                                 </div>
                             }
@@ -84,7 +84,7 @@
                         else
                         {
                             <div style="width: 100%; background: #e5e7eb; display: flex; align-items: center; justify-content: center; color: #6b7280;">
-                                No usage today
+                                @T("DetailedReports.NoUsageToday")
                             </div>
                         }
                     </div>
@@ -96,7 +96,7 @@
                     {
                         <div style="display: flex; align-items: center; gap: 8px;">
                             <div style="width: 16px; height: 16px; background: @usage.Color; border-radius: 3px;"></div>
-                            <span style="font-size: 0.9em;"><strong>@usage.ComputerName:</strong> @usage.Minutes min</span>
+                            <span style="font-size: 0.9em;"><strong>@usage.ComputerName:</strong> @usage.Minutes @T("DetailedReports.Minutes")</span>
                         </div>
                     }
                 </div>
@@ -104,16 +104,21 @@
                 <!-- Summary -->
                 <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; font-size: 0.95em;">
                     <div>
-                        <strong>Total Used:</strong> @report.TotalUsed min
+                        <strong>@T("DetailedReports.TotalUsed"):</strong> @report.TotalUsed @T("DetailedReports.Minutes")
                         @if (report.ComputerUsages.Count > 1)
                         {
-                            <span style="color: #6b7280;"> (across @report.ComputerUsages.Count computers)</span>
+                            var computersText = currentLang == "en" ? $"across {report.ComputerUsages.Count} computers" :
+                                               currentLang == "cs" ? $"na {report.ComputerUsages.Count} počítačích" :
+                                               currentLang == "de" ? $"auf {report.ComputerUsages.Count} Computern" :
+                                               currentLang == "fr" ? $"sur {report.ComputerUsages.Count} ordinateurs" :
+                                               $"en {report.ComputerUsages.Count} ordenadores";
+                            <span style="color: #6b7280;"> (@computersText)</span>
                         }
                     </div>
                     @if (report.DailyLimit.HasValue)
                     {
                         <div>
-                            <strong>Usage:</strong> @((report.TotalUsed * 100 / report.DailyLimit.Value).ToString("F1"))%
+                            <strong>@T("DetailedReports.Usage"):</strong> @((report.TotalUsed * 100 / report.DailyLimit.Value).ToString("F1"))%
                         </div>
                     }
                 </div>
@@ -122,7 +127,7 @@
                 @if (report.TimeSegments.Any())
                 {
                     <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid #e2e8f0;">
-                        <h4 style="margin-bottom: 10px; font-size: 1em; color: #4a5568;">Session Timeline</h4>
+                        <h4 style="margin-bottom: 10px; font-size: 1em; color: #4a5568;">@T("DetailedReports.SessionTimeline")</h4>
                         <div style="display: flex; flex-direction: column; gap: 8px;">
                             @foreach (var segment in report.TimeSegments)
                             {
@@ -130,7 +135,7 @@
                                     <div style="width: 12px; height: 12px; background: @segment.Color; border-radius: 50%; flex-shrink: 0;"></div>
                                     <div style="font-weight: 600; min-width: 120px;">@segment.TimeRange</div>
                                     <div style="color: #6b7280;">@segment.ComputerName</div>
-                                    <div style="margin-left: auto; color: #6b7280;">@segment.Duration min</div>
+                                    <div style="margin-left: auto; color: #6b7280;">@segment.Duration @T("DetailedReports.Minutes")</div>
                                 </div>
                             }
                         </div>
@@ -142,7 +147,7 @@
     else
     {
         <div style="text-align: center; padding: 40px; background: white; border-radius: 8px;">
-            <p style="color: #6b7280;">No usage data for selected date.</p>
+            <p style="color: #6b7280;">@T("DetailedReports.NoData")</p>
         </div>
     }
 </div>

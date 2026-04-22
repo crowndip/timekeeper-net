@@ -38,6 +38,9 @@
     "Reports": "Berichte",
     "ReportsDesc": "Nutzungsstatistiken und Berichte anzeigen",
     "ViewReports": "Berichte anzeigen",
+    "DetailedReports": "Podrobné reporty",
+    "DetailedReportsDesc": "Zobrazit podrobné reporty využití podle počítače",
+    "ViewDetailedReports": "Zobrazit podrobné reporty",
     "Configuration": "Konfiguration",
     "ConfigurationDesc": "Datenbankschema und Systemeinstellungen",
     "ViewConfiguration": "Konfiguration anzeigen",
@@ -175,6 +178,22 @@
     "TotalUsage": "Gesamtnutzung",
     "DailyAverage": "Tagesdurchschnitt",
     "NoData": "Für den ausgewählten Zeitraum sind keine Nutzungsdaten verfügbar."
+  },
+  "DetailedReports": {
+    "PageTitle": "📊 Detaillierte Berichte - Nutzung nach Computer",
+    "Date": "Datum",
+    "InfoText": "Zeigt die Zeitnutzung aufgeschlüsselt nach Computer für jeden Benutzer. Segmente zeigen, welcher Computer verwendet wurde.",
+    "DailyLimit": "Tageslimit",
+    "Unlimited": "Unbegrenzt",
+    "Remaining": "Verbleibend",
+    "TotalUsed": "Gesamt genutzt",
+    "AcrossComputers": "auf {0} Computern",
+    "Usage": "Nutzung",
+    "SessionTimeline": "Sitzungszeitachse",
+    "NoUsageToday": "Heute keine Nutzung",
+    "NoData": "Keine Nutzungsdaten für das ausgewählte Datum.",
+    "Minutes": "Min",
+    "Active": "aktiv"
   },
   "Configuration": {
     "PageTitle": "⚙️ Konfiguration",

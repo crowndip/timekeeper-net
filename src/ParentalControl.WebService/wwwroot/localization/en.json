@@ -38,6 +38,9 @@
     "Reports": "Reports",
     "ReportsDesc": "View usage statistics and reports",
     "ViewReports": "View Reports",
+    "DetailedReports": "Detailed Reports",
+    "DetailedReportsDesc": "View detailed usage reports by computer",
+    "ViewDetailedReports": "View Detailed Reports",
     "Configuration": "Configuration",
     "ConfigurationDesc": "Database schema and system settings",
     "ViewConfiguration": "View Configuration",
@@ -175,6 +178,22 @@
     "TotalUsage": "Total Usage",
     "DailyAverage": "Daily Average",
     "NoData": "No usage data available for the selected period."
+  },
+  "DetailedReports": {
+    "PageTitle": "📊 Detailed Reports - Usage by Computer",
+    "Date": "Date",
+    "InfoText": "Shows time usage broken down by computer for each user. Segments show which computer was used.",
+    "DailyLimit": "Daily Limit",
+    "Unlimited": "Unlimited",
+    "Remaining": "Remaining",
+    "TotalUsed": "Total Used",
+    "AcrossComputers": "across {0} computers",
+    "Usage": "Usage",
+    "SessionTimeline": "Session Timeline",
+    "NoUsageToday": "No usage today",
+    "NoData": "No usage data for selected date.",
+    "Minutes": "min",
+    "Active": "active"
   },
   "Configuration": {
     "PageTitle": "⚙️ Configuration",

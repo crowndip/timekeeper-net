@@ -38,6 +38,9 @@
     "Reports": "Reporty",
     "ReportsDesc": "Zobrazení statistik a reportů využití",
     "ViewReports": "Zobrazit reporty",
+    "DetailedReports": "Podrobné reporty",
+    "DetailedReportsDesc": "Zobrazit podrobné reporty využití podle počítače",
+    "ViewDetailedReports": "Zobrazit podrobné reporty",
     "Configuration": "Konfigurace",
     "ConfigurationDesc": "Schéma databáze a systémová nastavení",
     "ViewConfiguration": "Zobrazit konfiguraci",
@@ -175,6 +178,22 @@
     "TotalUsage": "Celkové využití",
     "DailyAverage": "Denní průměr",
     "NoData": "Pro vybrané období nejsou k dispozici žádná data o využití."
+  },
+  "DetailedReports": {
+    "PageTitle": "📊 Podrobné reporty - Využití podle počítače",
+    "Date": "Datum",
+    "InfoText": "Zobrazuje využití času rozdělené podle počítače pro každého uživatele. Segmenty ukazují, který počítač byl použit.",
+    "DailyLimit": "Denní limit",
+    "Unlimited": "Neomezeno",
+    "Remaining": "Zbývá",
+    "TotalUsed": "Celkem použito",
+    "AcrossComputers": "na {0} počítačích",
+    "Usage": "Využití",
+    "SessionTimeline": "Časová osa relací",
+    "NoUsageToday": "Dnes žádné využití",
+    "NoData": "Pro vybrané datum nejsou k dispozici žádná data.",
+    "Minutes": "min",
+    "Active": "aktivní"
   },
   "Configuration": {
     "PageTitle": "⚙️ Konfigurace",
