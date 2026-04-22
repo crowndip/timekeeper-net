@@ -90,17 +90,17 @@
 {
     <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000;" @onclick="CloseDialog">
         <div style="background: white; padding: 30px; border-radius: 12px; max-width: 600px; width: 90%; max-height: 90vh; overflow-y: auto;" @onclick:stopPropagation="true">
-            <h2 style="margin-top: 0;">@(editingProfile == null ? "Add Profile" : "Edit Profile")</h2>
+            <h2 style="margin-top: 0;">@(editingProfile == null ? T("Profiles.Dialog.AddTitle") : T("Profiles.Dialog.EditTitle"))</h2>
             
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Profile Name *</label>
-                <input @bind="formProfile.Name" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("Profiles.ProfileName") *</label>
+                <input @bind="formProfile.Name" placeholder="@T("Profiles.Dialog.ProfileNamePlaceholder")" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;" />
             </div>
 
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">User *</label>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("Profiles.User") *</label>
                 <select @bind="formProfile.UserId" @bind:after="OnUserSelected" style="width: 100%; padding: 8px; border: 1px solid #d1d5db; border-radius: 4px;">
-                    <option value="@Guid.Empty">Select User</option>
+                    <option value="@Guid.Empty">@T("Profiles.Dialog.SelectUser")</option>
                     @foreach (var user in users.Where(u => u.AccountType == AccountType.Child))
                     {
                         <option value="@user.Id">@user.Username @(user.PrimaryUserId.HasValue ? "(ALIAS)" : "")</option>
@@ -115,34 +115,34 @@
             </div>
 
             <div style="margin-bottom: 15px;">
-                <label style="display: block; margin-bottom: 5px; font-weight: 600;">Daily Limits (minutes, 0 = no limit)</label>
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">@T("Profiles.Dialog.DailyLimits")</label>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
                     <div>
-                        <label style="font-size: 12px;">Monday</label>
+                        <label style="font-size: 12px;">@T("Profiles.Days.Monday")</label>
                         <input type="number" @bind="formProfile.MondayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
                     </div>
                     <div>
-                        <label style="font-size: 12px;">Tuesday</label>
+                        <label style="font-size: 12px;">@T("Profiles.Days.Tuesday")</label>
                         <input type="number" @bind="formProfile.TuesdayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
                     </div>
                     <div>
-                        <label style="font-size: 12px;">Wednesday</label>
+                        <label style="font-size: 12px;">@T("Profiles.Days.Wednesday")</label>
                         <input type="number" @bind="formProfile.WednesdayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
                     </div>
                     <div>
-                        <label style="font-size: 12px;">Thursday</label>
+                        <label style="font-size: 12px;">@T("Profiles.Days.Thursday")</label>
                         <input type="number" @bind="formProfile.ThursdayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
                     </div>
                     <div>
-                        <label style="font-size: 12px;">Friday</label>
+                        <label style="font-size: 12px;">@T("Profiles.Days.Friday")</label>
                         <input type="number" @bind="formProfile.FridayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
                     </div>
                     <div>
-                        <label style="font-size: 12px;">Saturday</label>
+                        <label style="font-size: 12px;">@T("Profiles.Days.Saturday")</label>
                         <input type="number" @bind="formProfile.SaturdayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
                     </div>
                     <div>
-                        <label style="font-size: 12px;">Sunday</label>
+                        <label style="font-size: 12px;">@T("Profiles.Days.Sunday")</label>
                         <input type="number" @bind="formProfile.SundayLimit" min="0" max="1440" style="width: 100%; padding: 6px; border: 1px solid #d1d5db; border-radius: 4px;" />
                     </div>
                 </div>
@@ -151,7 +151,7 @@
             <div style="margin-bottom: 20px;">
                 <label style="display: flex; align-items: center; cursor: pointer;">
                     <input type="checkbox" @bind="formProfile.IsActive" style="margin-right: 8px;" />
-                    <span>Active (deactivates other profiles for this user)</span>
+                    <span>@T("Profiles.Dialog.IsActive")</span>
                 </label>
             </div>
 
