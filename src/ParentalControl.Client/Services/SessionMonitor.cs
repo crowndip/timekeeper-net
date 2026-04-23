@@ -81,7 +81,39 @@ public class SystemdSessionMonitor : ISessionMonitor
     {
         try
         {
-            // Check if session is locked
+            // Check session state - we want to stop counting only if:
+            // 1. Session is locked (user locked screen)
+            // 2. Session is closing (logout/shutdown)
+            // We DO count time for:
+            // - Active sessions (watching videos, etc.)
+            // - Idle sessions (no keyboard/mouse but logged in)
+            
+            var stateProcess = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "loginctl",
+                    Arguments = $"show-session {sessionId} -p State --value",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            
+            stateProcess.Start();
+            var state = await stateProcess.StandardOutput.ReadToEndAsync();
+            await stateProcess.WaitForExitAsync();
+            
+            state = state.Trim();
+            
+            // Only stop counting if session is closing or lingering
+            if (state == "closing" || state == "lingering")
+            {
+                _logger.LogDebug("Session {SessionId} is {State}, not counting time", sessionId, state);
+                return true;
+            }
+            
+            // Check if screen is locked (not just idle)
             var lockedProcess = new System.Diagnostics.Process
             {
                 StartInfo = new System.Diagnostics.ProcessStartInfo
@@ -100,17 +132,20 @@ public class SystemdSessionMonitor : ISessionMonitor
             
             if (lockedOutput.Trim() == "yes")
             {
-                _logger.LogDebug("Session {SessionId} is locked", sessionId);
-                return true; // Locked = idle (don't count time)
+                _logger.LogDebug("Session {SessionId} is locked, not counting time", sessionId);
+                return true;
             }
             
-            // If not locked, session is active (count time even if no input)
+            // Session is active or idle but unlocked - COUNT THE TIME
+            // This includes watching videos, reading, etc.
+            _logger.LogDebug("Session {SessionId} is active (state: {State}), counting time", sessionId, state);
             return false;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error checking session state for {SessionId}", sessionId);
-            return false; // On error, assume active to be safe
+            // On error, assume active to avoid missing time
+            return false;
         }
     }
     

@@ -30,7 +30,7 @@ services:
       AdminPassword: ${ADMIN_PASSWORD:-admin}
       LimitAdministratorPassword: ${LIMIT_ADMIN_PASSWORD}
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - parental_control_keys:/app/keys
     depends_on:
@@ -54,7 +54,7 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     ports:
-      - "8081:80"
+      - "8082:80"
     depends_on:
       - postgres
     networks:
