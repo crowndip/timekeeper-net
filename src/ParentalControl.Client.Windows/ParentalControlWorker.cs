@@ -13,6 +13,8 @@ public class ParentalControlWorker : BackgroundService
     private readonly IEnforcementEngine _enforcement;
     private Guid _currentSessionId = Guid.NewGuid();
     private bool _isLocked = false;
+    private readonly HashSet<int> _warningsShown = new();
+    private int _lastTimeRemaining = int.MaxValue;
     private readonly HashSet<string> _ignoredAccounts = new(StringComparer.OrdinalIgnoreCase)
     {
         "SYSTEM", "LOCAL SERVICE", "NETWORK SERVICE", "Administrator"
@@ -92,68 +94,120 @@ public class ParentalControlWorker : BackgroundService
     {
         var username = _sessionMonitor.GetCurrentUser();
         if (string.IsNullOrEmpty(username) || _ignoredAccounts.Contains(username))
-        {
             return;
-        }
 
-        // Server will map username to userId automatically
-        var userId = Guid.Empty; // Placeholder, server determines actual userId
-        
-        // Only count time if session is not locked
-        // If locked (screen locked or lid closed), record as idle time
+        // Derive a stable userId from username so each user has their own cache entry (Bug #5)
+        var userId = GetUserIdFromUsername(username);
+
+        // Record time for current user only
         if (_isLocked)
-        {
-            await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 0, 1); // Idle minute
-        }
+            await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 0, 1);
         else
-        {
-            await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 1, 0); // Active minute
-        }
+            await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 1, 0);
 
-        var pendingRecords = await _cache.GetPendingRecordsAsync();
-        
-        if (pendingRecords.Count > 0)
+        // Only submit records belonging to the current user to avoid cross-user enforcement (Bug #2)
+        var allPending = await _cache.GetPendingRecordsAsync();
+        var userPending = allPending.Where(r => r.Username == username).ToList();
+
+        if (userPending.Count > 0)
         {
-            // Have usage data to submit
-            var response = await _syncService.SubmitUsageAsync(pendingRecords);
+            var response = await _syncService.SubmitUsageAsync(userPending);
             if (response != null)
             {
-                await _cache.MarkAsSyncedAsync(pendingRecords.Select(r => r.Id).ToList());
-                await CheckEnforcementAsync(userId, response);
+                await _cache.MarkAsSyncedAsync(userPending.Select(r => r.Id).ToList());
+                await CheckEnforcementAsync(username, response);
             }
             else
             {
+                // Offline: recalculate remaining time from cached limits minus today's usage (Bug #4)
+                // This avoids permanent lockout from a stale ShouldEnforce=true snapshot
                 var cachedLimits = await _cache.GetLastKnownLimitsAsync(userId);
                 if (cachedLimits != null)
                 {
-                    await CheckEnforcementAsync(userId, cachedLimits);
+                    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+                    var todayUsage = await _cache.GetTodayUsageAsync(userId, today);
+                    var adjustedRemaining = cachedLimits.TimeRemainingMinutes - todayUsage;
+
+                    _logger.LogWarning("Offline mode: {Username} has {Remaining} minutes remaining (cached)",
+                        username, adjustedRemaining);
+
+                    if (adjustedRemaining <= 0)
+                    {
+                        _logger.LogWarning("Offline enforcement: time limit reached for {Username}", username);
+                        switch (cachedLimits.EnforcementAction)
+                        {
+                            case "lock":
+                                _enforcement.LockSession();
+                                break;
+                            default:
+                                _enforcement.LogoffUser();
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        var adjustedResponse = cachedLimits with
+                        {
+                            TimeRemainingMinutes = adjustedRemaining,
+                            ShouldEnforce = false
+                        };
+                        await CheckEnforcementAsync(username, adjustedResponse);
+                    }
                 }
             }
         }
         else
         {
             // No pending usage but user is logged in - check server for time limits
-            // This handles the case where parent added time while child was logged off
             var response = await _syncService.CheckTimeRemainingAsync(username);
             if (response != null)
+                await CheckEnforcementAsync(username, response);
+        }
+    }
+
+    private async Task CheckEnforcementAsync(string username, UsageReportResponse limits)
+    {
+        if (limits.ShouldEnforce)
+        {
+            _logger.LogWarning("Enforcement required for {Username}: {Action}", username, limits.EnforcementAction);
+            switch (limits.EnforcementAction) // Bug #3: respect configured action
             {
-                await CheckEnforcementAsync(userId, response);
+                case "lock":
+                    _enforcement.LockSession();
+                    break;
+                case "logout":
+                default:
+                    _enforcement.LogoffUser();
+                    break;
+            }
+            return;
+        }
+
+        // Reset warnings when time increases (new day or parent added time) (Bug #7)
+        if (limits.TimeRemainingMinutes > _lastTimeRemaining)
+        {
+            _logger.LogInformation("Time increased from {Old} to {New} minutes, resetting warnings",
+                _lastTimeRemaining, limits.TimeRemainingMinutes);
+            _warningsShown.Clear();
+        }
+        _lastTimeRemaining = limits.TimeRemainingMinutes;
+
+        // Use server-configured warning thresholds instead of hardcoded 5 min (Bug #7)
+        foreach (var warningMinutes in limits.WarningMinutes)
+        {
+            if (limits.TimeRemainingMinutes <= warningMinutes && !_warningsShown.Contains(warningMinutes))
+            {
+                _warningsShown.Add(warningMinutes);
+                await _enforcement.ShowWarningAsync(TimeSpan.FromMinutes(limits.TimeRemainingMinutes));
             }
         }
     }
 
-    private async Task CheckEnforcementAsync(Guid userId, UsageReportResponse limits)
+    // Derive a stable, deterministic Guid from a username (Bug #5)
+    private static Guid GetUserIdFromUsername(string username)
     {
-        var remaining = TimeSpan.FromMinutes(limits.TimeRemainingMinutes);
-
-        if (limits.ShouldEnforce)
-        {
-            _logger.LogWarning("Enforcement required (time limit or allowed hours), enforcing logoff");
-            _enforcement.LogoffUser();
-        }
-        else if (remaining <= TimeSpan.FromMinutes(5))
-        {
-            await _enforcement.ShowWarningAsync(remaining);
-        }
+        using var md5 = System.Security.Cryptography.MD5.Create();
+        var hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(username.ToLowerInvariant()));
+        return new Guid(hash);
     }
 }

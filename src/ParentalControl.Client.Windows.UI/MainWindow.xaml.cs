@@ -11,17 +11,26 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        
+
         _timer = new DispatcherTimer
         {
             Interval = TimeSpan.FromSeconds(1)
         };
         _timer.Tick += Timer_Tick;
-        
-        // TODO: Get actual time from service via named pipe
-        _timeRemaining = TimeSpan.FromMinutes(5);
+
+        // Read --minutes <N> from command-line (passed by the service via CreateProcessAsUser)
+        _timeRemaining = ParseTimeFromArgs() ?? TimeSpan.FromMinutes(5);
         UpdateDisplay();
         _timer.Start();
+    }
+
+    private static TimeSpan? ParseTimeFromArgs()
+    {
+        var args = Environment.GetCommandLineArgs();
+        var idx = Array.IndexOf(args, "--minutes");
+        if (idx >= 0 && idx + 1 < args.Length && int.TryParse(args[idx + 1], out var minutes))
+            return TimeSpan.FromMinutes(minutes);
+        return null;
     }
 
     private void Timer_Tick(object? sender, EventArgs e)

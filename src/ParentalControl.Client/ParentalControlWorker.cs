@@ -75,46 +75,61 @@ public class ParentalControlWorker : BackgroundService
     private async Task ProcessTickAsync()
     {
         var sessions = await _sessionMonitor.GetActiveSessionsAsync();
-        
+
         // Record time for active sessions
         foreach (var session in sessions)
         {
             await _timeTracker.RecordMinuteAsync(session);
         }
-        
+
         // Always sync with server (even if no active sessions)
         // This allows detecting time adjustments when user is logged off
         var usageData = await _timeTracker.GetPendingUsageAsync();
-        
+
         if (usageData.Count > 0)
         {
-            // Have usage data to submit
-            var response = await _serverSync.SubmitUsageAsync(usageData);
-            if (response != null)
+            // Build a lookup of username -> sessionId from active sessions.
+            // A user can have multiple sessions (e.g. graphical + TTY); take the first one.
+            var sessionMap = sessions
+                .GroupBy(s => s.Username)
+                .ToDictionary(g => g.Key, g => g.First().SessionId);
+
+            // Enforce per-user so each user gets the correct enforcement action
+            var syncedIds = new List<Guid>();
+            foreach (var userGroup in usageData.GroupBy(r => r.Username))
             {
-                // Server available - use server response
-                await _enforcement.CheckAndEnforceAsync(response);
-                await _timeTracker.MarkAsSyncedAsync(usageData.Select(u => u.Id).ToList());
+                var username = userGroup.Key;
+                var userRecords = userGroup.ToList();
+                var sessionId = sessionMap.TryGetValue(username, out var sid) ? sid : string.Empty;
+
+                var response = await _serverSync.SubmitUsageAsync(userRecords);
+                if (response != null)
+                {
+                    await _enforcement.CheckAndEnforceAsync(response, username, sessionId);
+                    syncedIds.AddRange(userRecords.Select(u => u.Id));
+                }
+                else
+                {
+                    _logger.LogWarning("Server unavailable for {Username}, using offline mode", username);
+                    await _enforcement.CheckAndEnforceOfflineAsync(userRecords, username, sessionId);
+                }
             }
-            else
-            {
-                // Server unavailable - use offline mode
-                _logger.LogWarning("Server unavailable, using offline mode");
-                await _enforcement.CheckAndEnforceOfflineAsync(usageData);
-            }
+
+            if (syncedIds.Count > 0)
+                await _timeTracker.MarkAsSyncedAsync(syncedIds);
         }
         else if (sessions.Count > 0)
         {
             // No pending usage but have active sessions - check server for time limits
             // This handles the case where parent added time while child was logged off
             _logger.LogDebug("No pending usage, checking server for {Count} active sessions", sessions.Count);
-            
+
             foreach (var session in sessions)
             {
                 var response = await _serverSync.CheckTimeRemainingAsync(session.Username);
                 if (response != null)
                 {
-                    await _enforcement.CheckAndEnforceAsync(response);
+                    await _enforcement.CheckAndEnforceAsync(response, session.Username, session.SessionId);
                 }
             }
         }

@@ -72,6 +72,7 @@ public class ServerSyncService : IServerSyncService
                 return null;
             }
             
+            UsageReportResponse? lastResult = null;
             foreach (var record in records)
             {
                 var request = new UsageReportRequest(
@@ -84,7 +85,7 @@ public class ServerSyncService : IServerSyncService
                     record.MinutesIdle,
                     true
                 );
-                
+
                 var response = await _httpClient.PostAsJsonAsync("/api/client/usage", request);
                 if (response.IsSuccessStatusCode)
                 {
@@ -92,10 +93,15 @@ public class ServerSyncService : IServerSyncService
                     if (result != null)
                     {
                         await _cache.SaveLastKnownLimitsAsync(record.UserId, result);
-                        return result;
+                        lastResult = result;
                     }
                 }
+                else
+                {
+                    _logger.LogWarning("Failed to submit usage record {Id}, status: {Status}", record.Id, response.StatusCode);
+                }
             }
+            return lastResult;
         }
         catch (HttpRequestException ex)
         {
@@ -129,7 +135,7 @@ public class ServerSyncService : IServerSyncService
         {
             var hostname = Environment.MachineName;
             var machineId = $"{hostname}-WIN";
-            var osInfo = "Windows 11";
+            var osInfo = System.Runtime.InteropServices.RuntimeInformation.OSDescription;
             
             var request = new RegisterComputerRequest(hostname, machineId, osInfo);
             var response = await _httpClient.PostAsJsonAsync("/api/client/register", request);

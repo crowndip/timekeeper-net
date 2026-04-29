@@ -54,8 +54,8 @@ public class SystemdSessionMonitor : ISessionMonitor
                     var sessionId = parts[0];
                     var username = parts[2];
                     
-                    // Skip system users
-                    if (username == "root" || username == "gdm" || username == "lightdm")
+                    // Skip system users (gdm=GNOME, lightdm=LightDM, sddm=KDE/Kubuntu)
+                    if (username == "root" || username == "gdm" || username == "lightdm" || username == "sddm")
                         continue;
                     
                     sessions.Add(new UserSession(

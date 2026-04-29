@@ -95,6 +95,22 @@ cp -r client-linux-${ARCH}/* "$INSTALL_DIR/"
 echo "Configuring server URL..."
 "$INSTALL_DIR/ParentalControl.Client" set server-url "$SERVER_URL"
 
+# Create parental-control group for tray app access to config files
+echo "Creating parental-control group..."
+groupadd -f parental-control
+# Add all regular users (UID >= 1000) to the group so the tray app can read config
+while IFS=: read -r username _ uid _; do
+    if [ "$uid" -ge 1000 ] && [ "$uid" -lt 65534 ]; then
+        usermod -aG parental-control "$username" 2>/dev/null || true
+        echo "  Added $username to parental-control group"
+    fi
+done < /etc/passwd
+
+# Create config directory with group access
+mkdir -p /etc/parental-control
+chown root:parental-control /etc/parental-control
+chmod 750 /etc/parental-control
+
 # Create systemd service
 cat > /etc/systemd/system/${SERVICE_NAME}.service << EOF
 [Unit]

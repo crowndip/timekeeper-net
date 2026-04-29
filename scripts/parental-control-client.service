@@ -4,8 +4,9 @@ After=network-online.target
 Wants=network-online.target
 
 [Service]
-Type=simple
+Type=notify
 ExecStart=/opt/parental-control/ParentalControl.Client
+WorkingDirectory=/opt/parental-control
 Restart=always
 RestartSec=10
 User=root
@@ -16,7 +17,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/log/parental-control /var/lib/parental-control
+ReadWritePaths=/var/log/parental-control /var/lib/parental-control /etc/parental-control
 
 [Install]
 WantedBy=multi-user.target

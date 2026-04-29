@@ -5,8 +5,8 @@ namespace ParentalControl.Client.Services;
 
 public interface IEnforcementEngine
 {
-    Task CheckAndEnforceAsync(UsageReportResponse response);
-    Task CheckAndEnforceOfflineAsync(List<UsageRecord> records);
+    Task CheckAndEnforceAsync(UsageReportResponse response, string username, string sessionId);
+    Task CheckAndEnforceOfflineAsync(List<UsageRecord> records, string username, string sessionId);
 }
 
 public class EnforcementEngine : IEnforcementEngine
@@ -14,6 +14,7 @@ public class EnforcementEngine : IEnforcementEngine
     private readonly ILogger<EnforcementEngine> _logger;
     private readonly ILocalCache _cache;
     private readonly HashSet<int> _warningsShown = new();
+    private int _lastTimeRemaining = int.MaxValue;
     
     public EnforcementEngine(ILogger<EnforcementEngine> logger, ILocalCache cache)
     {
@@ -21,23 +22,32 @@ public class EnforcementEngine : IEnforcementEngine
         _cache = cache;
     }
     
-    public async Task CheckAndEnforceAsync(UsageReportResponse response)
+    public async Task CheckAndEnforceAsync(UsageReportResponse response, string username, string sessionId)
     {
         if (response.ShouldEnforce && !string.IsNullOrEmpty(response.EnforcementAction))
         {
-            _logger.LogWarning("Enforcing action: {Action}", response.EnforcementAction);
-            
+            _logger.LogWarning("Enforcing action: {Action} for user {Username}", response.EnforcementAction, username);
+
             switch (response.EnforcementAction)
             {
                 case "logout":
-                    await LogoutCurrentUserAsync();
+                    await LogoutUserAsync(username);
                     break;
                 case "lock":
-                    await LockSessionAsync();
+                    await LockSessionAsync(sessionId);
                     break;
             }
         }
         
+        // Reset warnings when time increases (new day or parent added time)
+        if (response.TimeRemainingMinutes > _lastTimeRemaining)
+        {
+            _logger.LogInformation("Time increased from {Old} to {New} minutes, resetting warnings",
+                _lastTimeRemaining, response.TimeRemainingMinutes);
+            _warningsShown.Clear();
+        }
+        _lastTimeRemaining = response.TimeRemainingMinutes;
+
         foreach (var warningMinutes in response.WarningMinutes)
         {
             if (response.TimeRemainingMinutes == warningMinutes && !_warningsShown.Contains(warningMinutes))
@@ -49,109 +59,111 @@ public class EnforcementEngine : IEnforcementEngine
         }
     }
     
-    public async Task CheckAndEnforceOfflineAsync(List<UsageRecord> records)
+    public async Task CheckAndEnforceOfflineAsync(List<UsageRecord> records, string username, string sessionId)
     {
         if (records.Count == 0) return;
-        
-        // Group by user
-        var userRecords = records.GroupBy(r => r.UserId);
-        
-        foreach (var group in userRecords)
+
+        var userId = records[0].UserId;
+        var lastLimits = await _cache.GetLastKnownLimitsAsync(userId);
+
+        if (lastLimits == null)
         {
-            var userId = group.Key;
-            var lastLimits = await _cache.GetLastKnownLimitsAsync(userId);
-            
-            if (lastLimits == null)
+            _logger.LogWarning("No cached limits for user {Username}, cannot enforce offline", username);
+            return;
+        }
+
+        // Calculate today's usage from cache
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var todayUsage = await _cache.GetTodayUsageAsync(userId, today);
+
+        // Calculate remaining time based on last known limits
+        var timeRemaining = lastLimits.TimeRemainingMinutes - todayUsage;
+
+        _logger.LogInformation("Offline mode: User {Username} has {TimeRemaining} minutes remaining (cached)",
+            username, timeRemaining);
+
+        if (timeRemaining <= 0)
+        {
+            _logger.LogWarning("Offline enforcement: Time limit reached for user {Username}", username);
+
+            if (!string.IsNullOrEmpty(lastLimits.EnforcementAction))
             {
-                _logger.LogWarning("No cached limits for user {UserId}, cannot enforce offline", userId);
-                continue;
-            }
-            
-            // Calculate today's usage from cache
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
-            var todayUsage = await _cache.GetTodayUsageAsync(userId, today);
-            
-            // Calculate remaining time based on last known limits
-            var timeRemaining = lastLimits.TimeRemainingMinutes - todayUsage;
-            
-            _logger.LogInformation("Offline mode: User {UserId} has {TimeRemaining} minutes remaining (cached)", 
-                userId, timeRemaining);
-            
-            if (timeRemaining <= 0)
-            {
-                _logger.LogWarning("Offline enforcement: Time limit reached for user {UserId}", userId);
-                
-                if (!string.IsNullOrEmpty(lastLimits.EnforcementAction))
+                switch (lastLimits.EnforcementAction)
                 {
-                    switch (lastLimits.EnforcementAction)
-                    {
-                        case "logout":
-                            await LogoutCurrentUserAsync();
-                            break;
-                        case "lock":
-                            await LockSessionAsync();
-                            break;
-                    }
+                    case "logout":
+                        await LogoutUserAsync(username);
+                        break;
+                    case "lock":
+                        await LockSessionAsync(sessionId);
+                        break;
                 }
             }
-            else
+        }
+        else
+        {
+            // Check warnings
+            foreach (var warningMinutes in lastLimits.WarningMinutes)
             {
-                // Check warnings
-                foreach (var warningMinutes in lastLimits.WarningMinutes)
+                if (timeRemaining <= warningMinutes && !_warningsShown.Contains(warningMinutes))
                 {
-                    if (timeRemaining <= warningMinutes && !_warningsShown.Contains(warningMinutes))
-                    {
-                        _logger.LogInformation("Offline warning: {Minutes} minutes remaining", timeRemaining);
-                        _warningsShown.Add(warningMinutes);
-                    }
+                    _logger.LogInformation("Offline warning: {Minutes} minutes remaining", timeRemaining);
+                    _warningsShown.Add(warningMinutes);
                 }
             }
         }
     }
     
-    private async Task LogoutCurrentUserAsync()
+    private async Task LogoutUserAsync(string username)
     {
         try
         {
+            _logger.LogInformation("Logging out user {Username}", username);
             var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "loginctl",
-                Arguments = "terminate-user $USER",
+                Arguments = $"terminate-user {username}",
                 UseShellExecute = false
             });
-            
+
             if (process != null)
             {
                 await process.WaitForExitAsync();
-                _logger.LogInformation("User logged out");
+                if (process.ExitCode != 0)
+                    _logger.LogError("loginctl terminate-user {Username} exited with code {ExitCode}", username, process.ExitCode);
+                else
+                    _logger.LogInformation("User {Username} logged out", username);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to logout user");
+            _logger.LogError(ex, "Failed to logout user {Username}", username);
         }
     }
-    
-    private async Task LockSessionAsync()
+
+    private async Task LockSessionAsync(string sessionId)
     {
         try
         {
+            _logger.LogInformation("Locking session {SessionId}", sessionId);
             var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "loginctl",
-                Arguments = "lock-session",
+                Arguments = $"lock-session {sessionId}",
                 UseShellExecute = false
             });
-            
+
             if (process != null)
             {
                 await process.WaitForExitAsync();
-                _logger.LogInformation("Session locked");
+                if (process.ExitCode != 0)
+                    _logger.LogError("loginctl lock-session {SessionId} exited with code {ExitCode}", sessionId, process.ExitCode);
+                else
+                    _logger.LogInformation("Session {SessionId} locked", sessionId);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to lock session");
+            _logger.LogError(ex, "Failed to lock session {SessionId}", sessionId);
         }
     }
 }

@@ -35,11 +35,20 @@ try
             await File.WriteAllTextAsync(Path.Combine(configDir, "proxy-user"), username);
             await File.WriteAllTextAsync(Path.Combine(configDir, "proxy-pass"), password);
             
-            // Set permissions - readable by all (needed for tray app running as user)
+            // Set permissions: readable by root (owner) and parental-control group only.
+            // The tray app user must be a member of the parental-control group (set up by the installer).
             if (OperatingSystem.IsLinux())
             {
-                File.SetUnixFileMode(Path.Combine(configDir, "proxy-pass"), 
-                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
+                var proxyPassPath = Path.Combine(configDir, "proxy-pass");
+                File.SetUnixFileMode(proxyPassPath,
+                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead);
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "chgrp",
+                    Arguments = $"parental-control {proxyPassPath}",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                })?.WaitForExit();
             }
             
             Console.WriteLine($"Proxy credentials set for user: {username}");

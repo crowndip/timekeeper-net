@@ -79,6 +79,7 @@ public class ServerSyncService : IServerSyncService
                 return null;
             }
             
+            UsageReportResponse? lastResult = null;
             foreach (var record in records)
             {
                 var request = new UsageReportRequest(
@@ -91,7 +92,7 @@ public class ServerSyncService : IServerSyncService
                     record.MinutesIdle,
                     true
                 );
-                
+
                 var response = await _httpClient.PostAsJsonAsync("/api/client/usage", request);
                 if (response.IsSuccessStatusCode)
                 {
@@ -100,14 +101,15 @@ public class ServerSyncService : IServerSyncService
                     {
                         // Cache the response for offline mode
                         await _cache.SaveLastKnownLimitsAsync(record.UserId, result);
-                        return result;
+                        lastResult = result;
                     }
                 }
                 else
                 {
-                    _logger.LogWarning("Failed to submit usage, status: {Status}", response.StatusCode);
+                    _logger.LogWarning("Failed to submit usage record {Id}, status: {Status}", record.Id, response.StatusCode);
                 }
             }
+            return lastResult;
         }
         catch (HttpRequestException ex)
         {
@@ -366,12 +368,14 @@ public class ServerSyncService : IServerSyncService
                 Directory.CreateDirectory(dir!);
             
             File.WriteAllText(ProxyPassPath, password);
-            
-            // Set permissions - readable by all (needed for tray app running as user)
+
+            // Set permissions: readable by root (owner) and parental-control group only.
+            // The tray app user must be a member of the parental-control group (set up by the installer).
             if (OperatingSystem.IsLinux())
             {
-                File.SetUnixFileMode(ProxyPassPath, 
-                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead | UnixFileMode.OtherRead);
+                File.SetUnixFileMode(ProxyPassPath,
+                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead);
+                SetFileGroup(ProxyPassPath, "parental-control");
             }
             
             _logger.LogInformation("Saved proxy password to persistent storage");
@@ -424,5 +428,21 @@ public class ServerSyncService : IServerSyncService
         {
             return Guid.NewGuid().ToString("N");
         }
+    }
+
+    private static void SetFileGroup(string path, string group)
+    {
+        try
+        {
+            var p = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "chgrp",
+                Arguments = $"{group} {path}",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            });
+            p?.WaitForExit();
+        }
+        catch { } // Silently ignore if group doesn't exist yet
     }
 }
