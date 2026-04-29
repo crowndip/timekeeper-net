@@ -14,8 +14,8 @@ public class EnforcementEngine : IEnforcementEngine
 {
     private readonly ILogger<EnforcementEngine> _logger;
     private readonly ILocalCache _cache;
-    private readonly HashSet<int> _warningsShown = new();
-    private int _lastTimeRemaining = int.MaxValue;
+    private readonly Dictionary<string, HashSet<int>> _warningsShown = new();
+    private readonly Dictionary<string, int> _lastTimeRemaining = new();
 
     public EnforcementEngine(ILogger<EnforcementEngine> logger, ILocalCache cache)
     {
@@ -41,20 +41,23 @@ public class EnforcementEngine : IEnforcementEngine
         }
 
         // Reset warnings when time increases (new day or parent added time)
-        if (response.TimeRemainingMinutes > _lastTimeRemaining)
+        var lastTime = _lastTimeRemaining.GetValueOrDefault(username, int.MaxValue);
+        var warnings = _warningsShown.TryGetValue(username, out var w) ? w : (_warningsShown[username] = new HashSet<int>());
+
+        if (response.TimeRemainingMinutes > lastTime)
         {
-            _logger.LogInformation("Time increased from {Old} to {New} minutes, resetting warnings",
-                _lastTimeRemaining, response.TimeRemainingMinutes);
-            _warningsShown.Clear();
+            _logger.LogInformation("Time increased from {Old} to {New} minutes for {Username}, resetting warnings",
+                lastTime, response.TimeRemainingMinutes, username);
+            warnings.Clear();
         }
-        _lastTimeRemaining = response.TimeRemainingMinutes;
+        _lastTimeRemaining[username] = response.TimeRemainingMinutes;
 
         foreach (var warningMinutes in response.WarningMinutes)
         {
-            if (response.TimeRemainingMinutes == warningMinutes && !_warningsShown.Contains(warningMinutes))
+            if (response.TimeRemainingMinutes == warningMinutes && !warnings.Contains(warningMinutes))
             {
-                _logger.LogInformation("Warning: {Minutes} minutes remaining", warningMinutes);
-                _warningsShown.Add(warningMinutes);
+                _logger.LogInformation("Warning: {Minutes} minutes remaining for {Username}", warningMinutes, username);
+                warnings.Add(warningMinutes);
                 // TODO: Show notification via UI
             }
         }
@@ -103,12 +106,13 @@ public class EnforcementEngine : IEnforcementEngine
         else
         {
             // Check warnings
+            var warnings = _warningsShown.TryGetValue(username, out var w) ? w : (_warningsShown[username] = new HashSet<int>());
             foreach (var warningMinutes in lastLimits.WarningMinutes)
             {
-                if (timeRemaining <= warningMinutes && !_warningsShown.Contains(warningMinutes))
+                if (timeRemaining <= warningMinutes && !warnings.Contains(warningMinutes))
                 {
-                    _logger.LogInformation("Offline warning: {Minutes} minutes remaining", timeRemaining);
-                    _warningsShown.Add(warningMinutes);
+                    _logger.LogInformation("Offline warning: {Minutes} minutes remaining for {Username}", timeRemaining, username);
+                    warnings.Add(warningMinutes);
                 }
             }
         }
