@@ -192,7 +192,7 @@ public class EnforcementEngine : IEnforcementEngine
         // LightDM starts D-Bus via dbus-launch, giving each session a unique socket in
         // /tmp whose address is only discoverable from the process environment.
         var dbusAddress = GetSessionBusAddress(uid) ?? $"unix:path=/run/user/{uid}/bus";
-        _logger.LogDebug("D-Bus session bus for uid {Uid}: {Address}", uid, dbusAddress);
+        _logger.LogInformation("D-Bus session bus for uid {Uid}: {Address}", uid, dbusAddress);
 
         // KDE Plasma (Kubuntu default)
         if (await TryDbusLogoutAsync(username, dbusAddress,
@@ -253,15 +253,19 @@ public class EnforcementEngine : IEnforcementEngine
                         .FirstOrDefault(v => v.StartsWith(key));
 
                     if (entry != null)
+                    {
+                        _logger.LogInformation("Found D-Bus session bus address for uid {Uid}: {Address}", uid, entry.Substring(key.Length));
                         return entry.Substring(key.Length);
+                    }
                 }
                 catch { }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Could not read D-Bus address from /proc for uid {Uid}", uid);
+            _logger.LogWarning(ex, "Could not read D-Bus address from /proc for uid {Uid}", uid);
         }
+        _logger.LogWarning("No DBUS_SESSION_BUS_ADDRESS found in /proc for uid {Uid}, falling back to systemd user bus", uid);
         return null;
     }
 
@@ -292,7 +296,7 @@ public class EnforcementEngine : IEnforcementEngine
         }
         catch (Exception ex)
         {
-            _logger.LogDebug(ex, "Could not check loginctl sessions for {Username}", username);
+            _logger.LogWarning(ex, "Could not check loginctl sessions for {Username}", username);
             return false;
         }
     }
@@ -322,7 +326,7 @@ public class EnforcementEngine : IEnforcementEngine
             psi.Environment["DBUS_SESSION_BUS_ADDRESS"] = dbusAddress;
 
             var ok = await RunProcessWithTimeoutAsync(psi, timeoutSeconds: 10);
-            _logger.LogDebug("D-Bus logout {Destination}.{Method} for {Username}: {Result}",
+            _logger.LogInformation("D-Bus logout {Destination}.{Method} for {Username}: {Result}",
                 destination, method, username, ok ? "sent" : "failed");
             return ok;
         }

@@ -3,11 +3,26 @@ using Microsoft.Extensions.Hosting;
 using ParentalControl.Client;
 using ParentalControl.Client.Services;
 using Serilog;
+using Serilog.Events;
+
+// Ensure the log directory exists before Serilog tries to open the file.
+Directory.CreateDirectory("/var/log/parental-control");
 
 Log.Logger = new LoggerConfiguration()
-    .WriteTo.File("/var/log/parental-control/client.log", 
+    // Show everything from our own code; suppress noisy framework namespaces.
+    .MinimumLevel.Debug()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("System", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.Hosting.Lifetime", LogEventLevel.Information)
+    .WriteTo.File(
+        path: "/var/log/parental-control/client-.log",
         rollingInterval: RollingInterval.Day,
-        retainedFileCountLimit: 7)
+        // Roll within a day once a file reaches 10 MB (creates client-20260429_001.log etc.)
+        fileSizeLimitBytes: 10L * 1024 * 1024,
+        rollOnFileSizeLimit: true,
+        // Keep at most 14 files total (covers ~14 days of normal use)
+        retainedFileCountLimit: 14,
+        outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} [{Level:u3}] {SourceContext}: {Message:lj}{NewLine}{Exception}")
     .Enrich.FromLogContext()
     .CreateLogger();
 
