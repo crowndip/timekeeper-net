@@ -132,10 +132,21 @@ public class EnforcementEngine : IEnforcementEngine
         // Step 1: graceful desktop logout via D-Bus.
         // Gives the Wayland compositor (kwin_wayland on KDE, mutter on GNOME) time to
         // release DRM buffers and hand the VT back to SDDM cleanly.
+        // IMPORTANT: a D-Bus exit-code 0 only means the message was accepted, not that
+        // logout actually happened. On Cinnamon/LightDM a stub service on the systemd
+        // user bus acknowledges the call but does nothing. We wait up to 15 s and then
+        // verify the session is really gone before treating this step as done.
         if (await TryGracefulDesktopLogoutAsync(username))
         {
-            _logger.LogInformation("Graceful desktop logout sent for {Username}", username);
-            return;
+            _logger.LogInformation("Graceful desktop logout sent for {Username}, waiting up to 15s for session to close", username);
+            await Task.Delay(TimeSpan.FromSeconds(15));
+
+            if (!await UserStillLoggedInAsync(username))
+            {
+                _logger.LogInformation("Graceful desktop logout completed for {Username}", username);
+                return;
+            }
+            _logger.LogWarning("D-Bus logout did not close session for {Username} after 15s (stub service?), escalating", username);
         }
 
         // Step 2: end the specific loginctl session.
