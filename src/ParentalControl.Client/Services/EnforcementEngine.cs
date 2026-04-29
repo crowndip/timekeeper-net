@@ -141,25 +141,42 @@ public class EnforcementEngine : IEnforcementEngine
         // Step 2: end the specific loginctl session.
         // Less destructive than terminate-user: logind manages the VT transition
         // and notifies SDDM, giving it a chance to reclaim the display.
+        // NOTE: on LightDM-based desktops (Linux Mint/Cinnamon) this only kills
+        // PAM-scoped processes (e.g. the tray icon) but leaves Xorg and the desktop
+        // alive because those are LightDM children, not logind children.
+        // We therefore verify the user is actually gone before treating it as done.
         if (!string.IsNullOrEmpty(sessionId))
         {
             _logger.LogInformation("Attempting loginctl terminate-session {SessionId}", sessionId);
             await RunProcessWithTimeoutAsync("loginctl", $"terminate-session {sessionId}", timeoutSeconds: 20);
-            return;
+
+            await Task.Delay(TimeSpan.FromSeconds(3));
+            if (!await UserStillLoggedInAsync(username))
+            {
+                _logger.LogInformation("loginctl terminate-session succeeded for {Username}", username);
+                return;
+            }
+            _logger.LogWarning("loginctl terminate-session did not fully log out {Username}, escalating", username);
         }
 
         // Step 3: terminate all user sessions (can cause Wayland freeze on KDE).
-        _logger.LogWarning("No session ID, attempting loginctl terminate-user {Username}", username);
-        if (!await RunProcessWithTimeoutAsync("loginctl", $"terminate-user {username}", timeoutSeconds: 20))
+        _logger.LogWarning("Attempting loginctl terminate-user {Username}", username);
+        await RunProcessWithTimeoutAsync("loginctl", $"terminate-user {username}", timeoutSeconds: 20);
+
+        await Task.Delay(TimeSpan.FromSeconds(3));
+        if (!await UserStillLoggedInAsync(username))
         {
-            // Step 4: nuclear option — direct kernel-level kill of all user processes.
-            _logger.LogWarning("loginctl failed, using pkill -KILL for {Username}", username);
-            await RunProcessWithTimeoutAsync("pkill", $"-KILL -u {username}", timeoutSeconds: 10);
+            _logger.LogInformation("loginctl terminate-user succeeded for {Username}", username);
+            return;
         }
+
+        // Step 4: nuclear option — direct kernel-level kill of all user processes.
+        // Catches LightDM-parented Xorg/cinnamon-session that loginctl cannot reach.
+        _logger.LogWarning("loginctl failed, using pkill -KILL for {Username}", username);
+        await RunProcessWithTimeoutAsync("pkill", $"-KILL -u {username}", timeoutSeconds: 10);
     }
 
     // Attempts a graceful D-Bus logout for the user's running desktop environment.
-    // Requires the user's session D-Bus bus to be accessible at /run/user/{uid}/bus.
     private async Task<bool> TryGracefulDesktopLogoutAsync(string username)
     {
         var uid = GetUserUid(username);
@@ -169,20 +186,27 @@ public class EnforcementEngine : IEnforcementEngine
             return false;
         }
 
-        var dbusAddress = $"unix:path=/run/user/{uid}/bus";
+        // Prefer the real session bus address read from the user's process environment.
+        // /run/user/{uid}/bus is the systemd user-instance bus, which is NOT where the
+        // session manager registers on LightDM-based desktops (Linux Mint/Cinnamon).
+        // LightDM starts D-Bus via dbus-launch, giving each session a unique socket in
+        // /tmp whose address is only discoverable from the process environment.
+        var dbusAddress = GetSessionBusAddress(uid) ?? $"unix:path=/run/user/{uid}/bus";
+        _logger.LogDebug("D-Bus session bus for uid {Uid}: {Address}", uid, dbusAddress);
 
         // KDE Plasma (Kubuntu default)
         if (await TryDbusLogoutAsync(username, dbusAddress,
             "org.kde.Shutdown", "/Shutdown", "org.kde.Shutdown.logout"))
             return true;
 
-        // GNOME / Unity
+        // GNOME / Unity / Cinnamon — cinnamon-session is a GNOME fork and registers
+        // under org.gnome.SessionManager for backwards compatibility.
         if (await TryDbusLogoutAsync(username, dbusAddress,
             "org.gnome.SessionManager", "/org/gnome/SessionManager",
             "org.gnome.SessionManager.Logout", extraArgs: "uint32:1"))
             return true;
 
-        // Cinnamon (Linux Mint)
+        // Cinnamon (newer versions that may use their own name)
         if (await TryDbusLogoutAsync(username, dbusAddress,
             "org.cinnamon.SessionManager", "/org/cinnamon/SessionManager",
             "org.cinnamon.SessionManager.Logout", extraArgs: "uint32:1"))
@@ -195,6 +219,82 @@ public class EnforcementEngine : IEnforcementEngine
             return true;
 
         return false;
+    }
+
+    // Reads DBUS_SESSION_BUS_ADDRESS from the environment of a process running as uid.
+    // This works across display managers (LightDM, GDM, SDDM) regardless of whether
+    // the session bus was started by systemd --user or by dbus-launch.
+    private string? GetSessionBusAddress(int uid)
+    {
+        try
+        {
+            foreach (var pidDir in Directory.GetDirectories("/proc")
+                .Where(d => int.TryParse(Path.GetFileName(d), out _)))
+            {
+                try
+                {
+                    var statusPath = Path.Combine(pidDir, "status");
+                    if (!File.Exists(statusPath)) continue;
+
+                    var uidLine = File.ReadAllLines(statusPath)
+                        .FirstOrDefault(l => l.StartsWith("Uid:"));
+                    if (uidLine == null) continue;
+
+                    var parts = uidLine.Split('\t', StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length < 2 || !int.TryParse(parts[1], out var processUid) || processUid != uid)
+                        continue;
+
+                    var environPath = Path.Combine(pidDir, "environ");
+                    if (!File.Exists(environPath)) continue;
+
+                    const string key = "DBUS_SESSION_BUS_ADDRESS=";
+                    var entry = File.ReadAllText(environPath)
+                        .Split('\0')
+                        .FirstOrDefault(v => v.StartsWith(key));
+
+                    if (entry != null)
+                        return entry.Substring(key.Length);
+                }
+                catch { }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not read D-Bus address from /proc for uid {Uid}", uid);
+        }
+        return null;
+    }
+
+    // Returns true if the user still has at least one active loginctl session.
+    private async Task<bool> UserStillLoggedInAsync(string username)
+    {
+        try
+        {
+            var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "loginctl",
+                Arguments = "list-sessions --no-legend",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            });
+            if (process == null) return false;
+
+            var output = await process.StandardOutput.ReadToEndAsync();
+            await process.WaitForExitAsync();
+
+            return output.Split('\n').Any(line =>
+            {
+                var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                return parts.Length >= 3 && parts[2] == username;
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Could not check loginctl sessions for {Username}", username);
+            return false;
+        }
     }
 
     private async Task<bool> TryDbusLogoutAsync(string username, string dbusAddress,
