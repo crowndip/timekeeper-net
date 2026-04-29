@@ -12,6 +12,7 @@ public class ParentalControlWorker : BackgroundService
     private readonly IEnforcementEngine _enforcement;
     private readonly ILogger<ParentalControlWorker> _logger;
     private readonly int _tickIntervalSeconds;
+    private readonly HashSet<string> _seenSessionIds = new();
     
     public ParentalControlWorker(
         ISessionMonitor sessionMonitor,
@@ -75,6 +76,16 @@ public class ParentalControlWorker : BackgroundService
     private async Task ProcessTickAsync()
     {
         var sessions = await _sessionMonitor.GetActiveSessionsAsync();
+
+        // Check new sessions immediately before recording any time.
+        // Prevents ~1 minute of free usage when a child re-logs in after being enforced out.
+        foreach (var session in sessions.Where(s => _seenSessionIds.Add(s.SessionId)))
+        {
+            _logger.LogInformation("New session detected for {Username} ({SessionId}), checking enforcement immediately", session.Username, session.SessionId);
+            var response = await _serverSync.CheckTimeRemainingAsync(session.Username);
+            if (response != null)
+                await _enforcement.CheckAndEnforceAsync(response, session.Username, session.SessionId);
+        }
 
         // Record time for active sessions
         foreach (var session in sessions)

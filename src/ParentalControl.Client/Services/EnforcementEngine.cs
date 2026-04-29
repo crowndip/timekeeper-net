@@ -176,10 +176,22 @@ public class EnforcementEngine : IEnforcementEngine
             "org.kde.Shutdown", "/Shutdown", "org.kde.Shutdown.logout"))
             return true;
 
-        // GNOME / Unity fallback
+        // GNOME / Unity
         if (await TryDbusLogoutAsync(username, dbusAddress,
             "org.gnome.SessionManager", "/org/gnome/SessionManager",
             "org.gnome.SessionManager.Logout", extraArgs: "uint32:1"))
+            return true;
+
+        // Cinnamon (Linux Mint)
+        if (await TryDbusLogoutAsync(username, dbusAddress,
+            "org.cinnamon.SessionManager", "/org/cinnamon/SessionManager",
+            "org.cinnamon.SessionManager.Logout", extraArgs: "uint32:1"))
+            return true;
+
+        // XFCE
+        if (await TryDbusLogoutAsync(username, dbusAddress,
+            "org.xfce.SessionManager", "/org/xfce/SessionManager",
+            "org.xfce.SessionManager.Logout", extraArgs: "boolean:true boolean:false"))
             return true;
 
         return false;
