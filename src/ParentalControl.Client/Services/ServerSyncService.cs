@@ -116,13 +116,13 @@ public class ServerSyncService : IServerSyncService
         catch (HttpRequestException ex)
         {
             _logger.LogWarning(ex, "Network error submitting usage, will use offline mode");
+            return null;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to submit usage");
+            return null;
         }
-        
-        return null;
     }
     
     public async Task<ClientConfigResponse?> GetConfigurationAsync()
