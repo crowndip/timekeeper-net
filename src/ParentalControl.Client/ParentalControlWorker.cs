@@ -87,8 +87,13 @@ public class ParentalControlWorker : BackgroundService
                 await _enforcement.CheckAndEnforceAsync(response, session.Username, session.SessionId);
         }
 
-        // Record time for active sessions
-        foreach (var session in sessions)
+        // Record time for active sessions (deduplicate by username to avoid double-counting)
+        var uniqueSessions = sessions
+            .GroupBy(s => s.Username)
+            .Select(g => g.First())
+            .ToList();
+            
+        foreach (var session in uniqueSessions)
         {
             await _timeTracker.RecordMinuteAsync(session);
         }
