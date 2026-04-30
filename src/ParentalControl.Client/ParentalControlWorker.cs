@@ -135,7 +135,13 @@ public class ParentalControlWorker : BackgroundService
             // This handles the case where parent added time while child was logged off
             _logger.LogDebug("No pending usage, checking server for {Count} active sessions", sessions.Count);
 
-            foreach (var session in sessions)
+            // Deduplicate by username - only check once per user even if multiple sessions exist
+            var uniqueUsers = sessions
+                .GroupBy(s => s.Username)
+                .Select(g => g.First())
+                .ToList();
+
+            foreach (var session in uniqueUsers)
             {
                 var response = await _serverSync.CheckTimeRemainingAsync(session.Username);
                 if (response != null)

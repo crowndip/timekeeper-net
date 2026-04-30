@@ -67,7 +67,7 @@ public class TimeCalculationService : ITimeCalculationService
         return dailyRemaining;
     }
     
-    public Task<bool> ShouldEnforceAsync(Guid userId, int timeRemaining) => Task.FromResult(timeRemaining <= 0);
+    public Task<bool> ShouldEnforceAsync(Guid userId, int timeRemaining) => Task.FromResult(timeRemaining < 0);
     
     public async Task<bool> IsWithinAllowedHoursAsync(Guid userId, DateTime currentTime)
     {
