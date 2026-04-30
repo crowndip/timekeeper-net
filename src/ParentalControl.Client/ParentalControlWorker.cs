@@ -113,9 +113,11 @@ public class ParentalControlWorker : BackgroundService
                 var userRecords = userGroup.ToList();
                 var sessionId = sessionMap.TryGetValue(username, out var sid) ? sid : string.Empty;
 
+                // Submit all usage records for this user
                 var response = await _serverSync.SubmitUsageAsync(userRecords);
                 if (response != null)
                 {
+                    // Only enforce after ALL records are submitted (response contains final state)
                     await _enforcement.CheckAndEnforceAsync(response, username, sessionId);
                     syncedIds.AddRange(userRecords.Select(u => u.Id));
                 }

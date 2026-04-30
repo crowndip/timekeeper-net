@@ -79,37 +79,39 @@ public class ServerSyncService : IServerSyncService
                 return null;
             }
             
-            UsageReportResponse? lastResult = null;
-            foreach (var record in records)
-            {
-                var request = new UsageReportRequest(
-                    _computerId.Value,
-                    record.UserId,
-                    record.Username,
-                    record.SessionId,
-                    record.Timestamp,
-                    record.MinutesActive,
-                    record.MinutesIdle,
-                    true
-                );
+            // Aggregate all records into a single request
+            var totalActive = records.Sum(r => r.MinutesActive);
+            var totalIdle = records.Sum(r => r.MinutesIdle);
+            var firstRecord = records.First();
+            
+            var request = new UsageReportRequest(
+                _computerId.Value,
+                firstRecord.UserId,
+                firstRecord.Username,
+                firstRecord.SessionId,
+                firstRecord.Timestamp,
+                totalActive,
+                totalIdle,
+                true
+            );
 
-                var response = await _httpClient.PostAsJsonAsync("/api/client/usage", request);
-                if (response.IsSuccessStatusCode)
+            var response = await _httpClient.PostAsJsonAsync("/api/client/usage", request);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<UsageReportResponse>();
+                if (result != null)
                 {
-                    var result = await response.Content.ReadFromJsonAsync<UsageReportResponse>();
-                    if (result != null)
-                    {
-                        // Cache the response for offline mode
-                        await _cache.SaveLastKnownLimitsAsync(record.UserId, result);
-                        lastResult = result;
-                    }
-                }
-                else
-                {
-                    _logger.LogWarning("Failed to submit usage record {Id}, status: {Status}", record.Id, response.StatusCode);
+                    // Cache the response for offline mode
+                    await _cache.SaveLastKnownLimitsAsync(firstRecord.UserId, result);
+                    return result;
                 }
             }
-            return lastResult;
+            else
+            {
+                _logger.LogWarning("Failed to submit usage, status: {Status}", response.StatusCode);
+            }
+            
+            return null;
         }
         catch (HttpRequestException ex)
         {
