@@ -109,6 +109,13 @@ public class ClientController : ControllerBase
         }
         
         var date = DateOnly.FromDateTime(request.Timestamp);
+        var now = DateTime.UtcNow;
+        
+        // Check for concurrent usage: if another computer reported for this user in the last 60 seconds, don't double-count
+        var recentUsage = await _context.TimeUsage
+            .Where(u => u.UserId == reportedUserId && u.UsageDate == date && u.ComputerId != request.ComputerId)
+            .Where(u => u.LastUpdated >= now.AddSeconds(-60))
+            .AnyAsync();
         
         // Record usage with reported user ID (audit trail)
         var usage = await _context.TimeUsage
@@ -126,8 +133,12 @@ public class ClientController : ControllerBase
             _context.TimeUsage.Add(usage);
         }
         
-        usage.MinutesUsed += request.MinutesActive;
-        usage.LastUpdated = DateTime.UtcNow;
+        // Only add minutes if not concurrent usage
+        if (!recentUsage)
+        {
+            usage.MinutesUsed += request.MinutesActive;
+        }
+        usage.LastUpdated = now;
         
         if (request.SessionId.HasValue)
         {
