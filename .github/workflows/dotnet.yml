@@ -39,10 +39,10 @@ jobs:
         dotnet build src/ParentalControl.WebService/ParentalControl.WebService.csproj --no-restore --configuration Release
         dotnet build src/ParentalControl.Client/ParentalControl.Client.csproj --no-restore --configuration Release
         dotnet build src/ParentalControl.Client.UI/ParentalControl.Client.UI.csproj --no-restore --configuration Release
-        dotnet build src/ParentalControl.Client.Windows/ParentalControl.Client.Windows.csproj --no-restore --configuration Release
+        dotnet build src/ParentalControl.Client.Windows/ParentalControl.Client.Windows.csproj --no-restore --configuration Release /p:EnableWindowsTargeting=true
         dotnet build tests/ParentalControl.WebService.Tests/ParentalControl.WebService.Tests.csproj --no-restore --configuration Release
         dotnet build tests/ParentalControl.Client.Tests/ParentalControl.Client.Tests.csproj --no-restore --configuration Release
-        dotnet build tests/ParentalControl.Client.Windows.Tests/ParentalControl.Client.Windows.Tests.csproj --no-restore --configuration Release
+        dotnet build tests/ParentalControl.Client.Windows.Tests/ParentalControl.Client.Windows.Tests.csproj --no-restore --configuration Release /p:EnableWindowsTargeting=true
     
     - name: Test
       run: |
