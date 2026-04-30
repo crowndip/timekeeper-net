@@ -89,13 +89,27 @@ public class TimeCalculationServiceTests
     }
 
     [Fact]
-    public async Task ShouldEnforce_WhenNoTimeRemaining_ReturnsTrue()
+    public async Task ShouldEnforce_WhenNoTimeRemaining_ReturnsFalse()
     {
         using var context = CreateInMemoryContext();
         var service = CreateService(context);
         var userId = Guid.NewGuid();
 
+        // At exactly 0 minutes, should NOT enforce (user can use their last minute)
         var result = await service.ShouldEnforceAsync(userId, 0);
+
+        Assert.False(result);
+    }
+    
+    [Fact]
+    public async Task ShouldEnforce_WhenNegativeTime_ReturnsTrue()
+    {
+        using var context = CreateInMemoryContext();
+        var service = CreateService(context);
+        var userId = Guid.NewGuid();
+
+        // Only enforce when time goes negative
+        var result = await service.ShouldEnforceAsync(userId, -1);
 
         Assert.True(result);
     }

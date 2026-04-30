@@ -255,6 +255,6 @@ public class ClientAliasIntegrationTests
         
         // 100 - (40 + 35 + 25) = 0
         Assert.Equal(0, response.TimeRemainingMinutes);
-        Assert.True(response.ShouldEnforce);
+        Assert.False(response.ShouldEnforce); // Should NOT enforce at exactly 0
     }
 }

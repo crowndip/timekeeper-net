@@ -62,7 +62,7 @@ public class UserScenarioTests
         var shouldEnforce = await service.ShouldEnforceAsync(user.Id, remaining);
 
         Assert.Equal(0, remaining);
-        Assert.True(shouldEnforce);
+        Assert.False(shouldEnforce); // Should NOT enforce at exactly 0
     }
 
     [Fact]
