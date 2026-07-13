@@ -7,6 +7,7 @@
 @inject NavigationManager Navigation
 @inject LocalizationService Localizer
 @inject LanguageService LangService
+@inject IClockService Clock
 
 <PageTitle>@T("Dashboard.PageTitle")</PageTitle>
 
@@ -558,7 +559,7 @@ else
     {
         try
         {
-            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var today = Clock.LocalToday();
             var sessions = await DbContext.Sessions
                 .Include(s => s.User)
                     .ThenInclude(u => u.PrimaryUser)
@@ -570,7 +571,8 @@ else
 
             var timeCalc = new ParentalControl.WebService.Services.TimeCalculationService(
                 DbContext,
-                new ParentalControl.WebService.Services.UserResolutionService(DbContext)
+                new ParentalControl.WebService.Services.UserResolutionService(DbContext),
+                Clock
             );
 
             var activities = new List<RecentActivityItem>();

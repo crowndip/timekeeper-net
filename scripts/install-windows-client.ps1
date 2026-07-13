@@ -28,6 +28,27 @@ New-Item -ItemType Directory -Force -Path $installPath | Out-Null
 New-Item -ItemType Directory -Force -Path $dataPath | Out-Null
 New-Item -ItemType Directory -Force -Path "$dataPath\Logs" | Out-Null
 
+# Restrict write access to the service (SYSTEM) and admins only, so a local user
+# (including the child the service is enforcing limits on) can't tamper with
+# server-url.txt, computer-id.txt, api-key.txt, or cache.json to fake their own limits.
+# Users keep read access because ParentalControl.TrayIcon.Windows runs in the user's own
+# session and reads server-url.txt/computer-id.txt/proxy-user.txt/proxy-pass.txt/
+# appsettings.json from this same directory to show remaining time -- api-key.txt and
+# cache.json are therefore still user-readable (unchanged from before this restriction),
+# just no longer user-writable.
+#
+# S-1-5-18 = SYSTEM, S-1-5-32-544 = Administrators, S-1-5-32-545 = Users.
+# SIDs, not names: group display names are localized (Czech "Administrátoři"/"Uživatelé"),
+# and a failed name lookup after /inheritance:r would leave an EMPTY DACL -- a directory
+# nobody, including the service, can access. One combined invocation also avoids the
+# window where inheritance is stripped but the grants haven't been applied yet.
+Write-Host "Restricting data directory permissions..." -ForegroundColor Yellow
+icacls $dataPath /inheritance:r /grant "*S-1-5-18:(OI)(CI)F" /grant "*S-1-5-32-544:(OI)(CI)F" /grant "*S-1-5-32-545:(OI)(CI)RX" | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "WARNING: could not restrict permissions on $dataPath (icacls exit code $LASTEXITCODE)." -ForegroundColor Red
+    Write-Host "The service will still work, but a local user may be able to tamper with its data files." -ForegroundColor Red
+}
+
 # Copy binaries
 Write-Host "Copying binaries..." -ForegroundColor Yellow
 Copy-Item -Path ".\*" -Destination $installPath -Recurse -Force

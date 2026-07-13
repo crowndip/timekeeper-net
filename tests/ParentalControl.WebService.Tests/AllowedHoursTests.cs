@@ -19,7 +19,7 @@ public class AllowedHoursTests
     private TimeCalculationService CreateService(AppDbContext context)
     {
         var userResolution = new UserResolutionService(context);
-        return new TimeCalculationService(context, userResolution);
+        return new TimeCalculationService(context, userResolution, TestClock.Utc);
     }
 
     [Fact]
@@ -123,6 +123,113 @@ public class AllowedHoursTests
         
         // Assert
         Assert.Equal(15, result); // 15 minutes until 10 PM
+    }
+
+    [Fact]
+    public async Task GetMinutesUntilAllowedHoursEnd_AdjacentWindows_MergesAcrossThem()
+    {
+        // Regression test: with 08:00-12:00 and 12:00-18:00 configured as two separate
+        // rows, checking at 11:00 must not report only 60 minutes (until the first
+        // window's end) -- allowed time actually continues uninterrupted until 18:00.
+        using var context = CreateContext();
+        var user = new User { Username = "test", AccountType = AccountType.Child };
+        context.Users.Add(user);
+        var profile = new TimeProfile { UserId = user.Id, Name = "Test", IsActive = true };
+        context.TimeProfiles.Add(profile);
+
+        context.AllowedHours.Add(new AllowedHours
+        {
+            Profile = profile,
+            DayOfWeek = (int)DayOfWeek.Monday,
+            StartTime = new TimeOnly(8, 0),
+            EndTime = new TimeOnly(12, 0)
+        });
+        context.AllowedHours.Add(new AllowedHours
+        {
+            Profile = profile,
+            DayOfWeek = (int)DayOfWeek.Monday,
+            StartTime = new TimeOnly(12, 0),
+            EndTime = new TimeOnly(18, 0)
+        });
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+        var testTime = new DateTime(2024, 1, 1, 11, 0, 0); // Monday 11 AM
+
+        var result = await service.GetMinutesUntilAllowedHoursEndAsync(user.Id, testTime);
+
+        // Merged window is 08:00-18:00; 11:00 -> 7 hours = 420 minutes until end.
+        Assert.Equal(420, result);
+    }
+
+    [Fact]
+    public async Task GetMinutesUntilAllowedHoursEnd_OverlappingWindows_MergesAcrossThem()
+    {
+        // Overlapping (not just touching) windows must also merge correctly.
+        using var context = CreateContext();
+        var user = new User { Username = "test", AccountType = AccountType.Child };
+        context.Users.Add(user);
+        var profile = new TimeProfile { UserId = user.Id, Name = "Test", IsActive = true };
+        context.TimeProfiles.Add(profile);
+
+        context.AllowedHours.Add(new AllowedHours
+        {
+            Profile = profile,
+            DayOfWeek = (int)DayOfWeek.Monday,
+            StartTime = new TimeOnly(8, 0),
+            EndTime = new TimeOnly(13, 0)
+        });
+        context.AllowedHours.Add(new AllowedHours
+        {
+            Profile = profile,
+            DayOfWeek = (int)DayOfWeek.Monday,
+            StartTime = new TimeOnly(12, 0),
+            EndTime = new TimeOnly(18, 0)
+        });
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+        var testTime = new DateTime(2024, 1, 1, 11, 0, 0); // Monday 11 AM
+
+        var result = await service.GetMinutesUntilAllowedHoursEndAsync(user.Id, testTime);
+
+        // Merged window is 08:00-18:00; 11:00 -> 420 minutes until end.
+        Assert.Equal(420, result);
+    }
+
+    [Fact]
+    public async Task GetMinutesUntilAllowedHoursEnd_NonAdjacentWindows_DoesNotMerge()
+    {
+        // A genuine gap (e.g. lunch break with no allowed hours) must not be merged away.
+        using var context = CreateContext();
+        var user = new User { Username = "test", AccountType = AccountType.Child };
+        context.Users.Add(user);
+        var profile = new TimeProfile { UserId = user.Id, Name = "Test", IsActive = true };
+        context.TimeProfiles.Add(profile);
+
+        context.AllowedHours.Add(new AllowedHours
+        {
+            Profile = profile,
+            DayOfWeek = (int)DayOfWeek.Monday,
+            StartTime = new TimeOnly(8, 0),
+            EndTime = new TimeOnly(12, 0)
+        });
+        context.AllowedHours.Add(new AllowedHours
+        {
+            Profile = profile,
+            DayOfWeek = (int)DayOfWeek.Monday,
+            StartTime = new TimeOnly(13, 0),
+            EndTime = new TimeOnly(18, 0)
+        });
+        await context.SaveChangesAsync();
+
+        var service = CreateService(context);
+        var testTime = new DateTime(2024, 1, 1, 11, 0, 0); // Monday 11 AM, within first window
+
+        var result = await service.GetMinutesUntilAllowedHoursEndAsync(user.Id, testTime);
+
+        // Still bound by the first window's own end (12:00) -- the gap 12:00-13:00 is real.
+        Assert.Equal(60, result);
     }
 
     [Fact]

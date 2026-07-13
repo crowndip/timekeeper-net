@@ -21,7 +21,7 @@ public class AliasApiTests
     private UsersController CreateController(AppDbContext context)
     {
         var userResolution = new UserResolutionService(context);
-        return new UsersController(context, userResolution);
+        return new UsersController(context, userResolution, TestClock.Utc);
     }
 
     [Fact]

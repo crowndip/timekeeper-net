@@ -39,24 +39,20 @@ cat > "${PACKAGE_DIR}/opt/parental-control/appsettings.json" << 'EOF'
 }
 EOF
 
-# Create systemd service
-cat > "${PACKAGE_DIR}/etc/systemd/system/parental-control-client.service" << 'EOF'
-[Unit]
-Description=Parental Control Client
-After=network.target
+# Use the canonical, hardened systemd unit (ProtectSystem=strict + the ReadWritePaths
+# needed for LocalCache's persisted cache.json and the client's api-key file) instead of
+# maintaining a second copy here that silently drifts out of sync with it.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cp "${SCRIPT_DIR}/parental-control-client.service" "${PACKAGE_DIR}/etc/systemd/system/parental-control-client.service"
 
-[Service]
-Type=notify
-ExecStart=/opt/parental-control/ParentalControl.Client
-WorkingDirectory=/opt/parental-control
-Restart=always
-RestartSec=10
-KillSignal=SIGINT
-SyslogIdentifier=parental-control-client
-User=root
-
-[Install]
-WantedBy=multi-user.target
+# Mark appsettings.json as a conffile: without this, dpkg silently overwrites it on
+# every upgrade (files under /opt aren't conffiles by default), which would revert a
+# ServerUrl the parent edited directly in the file back to the localhost placeholder.
+# ServerUrl is only a fallback -- LoadServerUrl() in ServerSyncService prefers the
+# persisted /etc/parental-control/server-url file, but the file is still there and
+# some parents will edit it directly, so it needs upgrade-safe handling either way.
+cat > "${PACKAGE_DIR}/DEBIAN/conffiles" << 'EOF'
+/opt/parental-control/appsettings.json
 EOF
 
 # Create control file
@@ -88,8 +84,11 @@ systemctl enable parental-control-client.service
 
 # Restart service if it was already running (upgrade scenario)
 if [ "$1" = "configure" ] && [ -n "$2" ]; then
-    # This is an upgrade
-    echo "Upgrading from version $2 to ${VERSION}..."
+    # This is an upgrade. Note: this heredoc is single-quoted (see the 'EOF' above), so
+    # ${VERSION} from the outer script is NOT interpolated here and would print empty at
+    # runtime -- only $2 (the previous version, passed by dpkg to postinst itself) is
+    # meant to be resolved at install time, not by this script.
+    echo "Upgrading from version $2..."
     systemctl restart parental-control-client.service || true
 else
     # This is a fresh install
@@ -97,10 +96,12 @@ else
     echo "Parental Control Client installed successfully!"
     echo ""
     echo "Next steps:"
-    echo "1. Edit /opt/parental-control/appsettings.json"
-    echo "2. Set ServerUrl to your server address"
-    echo "3. Start service: sudo systemctl start parental-control-client"
-    echo "4. Check status: sudo systemctl status parental-control-client"
+    echo "1. Set the server address:"
+    echo "     sudo /opt/parental-control/ParentalControl.Client set server-url http://your-server:8080"
+    echo "   (this persists to /etc/parental-control/server-url and survives package upgrades;"
+    echo "    editing appsettings.json directly also works but is only used as a fallback)"
+    echo "2. Start service: sudo systemctl start parental-control-client"
+    echo "3. Check status: sudo systemctl status parental-control-client"
     echo ""
 fi
 

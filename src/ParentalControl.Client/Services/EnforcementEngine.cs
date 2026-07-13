@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using ParentalControl.Shared.DTOs;
@@ -8,14 +9,30 @@ public interface IEnforcementEngine
 {
     Task CheckAndEnforceAsync(UsageReportResponse response, string username, string sessionId);
     Task CheckAndEnforceOfflineAsync(List<UsageRecord> records, string username, string sessionId);
+
+    // Drops per-user tracking state (warnings shown, last-seen remaining time) for users
+    // who no longer have a session on this machine, so a daemon that runs for months
+    // doesn't accumulate an entry per username that ever logged in.
+    void PruneStaleUsers(IEnumerable<string> activeUsernames);
 }
 
 public class EnforcementEngine : IEnforcementEngine
 {
+    // Upper bound on the whole graduated logout ladder for one user. If a step hangs
+    // (a D-Bus call that never returns, a desktop that never actually tears down), this
+    // is what keeps enforcement from stalling indefinitely -- past this point we stop
+    // being graceful and force the issue directly.
+    private static readonly TimeSpan LogoutDeadline = TimeSpan.FromSeconds(90);
+
     private readonly ILogger<EnforcementEngine> _logger;
     private readonly ILocalCache _cache;
     private readonly Dictionary<string, HashSet<int>> _warningsShown = new();
     private readonly Dictionary<string, int> _lastTimeRemaining = new();
+
+    // Tracks usernames with a logout currently running in the background, so a
+    // still-over-limit user re-checked on the next tick (or twice in the same tick,
+    // online + offline paths) doesn't launch a second concurrent logout ladder.
+    private readonly ConcurrentDictionary<string, byte> _logoutInProgress = new(StringComparer.OrdinalIgnoreCase);
 
     public EnforcementEngine(ILogger<EnforcementEngine> logger, ILocalCache cache)
     {
@@ -23,7 +40,18 @@ public class EnforcementEngine : IEnforcementEngine
         _cache = cache;
     }
 
-    public async Task CheckAndEnforceAsync(UsageReportResponse response, string username, string sessionId)
+    public void PruneStaleUsers(IEnumerable<string> activeUsernames)
+    {
+        var active = new HashSet<string>(activeUsernames, StringComparer.OrdinalIgnoreCase);
+
+        foreach (var username in _warningsShown.Keys.Where(u => !active.Contains(u)).ToList())
+            _warningsShown.Remove(username);
+
+        foreach (var username in _lastTimeRemaining.Keys.Where(u => !active.Contains(u)).ToList())
+            _lastTimeRemaining.Remove(username);
+    }
+
+    public Task CheckAndEnforceAsync(UsageReportResponse response, string username, string sessionId)
     {
         if (response.ShouldEnforce && !string.IsNullOrEmpty(response.EnforcementAction))
         {
@@ -32,10 +60,10 @@ public class EnforcementEngine : IEnforcementEngine
             switch (response.EnforcementAction)
             {
                 case "logout":
-                    await LogoutUserAsync(username, sessionId);
+                    TriggerLogout(username, sessionId);
                     break;
                 case "lock":
-                    await LockSessionAsync(sessionId);
+                    TriggerLock(sessionId);
                     break;
             }
         }
@@ -54,21 +82,29 @@ public class EnforcementEngine : IEnforcementEngine
 
         foreach (var warningMinutes in response.WarningMinutes)
         {
-            if (response.TimeRemainingMinutes == warningMinutes && !warnings.Contains(warningMinutes))
+            // "<=" rather than "==": TimeRemainingMinutes can skip values entirely (a
+            // missed sync counts more than one minute at once, the binding constraint can
+            // jump between daily/weekly/allowed-hours, and parent adjustments move it
+            // arbitrarily), so an exact-equality check can silently miss a warning threshold.
+            if (response.TimeRemainingMinutes <= warningMinutes && !warnings.Contains(warningMinutes))
             {
                 _logger.LogInformation("Warning: {Minutes} minutes remaining for {Username}", warningMinutes, username);
                 warnings.Add(warningMinutes);
                 // TODO: Show notification via UI
             }
         }
+
+        return Task.CompletedTask;
     }
 
     public async Task CheckAndEnforceOfflineAsync(List<UsageRecord> records, string username, string sessionId)
     {
         if (records.Count == 0) return;
 
-        var userId = records[0].UserId;
-        var lastLimits = await _cache.GetLastKnownLimitsAsync(userId);
+        // Cache state is keyed by username, not the server's user Guid: SystemdSessionMonitor
+        // creates every session with UserId = Guid.Empty (server resolves it from username),
+        // so keying by Guid would merge every local user's offline state into one bucket.
+        var lastLimits = await _cache.GetLastKnownLimitsAsync(username);
 
         if (lastLimits == null)
         {
@@ -76,12 +112,17 @@ public class EnforcementEngine : IEnforcementEngine
             return;
         }
 
-        // Calculate today's usage from cache
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var todayUsage = await _cache.GetTodayUsageAsync(userId, today);
+        // `records` here is exactly the set of usage records not yet successfully synced to
+        // the server -- i.e. usage since the last successful sync, which is also exactly
+        // when lastLimits.TimeRemainingMinutes was captured (see ServerSyncService.
+        // SubmitUsageAsync, which caches limits only on success and MarkAsSyncedAsync only
+        // runs after that same success). Using the whole day's usage here instead would
+        // double-subtract minutes the server had already accounted for when it returned
+        // lastLimits, logging the child out far earlier than their limit actually allows.
+        var minutesSinceLastSync = records.Sum(r => r.MinutesActive);
 
         // Calculate remaining time based on last known limits
-        var timeRemaining = lastLimits.TimeRemainingMinutes - todayUsage;
+        var timeRemaining = lastLimits.TimeRemainingMinutes - minutesSinceLastSync;
 
         _logger.LogInformation("Offline mode: User {Username} has {TimeRemaining} minutes remaining (cached)",
             username, timeRemaining);
@@ -95,10 +136,10 @@ public class EnforcementEngine : IEnforcementEngine
                 switch (lastLimits.EnforcementAction)
                 {
                     case "logout":
-                        await LogoutUserAsync(username, sessionId);
+                        TriggerLogout(username, sessionId);
                         break;
                     case "lock":
-                        await LockSessionAsync(sessionId);
+                        TriggerLock(sessionId);
                         break;
                 }
             }
@@ -118,11 +159,63 @@ public class EnforcementEngine : IEnforcementEngine
         }
     }
 
-    // Graduated logout: graceful first, escalating to forceful.
-    // The root cause of the Kubuntu full-system freeze is that calling
-    // `loginctl terminate-user` kills kwin_wayland (the Wayland compositor)
-    // without giving it time to release DRM/KMS resources cleanly, leaving
-    // the display pipeline in a broken state with no process able to render.
+    // Fire-and-forget dispatch: the caller (CheckAndEnforceAsync / CheckAndEnforceOfflineAsync)
+    // runs on the worker's single tick loop, which also drives time tracking and server sync
+    // for every other session on the machine. Awaiting the full logout ladder there would
+    // stall all of that for up to LogoutDeadline -- this is what used to make the whole
+    // client "hang" when a logout attempt got stuck. TryAdd also means a still-over-limit
+    // user re-checked before the previous attempt finishes never launches a second ladder.
+    private void TriggerLogout(string username, string sessionId)
+    {
+        if (!_logoutInProgress.TryAdd(username, 0))
+        {
+            _logger.LogDebug("Logout already in progress for {Username}, ignoring duplicate trigger", username);
+            return;
+        }
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await LogoutUserAsync(username, sessionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled error during background logout for {Username}", username);
+            }
+            finally
+            {
+                _logoutInProgress.TryRemove(username, out _);
+            }
+        });
+    }
+
+    private void TriggerLock(string sessionId)
+    {
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                await LockSessionAsync(sessionId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unhandled error during background lock of session {SessionId}", sessionId);
+            }
+        });
+    }
+
+    // Runs the graduated logout ladder under a hard overall deadline. If a step hangs
+    // (or the accumulated time from every step's own per-call timeout runs long), this
+    // is what guarantees the child is actually logged off within a bounded time instead
+    // of the enforcement attempt stalling indefinitely.
+    //
+    // The ladder runs under a CancellationToken tied to the deadline rather than racing
+    // it with Task.WhenAny: WhenAny lets the loser keep running detached after the
+    // deadline "wins" -- it can keep escalating (terminate-user, pkill) after the
+    // fallback below already ran, the in-progress guard is released while it's still
+    // active, and an exception from the abandoned task is never observed. Cancelling
+    // the ladder itself avoids all three.
     private async Task LogoutUserAsync(string username, string sessionId)
     {
         if (!IsValidUsername(username))
@@ -131,6 +224,37 @@ public class EnforcementEngine : IEnforcementEngine
             return;
         }
 
+        using var cts = new CancellationTokenSource(LogoutDeadline);
+        try
+        {
+            await RunLogoutLadderAsync(username, sessionId, cts.Token);
+            return;
+        }
+        catch (OperationCanceledException)
+        {
+            _logger.LogCritical(
+                "Logout ladder for {Username} exceeded the {Deadline}s deadline; forcing immediate SIGKILL fallback",
+                username, LogoutDeadline.TotalSeconds);
+        }
+
+        await RunProcessWithTimeoutAsync("pkill", $"-KILL -u {username}", timeoutSeconds: 10);
+
+        if (await UserStillLoggedInAsync(username))
+            _logger.LogCritical("User {Username} is STILL logged in after the deadline SIGKILL fallback; giving up for this tick", username);
+    }
+
+    // Graduated logout: graceful first, escalating to forceful.
+    // The root cause of the Kubuntu full-system freeze is that calling
+    // `loginctl terminate-user` kills kwin_wayland (the Wayland compositor)
+    // without giving it time to release DRM/KMS resources cleanly, leaving
+    // the display pipeline in a broken state with no process able to render.
+    //
+    // `token` is tied to the overall deadline in LogoutUserAsync. Each per-call process
+    // timeout (10-20s) already bounds an individual step, so checking the token between
+    // steps (rather than plumbing it into RunProcessWithTimeoutAsync itself) is enough to
+    // observe the deadline within one step's timeout of it actually expiring.
+    private async Task RunLogoutLadderAsync(string username, string sessionId, CancellationToken token)
+    {
         _logger.LogInformation("Logging out user {Username} (session {SessionId})", username, sessionId);
 
         // Step 1: graceful desktop logout via D-Bus.
@@ -143,7 +267,7 @@ public class EnforcementEngine : IEnforcementEngine
         if (await TryGracefulDesktopLogoutAsync(username))
         {
             _logger.LogInformation("Graceful desktop logout sent for {Username}, waiting up to 15s for session to close", username);
-            await Task.Delay(TimeSpan.FromSeconds(15));
+            await Task.Delay(TimeSpan.FromSeconds(15), token);
 
             if (!await UserStillLoggedInAsync(username))
             {
@@ -152,6 +276,8 @@ public class EnforcementEngine : IEnforcementEngine
             }
             _logger.LogWarning("D-Bus logout did not close session for {Username} after 15s (stub service?), escalating", username);
         }
+
+        token.ThrowIfCancellationRequested();
 
         // Step 2: end the specific loginctl session.
         // Less destructive than terminate-user: logind manages the VT transition
@@ -165,7 +291,7 @@ public class EnforcementEngine : IEnforcementEngine
             _logger.LogInformation("Attempting loginctl terminate-session {SessionId}", sessionId);
             await RunProcessWithTimeoutAsync("loginctl", $"terminate-session {sessionId}", timeoutSeconds: 20);
 
-            await Task.Delay(TimeSpan.FromSeconds(3));
+            await Task.Delay(TimeSpan.FromSeconds(3), token);
             if (!await UserStillLoggedInAsync(username))
             {
                 _logger.LogInformation("loginctl terminate-session succeeded for {Username}", username);
@@ -174,16 +300,20 @@ public class EnforcementEngine : IEnforcementEngine
             _logger.LogWarning("loginctl terminate-session did not fully log out {Username}, escalating", username);
         }
 
+        token.ThrowIfCancellationRequested();
+
         // Step 3: terminate all user sessions (can cause Wayland freeze on KDE).
         _logger.LogWarning("Attempting loginctl terminate-user {Username}", username);
         await RunProcessWithTimeoutAsync("loginctl", $"terminate-user {username}", timeoutSeconds: 20);
 
-        await Task.Delay(TimeSpan.FromSeconds(3));
+        await Task.Delay(TimeSpan.FromSeconds(3), token);
         if (!await UserStillLoggedInAsync(username))
         {
             _logger.LogInformation("loginctl terminate-user succeeded for {Username}", username);
             return;
         }
+
+        token.ThrowIfCancellationRequested();
 
         // Step 4: nuclear option — direct kernel-level kill of all user processes.
         // Catches LightDM-parented Xorg/cinnamon-session that loginctl cannot reach.
@@ -233,7 +363,46 @@ public class EnforcementEngine : IEnforcementEngine
             "org.xfce.SessionManager.Logout", extraArgs: "boolean:true boolean:false"))
             return true;
 
+        // MATE (Linux Mint MATE edition) -- mate-session-manager's D-Bus interface isn't
+        // consistently present across distro builds, so fall back to its own CLI logout
+        // command, which still needs the session bus address to reach the running
+        // mate-session process.
+        if (await TryCliLogoutAsync(username, dbusAddress, "mate-session-save", "--logout"))
+            return true;
+
+        // LXDE has no reliable non-interactive logout command (lxsession-logout only
+        // shows a confirmation dialog), so there is deliberately no attempt here -- it
+        // falls through to the loginctl-based steps in RunLogoutLadderAsync.
         return false;
+    }
+
+    // Runs a graceful-logout CLI command (as opposed to a D-Bus method call) as the
+    // target user, with the session bus address available for commands that need to
+    // signal a running session manager process.
+    private async Task<bool> TryCliLogoutAsync(string username, string dbusAddress, string command, string arguments)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "runuser",
+                Arguments = $"-u {username} -- {command} {arguments}",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            };
+            psi.Environment["DBUS_SESSION_BUS_ADDRESS"] = dbusAddress;
+
+            var ok = await RunProcessWithTimeoutAsync(psi, timeoutSeconds: 10);
+            _logger.LogInformation("CLI logout {Command} for {Username}: {Result}", command, username, ok ? "sent" : "failed");
+            return ok;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "CLI logout {Command} not available for {Username}", command, username);
+            return false;
+        }
     }
 
     // Reads DBUS_SESSION_BUS_ADDRESS from the environment of a process running as uid.
@@ -285,35 +454,32 @@ public class EnforcementEngine : IEnforcementEngine
     }
 
     // Returns true if the user still has at least one active loginctl session.
+    //
+    // Runs under ProcessRunner's hard timeout: this check sits between the logout
+    // ladder's cancellation checkpoints, so an unbounded wait here would defeat the
+    // deadline in LogoutUserAsync AND leave _logoutInProgress claimed forever (killing
+    // all future enforcement for the user until a service restart).
     private async Task<bool> UserStillLoggedInAsync(string username)
     {
-        try
-        {
-            var process = Process.Start(new ProcessStartInfo
+        var (ok, output) = await ProcessRunner.RunAsync(
+            new ProcessStartInfo
             {
                 FileName = "loginctl",
-                Arguments = "list-sessions --no-legend",
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                CreateNoWindow = true
-            });
-            if (process == null) return false;
+                Arguments = "list-sessions --no-legend"
+            },
+            TimeSpan.FromSeconds(10), _logger);
 
-            var output = await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync();
-
-            return output.Split('\n').Any(line =>
-            {
-                var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                return parts.Length >= 3 && parts[2] == username;
-            });
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Could not check loginctl sessions for {Username}", username);
+        // Can't verify -> treat as logged out. Matches the previous catch-block
+        // semantics: never escalate destructively (terminate-user, pkill) on the basis
+        // of a failed query.
+        if (!ok)
             return false;
-        }
+
+        return output.Split('\n').Any(line =>
+        {
+            var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            return parts.Length >= 3 && parts[2] == username;
+        });
     }
 
     private async Task<bool> TryDbusLogoutAsync(string username, string dbusAddress,

@@ -19,7 +19,7 @@ public class UserScenarioTests
     private TimeCalculationService CreateService(AppDbContext context)
     {
         var userResolution = new UserResolutionService(context);
-        return new TimeCalculationService(context, userResolution);
+        return new TimeCalculationService(context, userResolution, TestClock.Utc);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class UserScenarioTests
         await context.SaveChangesAsync();
 
         var remaining = await service.CalculateTimeRemainingAsync(user.Id, today);
-        var shouldEnforce = await service.ShouldEnforceAsync(user.Id, remaining);
+        var shouldEnforce = service.ShouldEnforce(remaining);
 
         Assert.Equal(0, remaining);
         Assert.False(shouldEnforce); // Should NOT enforce at exactly 0
@@ -358,7 +358,7 @@ public class UserScenarioTests
         await context.SaveChangesAsync();
 
         var remaining = await service.CalculateTimeRemainingAsync(user.Id, today);
-        var shouldEnforce = await service.ShouldEnforceAsync(user.Id, remaining);
+        var shouldEnforce = service.ShouldEnforce(remaining);
         Assert.False(shouldEnforce); // Inactive users not enforced
     }
 

@@ -12,6 +12,11 @@ public class ValidationHelper
         if (username.Length > 64) return false;
         return username.All(c => char.IsLetterOrDigit(c) || c == '_' || c == '-' || c == '.');
     }
+
+    // Usernames are matched case-insensitively across the whole system (clients report
+    // OS usernames, which are case-insensitive on Windows and inconsistently-cased by
+    // convention on Linux); normalize once, everywhere a username is stored or looked up.
+    public static string NormalizeUsername(string username) => username.Trim().ToLowerInvariant();
     
     public static bool ValidateEmail(string? email)
     {

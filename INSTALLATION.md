@@ -24,6 +24,10 @@ Complete installation instructions for Parental Control System.
    export ADMIN_PASSWORD=your_dashboard_password
    export LIMIT_ADMIN_PASSWORD=your_admin_operations_password
    export DB_PASSWORD=your_database_password
+
+   # Household timezone -- daily resets, allowed-hours windows, and week boundaries
+   # are computed in this zone, not UTC. Defaults to UTC if unset.
+   export TZ=Europe/Prague
    ```
 
 3. **Start services**:
@@ -234,6 +238,22 @@ sudo journalctl -u parental-control-client -f
 
 4. **Assign profiles to users**
 
+### Server settings reference
+
+These live under `appsettings.json`'s `ParentalControl` section (or as `ParentalControl__SettingName` environment variables in Docker). All default to safe/backward-compatible values -- nothing here needs to be touched for a normal install.
+
+| Setting | Default | Purpose |
+|---|---|---|
+| `TimeZoneId` | `""` (uses host/container local time, i.e. the `TZ` env var) | IANA zone name (e.g. `Europe/Prague`) for daily reset / allowed-hours / week-boundary calculations. |
+| `FirstDayOfWeek` | `Monday` | Which day a weekly limit resets on. |
+| `RequireClientApiKey` | `false` | See below. |
+| `TrustForwardedHeaders` | `false` | Enable only if nginx (or another reverse proxy) sits in front of the web service, so the login-attempt throttle sees the real client IP instead of the proxy's. Enabling this without an actual trusted proxy in front lets a caller spoof their own source IP. |
+| `DataProtectionKeysPath` | `/app/keys` | Where session-cookie encryption keys are persisted. Only needs changing if running outside the Docker image. |
+
+**Rolling out `RequireClientApiKey`**: every client computer authenticates its `/api/client/*` requests with an API key issued at registration, but a fresh install or an old client predating this feature won't have one yet. With the setting at its default (`false`), a missing key is allowed (logged as a warning) while a *wrong* key is always rejected. Once every computer in the house is running a client new enough to send the key (check `journalctl -u parental-control-client | grep "API key"` on each machine), set `RequireClientApiKey` to `true` and restart the web service to close the gap.
+
+**Enabling `TrustForwardedHeaders` safely**: this setting makes the web service trust the `X-Forwarded-For` header for the login-attempt throttle's per-IP tracking. That is only safe if the web service is **actually unreachable except through nginx** -- otherwise anyone on the LAN can reach the published port directly and set their own `X-Forwarded-For` per request, making every attempt look like a fresh IP and bypassing the throttle entirely. If nginx runs on the same host as the `webservice` container, change the `docker-compose.yml` port mapping from `"8081:80"` to `"127.0.0.1:8081:80"` so only nginx (and the host itself) can reach it; if nginx runs elsewhere, firewall port 8081 from the rest of the LAN instead. Don't enable this setting without one of those two changes in place.
+
 ### Client Verification
 
 1. **Check client registration**:
@@ -334,6 +354,8 @@ docker-compose down -v
 ```
 
 ## Upgrading
+
+Client upgrades never require re-entering the server URL or losing pending time data: the registration ID, API key, and any usage not yet synced to the server all live under `/etc/parental-control/` and `/var/lib/parental-control/`, which are separate from the installed binaries and are never touched by an upgrade.
 
 ### Client (Ubuntu/Debian)
 

@@ -29,6 +29,10 @@ services:
       ConnectionStrings__DefaultConnection: "Host=postgres;Database=parental_control;Username=pcadmin;Password=${DB_PASSWORD}"
       AdminPassword: ${ADMIN_PASSWORD:-admin}
       LimitAdministratorPassword: ${LIMIT_ADMIN_PASSWORD}
+      # Household local timezone -- daily resets, allowed-hours windows, and week
+      # boundaries are all computed in this zone. Set to your IANA zone name (e.g.
+      # "Europe/Prague") in your .env file; defaults to UTC if unset.
+      TZ: ${TZ:-UTC}
     ports:
       - "8081:80"
     volumes:
@@ -54,7 +58,9 @@ services:
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
     ports:
-      - "8082:80"
+      # Admin tool with a default admin/admin login -- reach it via SSH tunnel or from
+      # the server itself, not exposed to the LAN.
+      - "127.0.0.1:8082:80"
     depends_on:
       - postgres
     networks:

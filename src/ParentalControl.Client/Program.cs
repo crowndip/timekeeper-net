@@ -48,24 +48,48 @@ try
             var username = args[2];
             var password = args[3];
             await File.WriteAllTextAsync(Path.Combine(configDir, "proxy-user"), username);
-            await File.WriteAllTextAsync(Path.Combine(configDir, "proxy-pass"), password);
-            
-            // Set permissions: readable by root (owner) and parental-control group only.
-            // The tray app user must be a member of the parental-control group (set up by the installer).
+
+            var proxyPassPath = Path.Combine(configDir, "proxy-pass");
             if (OperatingSystem.IsLinux())
             {
-                var proxyPassPath = Path.Combine(configDir, "proxy-pass");
-                File.SetUnixFileMode(proxyPassPath,
-                    UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead);
-                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                // Set the restrictive mode as part of file creation rather than writing
+                // the content first and chmod-ing after -- the latter leaves the file
+                // world-readable under the default umask for the window in between.
+                var options = new FileStreamOptions
+                {
+                    Mode = FileMode.Create,
+                    Access = FileAccess.Write,
+                    UnixCreateMode = UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead
+                };
+                await using (var stream = new FileStream(proxyPassPath, options))
+                await using (var writer = new StreamWriter(stream))
+                {
+                    await writer.WriteAsync(password);
+                }
+
+                // The tray app user must be a member of the parental-control group (set up
+                // by the installer). Only warn on failure -- this can legitimately run
+                // before that group exists on a fresh install.
+                var chgrp = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
                 {
                     FileName = "chgrp",
                     Arguments = $"parental-control {proxyPassPath}",
                     UseShellExecute = false,
                     CreateNoWindow = true
-                })?.WaitForExit();
+                });
+                chgrp?.WaitForExit();
+                if (chgrp == null || chgrp.ExitCode != 0)
+                {
+                    Console.WriteLine("Warning: failed to set group ownership on proxy-pass " +
+                        "(the 'parental-control' group may not exist yet); the tray app may not " +
+                        "be able to read the proxy password until this is retried.");
+                }
             }
-            
+            else
+            {
+                await File.WriteAllTextAsync(proxyPassPath, password);
+            }
+
             Console.WriteLine($"Proxy credentials set for user: {username}");
             return 0;
         }
@@ -83,11 +107,12 @@ try
         .UseSystemd()
         .ConfigureServices((context, services) =>
         {
-            var config = context.Configuration.GetSection("ParentalControl");
-            
-            if (string.IsNullOrEmpty(config["ServerUrl"]))
-                throw new InvalidOperationException("ServerUrl is not configured");
-
+            // Deliberately no upfront "ServerUrl must be configured" check here: a missing
+            // or invalid server URL must never crash the daemon (that would crash-loop the
+            // systemd service and disable enforcement entirely). ServerSyncService.
+            // InitializeAsync handles a missing/invalid URL by logging and retrying instead
+            // of throwing -- see ParentalControlWorker, which calls it on every tick until
+            // it succeeds.
             services.AddHttpClient<IServerSyncService, ServerSyncService>()
                 .SetHandlerLifetime(TimeSpan.FromMinutes(5));
             

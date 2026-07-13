@@ -36,7 +36,10 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Computer>(entity =>
         {
             entity.HasKey(e => e.Id);
-            entity.HasIndex(e => e.Hostname).IsUnique();
+            // Hostname is display metadata, not an identity key (see ClientController.Register):
+            // two machines can legitimately share a hostname after a reinstall, and a unique
+            // index here would let one hijack the other's record.
+            entity.HasIndex(e => e.Hostname);
             entity.HasIndex(e => e.MachineId).IsUnique();
         });
         

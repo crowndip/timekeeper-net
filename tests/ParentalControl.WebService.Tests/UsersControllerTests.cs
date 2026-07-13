@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ParentalControl.Shared.DTOs;
 using ParentalControl.WebService.Controllers;
 using ParentalControl.WebService.Data;
 using ParentalControl.WebService.Models;
@@ -19,7 +20,7 @@ public class UsersControllerTests : IDisposable
             .Options;
         _context = new AppDbContext(options);
         var userResolution = new ParentalControl.WebService.Services.UserResolutionService(_context);
-        _controller = new UsersController(_context, userResolution);
+        _controller = new UsersController(_context, userResolution, TestClock.Utc);
     }
 
     [Fact]
@@ -63,10 +64,10 @@ public class UsersControllerTests : IDisposable
     public async Task CreateUser_WithValidData_CreatesUser()
     {
         // Arrange
-        var user = new User { Username = "newuser", AccountType = AccountType.Child };
+        var request = new CreateUserRequest("newuser", null, null, "Child");
 
         // Act
-        var result = await _controller.CreateUser(user);
+        var result = await _controller.CreateUser(request);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
@@ -79,10 +80,10 @@ public class UsersControllerTests : IDisposable
         // Arrange
         _context.Users.Add(new User { Username = "existing", AccountType = AccountType.Child });
         await _context.SaveChangesAsync();
-        var user = new User { Username = "existing", AccountType = AccountType.Child };
+        var request = new CreateUserRequest("existing", null, null, "Child");
 
         // Act
-        var result = await _controller.CreateUser(user);
+        var result = await _controller.CreateUser(request);
 
         // Assert
         Assert.IsType<BadRequestObjectResult>(result);
@@ -95,10 +96,10 @@ public class UsersControllerTests : IDisposable
         var user = new User { Username = "testuser", FullName = "Old Name", AccountType = AccountType.Child };
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-        user.FullName = "New Name";
+        var request = new UpdateUserRequest("New Name", null, "Child", true);
 
         // Act
-        var result = await _controller.UpdateUser(user.Id, user);
+        var result = await _controller.UpdateUser(user.Id, request);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
@@ -110,10 +111,10 @@ public class UsersControllerTests : IDisposable
     public async Task UpdateUser_WithInvalidId_ReturnsNotFound()
     {
         // Arrange
-        var user = new User { Username = "testuser", AccountType = AccountType.Child };
+        var request = new UpdateUserRequest(null, null, "Child", true);
 
         // Act
-        var result = await _controller.UpdateUser(Guid.NewGuid(), user);
+        var result = await _controller.UpdateUser(Guid.NewGuid(), request);
 
         // Assert
         Assert.IsType<NotFoundObjectResult>(result);

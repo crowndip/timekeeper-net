@@ -24,7 +24,7 @@ public class UserAliasTests
     private TimeCalculationService CreateTimeService(AppDbContext context)
     {
         var userResolution = new UserResolutionService(context);
-        return new TimeCalculationService(context, userResolution);
+        return new TimeCalculationService(context, userResolution, TestClock.Utc);
     }
 
     [Fact]

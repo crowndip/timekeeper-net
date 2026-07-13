@@ -11,142 +11,114 @@ public interface ISessionMonitor
 
 public class SystemdSessionMonitor : ISessionMonitor
 {
+    // A wedged logind/D-Bus must never hang the whole tick loop forever: no tracking and
+    // no enforcement would happen until a human noticed and restarted the service, which
+    // is exactly the kind of maintenance this project is trying to eliminate.
+    private static readonly TimeSpan LoginctlTimeout = TimeSpan.FromSeconds(10);
+
     private readonly ILogger<SystemdSessionMonitor> _logger;
-    
+
     public SystemdSessionMonitor(ILogger<SystemdSessionMonitor> logger) => _logger = logger;
-    
+
     public async Task<List<UserSession>> GetActiveSessionsAsync()
     {
         var sessions = new List<UserSession>();
-        
-        try
+
+        var (ok, output) = await ProcessRunner.RunAsync(
+            new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "loginctl",
+                Arguments = "list-sessions --no-legend"
+            },
+            LoginctlTimeout, _logger);
+
+        // A failed/timed-out query returns an empty session list rather than throwing --
+        // this tick simply sees no sessions, and the next tick tries again. An empty tick
+        // self-heals; a hung one does not.
+        if (!ok)
+            return sessions;
+
+        // Parse output: SESSION UID USER SEAT TTY
+        var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        foreach (var line in lines)
         {
-            // Use loginctl to get active sessions
-            var process = new System.Diagnostics.Process
+            var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length >= 3)
             {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "loginctl",
-                    Arguments = "list-sessions --no-legend",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-            
-            process.Start();
-            var output = await process.StandardOutput.ReadToEndAsync();
-            await process.WaitForExitAsync();
-            
-            if (process.ExitCode != 0)
-            {
-                _logger.LogWarning("loginctl failed with exit code {ExitCode}", process.ExitCode);
-                return sessions;
-            }
-            
-            // Parse output: SESSION UID USER SEAT TTY
-            var lines = output.Split('\n', StringSplitOptions.RemoveEmptyEntries);
-            foreach (var line in lines)
-            {
-                var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                if (parts.Length >= 3)
-                {
-                    var sessionId = parts[0];
-                    var username = parts[2];
-                    
-                    // Skip system users (gdm=GNOME, lightdm=LightDM, sddm=KDE/Kubuntu)
-                    if (username == "root" || username == "gdm" || username == "lightdm" || username == "sddm")
-                        continue;
-                    
-                    sessions.Add(new UserSession(
-                        UserId: Guid.Empty, // Server will determine userId from username
-                        Username: username,
-                        SessionId: sessionId,
-                        IsIdle: false
-                    ));
-                    
-                    _logger.LogDebug("Detected session: {SessionId} for user {Username}", sessionId, username);
-                }
+                var sessionId = parts[0];
+                var username = parts[2];
+
+                // Skip system users (gdm=GNOME, lightdm=LightDM, sddm=KDE/Kubuntu)
+                if (username == "root" || username == "gdm" || username == "lightdm" || username == "sddm")
+                    continue;
+
+                sessions.Add(new UserSession(
+                    UserId: Guid.Empty, // Server will determine userId from username
+                    Username: username,
+                    SessionId: sessionId,
+                    IsIdle: false
+                ));
+
+                _logger.LogDebug("Detected session: {SessionId} for user {Username}", sessionId, username);
             }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting active sessions");
-        }
-        
+
         return sessions;
     }
-    
+
     public async Task<bool> IsSessionIdleAsync(string sessionId)
     {
-        try
-        {
-            // Check session state - we want to stop counting only if:
-            // 1. Session is locked (user locked screen)
-            // 2. Session is closing (logout/shutdown)
-            // We DO count time for:
-            // - Active sessions (watching videos, etc.)
-            // - Idle sessions (no keyboard/mouse but logged in)
-            
-            var stateProcess = new System.Diagnostics.Process
+        // Check session state - we want to stop counting only if:
+        // 1. Session is locked (user locked screen)
+        // 2. Session is closing (logout/shutdown)
+        // We DO count time for:
+        // - Active sessions (watching videos, etc.)
+        // - Idle sessions (no keyboard/mouse but logged in)
+        // On any query failure/timeout: assume active (count time) -- never give free time
+        // because a status query failed.
+
+        var (stateOk, stateOutput) = await ProcessRunner.RunAsync(
+            new System.Diagnostics.ProcessStartInfo
             {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "loginctl",
-                    Arguments = $"show-session {sessionId} -p State --value",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-            
-            stateProcess.Start();
-            var state = await stateProcess.StandardOutput.ReadToEndAsync();
-            await stateProcess.WaitForExitAsync();
-            
-            state = state.Trim();
-            
-            // Only stop counting if session is closing or lingering
-            if (state == "closing" || state == "lingering")
-            {
-                _logger.LogDebug("Session {SessionId} is {State}, not counting time", sessionId, state);
-                return true;
-            }
-            
-            // Check if screen is locked (not just idle)
-            var lockedProcess = new System.Diagnostics.Process
-            {
-                StartInfo = new System.Diagnostics.ProcessStartInfo
-                {
-                    FileName = "loginctl",
-                    Arguments = $"show-session {sessionId} -p LockedHint --value",
-                    RedirectStandardOutput = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-            
-            lockedProcess.Start();
-            var lockedOutput = await lockedProcess.StandardOutput.ReadToEndAsync();
-            await lockedProcess.WaitForExitAsync();
-            
-            if (lockedOutput.Trim() == "yes")
-            {
-                _logger.LogDebug("Session {SessionId} is locked, not counting time", sessionId);
-                return true;
-            }
-            
-            // Session is active or idle but unlocked - COUNT THE TIME
-            // This includes watching videos, reading, etc.
-            _logger.LogDebug("Session {SessionId} is active (state: {State}), counting time", sessionId, state);
+                FileName = "loginctl",
+                Arguments = $"show-session {sessionId} -p State --value"
+            },
+            LoginctlTimeout, _logger);
+
+        if (!stateOk)
             return false;
-        }
-        catch (Exception ex)
+
+        var state = stateOutput.Trim();
+
+        // Only stop counting if session is closing or lingering
+        if (state == "closing" || state == "lingering")
         {
-            _logger.LogError(ex, "Error checking session state for {SessionId}", sessionId);
-            // On error, assume active to avoid missing time
-            return false;
+            _logger.LogDebug("Session {SessionId} is {State}, not counting time", sessionId, state);
+            return true;
         }
+
+        // Check if screen is locked (not just idle)
+        var (lockedOk, lockedOutput) = await ProcessRunner.RunAsync(
+            new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = "loginctl",
+                Arguments = $"show-session {sessionId} -p LockedHint --value"
+            },
+            LoginctlTimeout, _logger);
+
+        if (!lockedOk)
+            return false;
+
+        if (lockedOutput.Trim() == "yes")
+        {
+            _logger.LogDebug("Session {SessionId} is locked, not counting time", sessionId);
+            return true;
+        }
+
+        // Session is active or idle but unlocked - COUNT THE TIME
+        // This includes watching videos, reading, etc.
+        _logger.LogDebug("Session {SessionId} is active (state: {State}), counting time", sessionId, state);
+        return false;
     }
     
     public async Task<List<string>> GetAllLocalUsersAsync()
@@ -160,11 +132,10 @@ public class SystemdSessionMonitor : ISessionMonitor
             foreach (var line in lines)
             {
                 var parts = line.Split(':');
-                if (parts.Length >= 4)
+                if (parts.Length >= 4 && int.TryParse(parts[2], out var uid))
                 {
                     var username = parts[0];
-                    var uid = int.Parse(parts[2]);
-                    
+
                     // Regular users have UID >= 1000 (skip system users)
                     if (uid >= 1000 && uid < 65534)
                     {

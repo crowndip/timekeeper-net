@@ -7,7 +7,7 @@ namespace ParentalControl.WebService.Services;
 public interface ITimeCalculationService
 {
     Task<int> CalculateTimeRemainingAsync(Guid userId, DateOnly date);
-    Task<bool> ShouldEnforceAsync(Guid userId, int timeRemaining);
+    bool ShouldEnforce(int timeRemaining);
     Task<bool> IsWithinAllowedHoursAsync(Guid userId, DateTime currentTime);
     Task<int> GetMinutesUntilAllowedHoursEndAsync(Guid userId, DateTime currentTime);
 }
@@ -16,11 +16,13 @@ public class TimeCalculationService : ITimeCalculationService
 {
     private readonly AppDbContext _context;
     private readonly IUserResolutionService _userResolution;
-    
-    public TimeCalculationService(AppDbContext context, IUserResolutionService userResolution)
+    private readonly IClockService _clock;
+
+    public TimeCalculationService(AppDbContext context, IUserResolutionService userResolution, IClockService clock)
     {
         _context = context;
         _userResolution = userResolution;
+        _clock = clock;
     }
     
     public async Task<int> CalculateTimeRemainingAsync(Guid userId, DateOnly date)
@@ -52,22 +54,27 @@ public class TimeCalculationService : ITimeCalculationService
             .SumAsync(a => a.MinutesAdjustment);
         
         var dailyRemaining = dayLimit - usedToday + adjustments;
-        
+
         if (profile.WeeklyLimit > 0)
         {
-            var weekStart = date.AddDays(-(int)date.DayOfWeek);
+            var weekStart = _clock.GetWeekStart(date);
+            var weekEnd = weekStart.AddDays(7);
             var usedThisWeek = await _context.TimeUsage
-                .Where(u => allUserIds.Contains(u.UserId) && u.UsageDate >= weekStart && u.UsageDate < weekStart.AddDays(7))
+                .Where(u => allUserIds.Contains(u.UserId) && u.UsageDate >= weekStart && u.UsageDate < weekEnd)
                 .SumAsync(u => u.MinutesUsed);
-            
-            var weeklyRemaining = profile.WeeklyLimit - usedThisWeek + adjustments;
+
+            var weeklyAdjustments = await _context.TimeAdjustments
+                .Where(a => allUserIds.Contains(a.UserId) && a.AdjustmentDate >= weekStart && a.AdjustmentDate < weekEnd)
+                .SumAsync(a => a.MinutesAdjustment);
+
+            var weeklyRemaining = profile.WeeklyLimit - usedThisWeek + weeklyAdjustments;
             return Math.Min(dailyRemaining, weeklyRemaining);
         }
-        
+
         return dailyRemaining;
     }
     
-    public Task<bool> ShouldEnforceAsync(Guid userId, int timeRemaining) => Task.FromResult(timeRemaining < 0);
+    public bool ShouldEnforce(int timeRemaining) => timeRemaining < 0;
     
     public async Task<bool> IsWithinAllowedHoursAsync(Guid userId, DateTime currentTime)
     {
@@ -81,10 +88,11 @@ public class TimeCalculationService : ITimeCalculationService
         
         if (profile == null || !profile.AllowedHours.Any())
             return true; // No restrictions = always allowed
-        
-        var dayOfWeek = (int)currentTime.DayOfWeek;
-        var currentTimeOnly = TimeOnly.FromDateTime(currentTime);
-        
+
+        var localTime = _clock.ToLocal(currentTime);
+        var dayOfWeek = (int)localTime.DayOfWeek;
+        var currentTimeOnly = TimeOnly.FromDateTime(localTime);
+
         var allowed = profile.AllowedHours
             .Where(ah => ah.DayOfWeek == dayOfWeek)
             .Any(ah => currentTimeOnly >= ah.StartTime && currentTimeOnly <= ah.EndTime);
@@ -104,21 +112,49 @@ public class TimeCalculationService : ITimeCalculationService
         
         if (profile == null || !profile.AllowedHours.Any())
             return int.MaxValue; // No restrictions
-        
-        var dayOfWeek = (int)currentTime.DayOfWeek;
-        var currentTimeOnly = TimeOnly.FromDateTime(currentTime);
-        
-        var todayHours = profile.AllowedHours
-            .Where(ah => ah.DayOfWeek == dayOfWeek && currentTimeOnly >= ah.StartTime && currentTimeOnly <= ah.EndTime)
-            .FirstOrDefault();
-        
-        if (todayHours == null)
+
+        var localTime = _clock.ToLocal(currentTime);
+        var dayOfWeek = (int)localTime.DayOfWeek;
+        var currentTimeOnly = TimeOnly.FromDateTime(localTime);
+
+        // Merge adjacent/overlapping windows first: with 08:00-12:00 and 12:00-18:00
+        // configured as two separate rows, a naive "find the window containing now" at
+        // 11:00 would report only 60 minutes left (until the first window's end) even
+        // though allowed time actually continues uninterrupted until 18:00.
+        var todayWindows = profile.AllowedHours.Where(ah => ah.DayOfWeek == dayOfWeek);
+        var merged = MergeWindows(todayWindows);
+
+        var containingIndex = merged.FindIndex(w => currentTimeOnly >= w.Start && currentTimeOnly <= w.End);
+        if (containingIndex < 0)
             return 0; // Outside allowed hours
-        
-        var minutesUntilEnd = (int)(todayHours.EndTime.ToTimeSpan() - currentTimeOnly.ToTimeSpan()).TotalMinutes;
+
+        var minutesUntilEnd = (int)(merged[containingIndex].End.ToTimeSpan() - currentTimeOnly.ToTimeSpan()).TotalMinutes;
         return minutesUntilEnd;
     }
-    
+
+    private static List<(TimeOnly Start, TimeOnly End)> MergeWindows(IEnumerable<AllowedHours> windows)
+    {
+        var sorted = windows.OrderBy(w => w.StartTime).ToList();
+        var merged = new List<(TimeOnly Start, TimeOnly End)>();
+
+        foreach (var window in sorted)
+        {
+            if (merged.Count > 0 && window.StartTime <= merged[^1].End)
+            {
+                // Overlaps or touches the previous window -- extend it rather than
+                // treating this as a separate window with its own earlier "end".
+                if (window.EndTime > merged[^1].End)
+                    merged[^1] = (merged[^1].Start, window.EndTime);
+            }
+            else
+            {
+                merged.Add((window.StartTime, window.EndTime));
+            }
+        }
+
+        return merged;
+    }
+
     private static int GetDailyLimit(TimeProfile profile, DayOfWeek day) => day switch
     {
         DayOfWeek.Monday => profile.MondayLimit,

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using ParentalControl.WebService.Data;
 using ParentalControl.WebService.Services;
@@ -28,6 +29,7 @@ try
             .EnableSensitiveDataLogging(builder.Environment.IsDevelopment())
             .EnableDetailedErrors(builder.Environment.IsDevelopment()));
 
+    builder.Services.AddSingleton<IClockService, ClockService>();
     builder.Services.AddScoped<ITimeCalculationService, TimeCalculationService>();
     builder.Services.AddScoped<IUserResolutionService, UserResolutionService>();
     builder.Services.AddScoped<IDatabaseInitializationService, DatabaseInitializationService>();
@@ -55,8 +57,11 @@ try
     builder.Services.AddRazorPages();
     builder.Services.AddServerSideBlazor();
     
+    // Configurable so this can run outside the Docker image (where /app/keys is the
+    // container's writable volume mount) without crashing on a read-only/nonexistent path.
+    var dataProtectionKeysPath = builder.Configuration["ParentalControl:DataProtectionKeysPath"] ?? "/app/keys";
     builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo("/app/keys"));
+        .PersistKeysToFileSystem(new DirectoryInfo(dataProtectionKeysPath));
     
     builder.Services.AddDistributedMemoryCache();
     builder.Services.AddSession(options =>
@@ -113,6 +118,26 @@ try
     {
         app.UseSwagger();
         app.UseSwaggerUI();
+    }
+
+    // Only trust X-Forwarded-For when explicitly told there's a reverse proxy in front
+    // (nginx per this deployment's documented setup) -- otherwise a direct caller could
+    // spoof their own source IP and dodge the login-throttle in AuthController. Off by
+    // default; the parent enables it once nginx is actually in place.
+    if (builder.Configuration.GetValue("ParentalControl:TrustForwardedHeaders", false))
+    {
+        var forwardedHeadersOptions = new ForwardedHeadersOptions
+        {
+            ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+            ForwardLimit = 1
+        };
+        // The proxy's own container/host address varies by deployment (docker bridge
+        // subnet, host networking, etc.) and isn't knowable in advance. Enabling this
+        // setting at all *is* the trust decision -- clear the default loopback-only
+        // restriction so it isn't silently ignored behind a non-loopback proxy.
+        forwardedHeadersOptions.KnownNetworks.Clear();
+        forwardedHeadersOptions.KnownProxies.Clear();
+        app.UseForwardedHeaders(forwardedHeadersOptions);
     }
 
     app.UseSerilogRequestLogging();

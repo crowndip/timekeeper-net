@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using ParentalControl.Shared.DTOs;
 using ParentalControl.WebService.Data;
 using ParentalControl.WebService.Models;
 using ParentalControl.WebService.Services;
@@ -13,77 +14,102 @@ public class UsersController : ControllerBase
 {
     private readonly AppDbContext _context;
     private readonly IUserResolutionService _userResolution;
+    private readonly IClockService _clock;
 
-    public UsersController(AppDbContext context, IUserResolutionService userResolution)
+    public UsersController(AppDbContext context, IUserResolutionService userResolution, IClockService clock)
     {
         _context = context;
         _userResolution = userResolution;
+        _clock = clock;
     }
 
+    // Full user records (including Email) aren't needed by any anonymous flow -- unlike
+    // time-status below, which is deliberately anonymous so a child can check their own
+    // remaining time without a parent password. Nothing in this repo's UI calls these
+    // two REST endpoints (the Blazor page queries AppDbContext directly server-side).
     [HttpGet]
+    [RequireAuth]
     public async Task<IActionResult> GetUsers([FromQuery] AccountType? accountType = null)
     {
         var query = _context.Users.AsQueryable();
-        
+
         if (accountType.HasValue)
             query = query.Where(u => u.AccountType == accountType.Value);
-        
+
         var users = await query.OrderBy(u => u.Username).ToListAsync();
         return Ok(new { success = true, data = users });
     }
 
     [HttpGet("{id}")]
+    [RequireAuth]
     public async Task<IActionResult> GetUser(Guid id)
     {
         var user = await _context.Users.FindAsync(id);
         if (user == null)
             return NotFound(new { success = false, error = "User not found" });
-        
+
         return Ok(new { success = true, data = user });
     }
 
     [HttpPost]
     [RequireAuth]
-    public async Task<IActionResult> CreateUser([FromBody] User user)
+    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest request)
     {
-        if (!ValidationHelper.ValidateUsername(user.Username))
+        if (!ValidationHelper.ValidateUsername(request.Username))
             return BadRequest(new { success = false, error = "Invalid username. Use only letters, numbers, _, -, . (max 64 chars)" });
-        
-        if (!ValidationHelper.ValidateEmail(user.Email))
+
+        if (!ValidationHelper.ValidateEmail(request.Email))
             return BadRequest(new { success = false, error = "Invalid email format" });
-        
-        if (await _context.Users.AnyAsync(u => u.Username == user.Username))
+
+        if (!Enum.TryParse<AccountType>(request.AccountType, ignoreCase: true, out var accountType))
+            return BadRequest(new { success = false, error = "Invalid account type" });
+
+        // Normalize the same way the client-reporting path does (ClientController.EnsureUserExistsAsync)
+        // so a user created here as "Alice" is the same row a client reporting "alice" resolves to.
+        var username = ValidationHelper.NormalizeUsername(request.Username);
+
+        if (await _context.Users.AnyAsync(u => u.Username == username))
             return BadRequest(new { success = false, error = "Username already exists" });
 
-        user.Id = Guid.NewGuid();
-        user.CreatedAt = DateTime.UtcNow;
-        user.UpdatedAt = DateTime.UtcNow;
-        
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Username = username,
+            FullName = request.FullName,
+            Email = request.Email,
+            AccountType = accountType,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
-        
+
         return Ok(new { success = true, data = user, message = "User created successfully" });
     }
 
     [HttpPut("{id}")]
     [RequireAuth]
-    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] User user)
+    public async Task<IActionResult> UpdateUser(Guid id, [FromBody] UpdateUserRequest request)
     {
-        if (!ValidationHelper.ValidateEmail(user.Email))
+        if (!ValidationHelper.ValidateEmail(request.Email))
             return BadRequest(new { success = false, error = "Invalid email format" });
-        
+
+        if (!Enum.TryParse<AccountType>(request.AccountType, ignoreCase: true, out var accountType))
+            return BadRequest(new { success = false, error = "Invalid account type" });
+
         var existing = await _context.Users.FindAsync(id);
         if (existing == null)
             return NotFound(new { success = false, error = "User not found" });
 
-        existing.FullName = user.FullName;
-        existing.Email = user.Email;
-        existing.AccountType = user.AccountType;
-        existing.IsActive = user.IsActive;
+        existing.FullName = request.FullName;
+        existing.Email = request.Email;
+        existing.AccountType = accountType;
+        existing.IsActive = request.IsActive;
         existing.UpdatedAt = DateTime.UtcNow;
-        
+
         await _context.SaveChangesAsync();
-        
+
         return Ok(new { success = true, data = existing, message = "User updated successfully" });
     }
 
@@ -115,7 +141,7 @@ public class UsersController : ControllerBase
         var adjustment = new TimeAdjustment
         {
             UserId = id,
-            AdjustmentDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            AdjustmentDate = _clock.LocalToday(),
             MinutesAdjustment = request.MinutesAdjustment,
             Reason = request.Reason ?? "Manual adjustment",
             CreatedBy = "Admin"
@@ -134,16 +160,24 @@ public class UsersController : ControllerBase
         if (user == null)
             return NotFound(new { success = false, error = "User not found" });
         
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var today = _clock.LocalToday();
         var timeCalc = HttpContext.RequestServices.GetRequiredService<ITimeCalculationService>();
         var timeRemaining = await timeCalc.CalculateTimeRemainingAsync(id, today);
-        
+
+        // timeRemaining above resolves the alias group internally; usedToday must be
+        // computed over that same group, or the two numbers in this response can
+        // disagree for a user who has aliases (or is one).
+        var primaryUser = await _userResolution.ResolveToPrimaryAsync(id);
+        var allUserIds = primaryUser != null
+            ? await _userResolution.GetAllUserIdsInGroupAsync(primaryUser.Id)
+            : new List<Guid> { id };
+
         var usedToday = await _context.TimeUsage
-            .Where(u => u.UserId == id && u.UsageDate == today)
+            .Where(u => allUserIds.Contains(u.UserId) && u.UsageDate == today)
             .SumAsync(u => u.MinutesUsed);
-        
+
         var adjustmentsToday = await _context.TimeAdjustments
-            .Where(a => a.UserId == id && a.AdjustmentDate == today)
+            .Where(a => allUserIds.Contains(a.UserId) && a.AdjustmentDate == today)
             .OrderByDescending(a => a.CreatedAt)
             .Select(a => new { a.MinutesAdjustment, a.Reason, a.CreatedAt })
             .ToListAsync();
@@ -221,6 +255,7 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{primaryUserId}/aliases")]
+    [RequireAuth]
     public async Task<IActionResult> GetAliases(Guid primaryUserId)
     {
         var aliases = await _context.Users
@@ -232,10 +267,11 @@ public class UsersController : ControllerBase
     }
 
     [HttpGet("{userId}/usage-breakdown")]
+    [RequireAuth]
     public async Task<IActionResult> GetUsageBreakdown(Guid userId, [FromQuery] DateOnly? startDate, [FromQuery] DateOnly? endDate)
     {
-        var start = startDate ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-30));
-        var end = endDate ?? DateOnly.FromDateTime(DateTime.UtcNow);
+        var end = endDate ?? _clock.LocalToday();
+        var start = startDate ?? end.AddDays(-30);
 
         var primaryUser = await _userResolution.ResolveToPrimaryAsync(userId);
         if (primaryUser == null)

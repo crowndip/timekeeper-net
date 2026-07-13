@@ -15,10 +15,22 @@ public class ParentalControlWorker : BackgroundService
     private bool _isLocked = false;
     private readonly HashSet<int> _warningsShown = new();
     private int _lastTimeRemaining = int.MaxValue;
+    private bool _registered;
     private readonly HashSet<string> _ignoredAccounts = new(StringComparer.OrdinalIgnoreCase)
     {
         "SYSTEM", "LOCAL SERVICE", "NETWORK SERVICE", "Administrator"
     };
+
+    // If the server's database is restored from backup (or otherwise loses its Computer
+    // rows) while this client keeps its own persisted ComputerId, every usage submission
+    // fails a foreign-key check server-side and returns null forever -- normal offline
+    // handling never resolves this because the server IS reachable, it just doesn't
+    // recognize this ComputerId anymore. After enough consecutive failures, force
+    // re-registration (idempotent and safe even if the real cause is just "still
+    // offline" -- one extra failed HTTP call per tick is cheap) so the client
+    // self-heals instead of needing a manual service restart.
+    private const int ConsecutiveSyncFailuresBeforeReregister = 10;
+    private int _consecutiveSyncFailures;
 
     public ParentalControlWorker(
         ILogger<ParentalControlWorker> logger,
@@ -67,11 +79,9 @@ public class ParentalControlWorker : BackgroundService
     {
         _logger.LogInformation("Parental Control Windows Client starting");
 
-        await _syncService.RegisterComputerAsync();
-        
-        // Sync all local users with server
-        var allUsers = await _sessionMonitor.GetAllLocalUsersAsync();
-        await _syncService.SyncAllUsersAsync(allUsers);
+        // Load persisted cache before doing anything else, so a reboot while offline
+        // doesn't lose pending usage or cached limits (see LocalCache).
+        await _cache.InitializeAsync();
 
         var tickInterval = _configuration.GetValue<int>("ParentalControl:TickIntervalSeconds", 60);
 
@@ -92,20 +102,31 @@ public class ParentalControlWorker : BackgroundService
 
     private async Task ProcessTickAsync()
     {
+        // Registration/config discovery retries every tick until it succeeds, rather than
+        // only once at startup: a computer that boots before the network or server config
+        // is ready must still register automatically once it becomes reachable, with no
+        // manual intervention. RegisterComputerAsync is idempotent (safe to call repeatedly).
+        if (!_registered)
+        {
+            _registered = await _syncService.RegisterComputerAsync();
+            if (_registered)
+            {
+                var allUsers = await _sessionMonitor.GetAllLocalUsersAsync();
+                await _syncService.SyncAllUsersAsync(allUsers);
+            }
+        }
+
         var username = _sessionMonitor.GetCurrentUser();
         if (string.IsNullOrEmpty(username) || _ignoredAccounts.Contains(username))
             return;
 
-        // Derive a stable userId from username so each user has their own cache entry (Bug #5)
-        var userId = GetUserIdFromUsername(username);
-
         // Record time for current user only
         if (_isLocked)
-            await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 0, 1);
+            await _cache.IncrementUsageAsync(Guid.Empty, username, _currentSessionId, 0, 1);
         else
-            await _cache.IncrementUsageAsync(userId, username, _currentSessionId, 1, 0);
+            await _cache.IncrementUsageAsync(Guid.Empty, username, _currentSessionId, 1, 0);
 
-        // Only submit records belonging to the current user to avoid cross-user enforcement (Bug #2)
+        // Only submit records belonging to the current user to avoid cross-user enforcement
         var allPending = await _cache.GetPendingRecordsAsync();
         var userPending = allPending.Where(r => r.Username == username).ToList();
 
@@ -114,19 +135,35 @@ public class ParentalControlWorker : BackgroundService
             var response = await _syncService.SubmitUsageAsync(userPending);
             if (response != null)
             {
+                _consecutiveSyncFailures = 0;
                 await _cache.MarkAsSyncedAsync(userPending.Select(r => r.Id).ToList());
                 await CheckEnforcementAsync(username, response);
             }
             else
             {
-                // Offline: recalculate remaining time from cached limits minus today's usage (Bug #4)
-                // This avoids permanent lockout from a stale ShouldEnforce=true snapshot
-                var cachedLimits = await _cache.GetLastKnownLimitsAsync(userId);
+                _consecutiveSyncFailures++;
+                if (_consecutiveSyncFailures >= ConsecutiveSyncFailuresBeforeReregister)
+                {
+                    _logger.LogWarning(
+                        "{Count} consecutive usage-submission failures; forcing re-registration in case the server's database was reset",
+                        _consecutiveSyncFailures);
+                    _registered = false;
+                    _consecutiveSyncFailures = 0;
+                }
+
+                // Offline: recalculate remaining time from cached limits minus usage since
+                // the last successful sync. `userPending` here is exactly that -- every
+                // record not yet successfully submitted, which is also exactly when
+                // cachedLimits.TimeRemainingMinutes was captured (SubmitUsageAsync only
+                // caches limits on success, and only synced records are ever removed).
+                // Using the whole day's usage instead double-subtracts minutes the server
+                // already accounted for, logging the child out far earlier than their
+                // limit actually allows.
+                var cachedLimits = await _cache.GetLastKnownLimitsAsync(username);
                 if (cachedLimits != null)
                 {
-                    var today = DateOnly.FromDateTime(DateTime.UtcNow);
-                    var todayUsage = await _cache.GetTodayUsageAsync(userId, today);
-                    var adjustedRemaining = cachedLimits.TimeRemainingMinutes - todayUsage;
+                    var minutesSinceLastSync = userPending.Sum(r => r.MinutesActive);
+                    var adjustedRemaining = cachedLimits.TimeRemainingMinutes - minutesSinceLastSync;
 
                     _logger.LogWarning("Offline mode: {Username} has {Remaining} minutes remaining (cached)",
                         username, adjustedRemaining);
@@ -201,13 +238,5 @@ public class ParentalControlWorker : BackgroundService
                 await _enforcement.ShowWarningAsync(TimeSpan.FromMinutes(limits.TimeRemainingMinutes));
             }
         }
-    }
-
-    // Derive a stable, deterministic Guid from a username (Bug #5)
-    private static Guid GetUserIdFromUsername(string username)
-    {
-        using var md5 = System.Security.Cryptography.MD5.Create();
-        var hash = md5.ComputeHash(System.Text.Encoding.UTF8.GetBytes(username.ToLowerInvariant()));
-        return new Guid(hash);
     }
 }
